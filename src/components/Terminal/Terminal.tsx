@@ -4,7 +4,7 @@ import { TerminalInput } from './TerminalInput';
 import { useCommandHistory } from '../../hooks/useCommandHistory';
 import { useAutoComplete } from '../../hooks/useAutoComplete';
 import { createExecutionContext, getCommandNames } from '../../commands';
-import type { OutputLine } from './types';
+import type { OutputLine, AuthorData } from './types';
 
 const BANNER = `
      ██╗███████╗ ██████╗██████╗ ██╗██████╗ ████████╗ ██████╗ ██████╗ ██████╗ ███████╗██████╗
@@ -38,7 +38,7 @@ export const Terminal = () => {
     }
   }, [lines]);
 
-  const addLine = useCallback((type: OutputLine['type'], content: string) => {
+  const addLine = useCallback((type: OutputLine['type'], content: string | AuthorData) => {
     setLines((prev) => [
       ...prev,
       { id: lineIdRef.current++, type, content },
@@ -71,6 +71,13 @@ export const Terminal = () => {
 
       // Display result if not undefined
       if (result !== undefined) {
+        // Check for special result types
+        if (result && typeof result === 'object' && '__type' in result) {
+          if (result.__type === 'author') {
+            addLine('author', result as AuthorData);
+            return;
+          }
+        }
         const resultStr = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
         addLine('result', resultStr);
       }

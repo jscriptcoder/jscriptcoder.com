@@ -1,6 +1,7 @@
 import type { Command } from '../components/Terminal/types';
 import { createHelpCommand } from './help';
 import { echoCommand } from './echo';
+import { authorCommand } from './author';
 
 const commands = new Map<string, Command>();
 
@@ -11,6 +12,7 @@ const getCommands = () => commands;
 const helpCommand = createHelpCommand(getCommands);
 commands.set('help', helpCommand);
 commands.set('echo', echoCommand);
+commands.set('author', authorCommand);
 
 // Export command registry
 export { commands };
