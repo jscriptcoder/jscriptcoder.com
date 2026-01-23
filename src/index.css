@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  @apply h-full m-0 p-0;
+}
+
+body {
+  @apply bg-black text-amber-500 antialiased;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+/* Scrollbar styling for terminal feel */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-black;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-amber-900/50 rounded;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-amber-800/70;
+}
