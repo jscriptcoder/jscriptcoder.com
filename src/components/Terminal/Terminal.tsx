@@ -30,8 +30,8 @@ export const Terminal = () => {
   const outputRef = useRef<HTMLDivElement>(null);
 
   const { addCommand, navigateUp, navigateDown, resetNavigation } = useCommandHistory();
-  const { complete, resetCompletion } = useAutoComplete(getCommandNames());
-  const { getVariables, handleVariableOperation } = useVariables();
+  const { getVariables, getVariableNames, handleVariableOperation } = useVariables();
+  const { getCompletions } = useAutoComplete(getCommandNames(), getVariableNames());
 
   // Auto-scroll to bottom when new output is added
   useEffect(() => {
@@ -114,8 +114,7 @@ export const Terminal = () => {
     executeCommand(input);
     setInput('');
     resetNavigation();
-    resetCompletion();
-  }, [input, executeCommand, resetNavigation, resetCompletion]);
+  }, [input, executeCommand, resetNavigation]);
 
   const handleHistoryUp = useCallback(() => {
     const cmd = navigateUp();
@@ -128,14 +127,19 @@ export const Terminal = () => {
   }, [navigateDown]);
 
   const handleTab = useCallback(() => {
-    const completed = complete(input);
-    setInput(completed);
-  }, [input, complete]);
+    const { matches, displayText } = getCompletions(input);
+    if (matches.length === 1) {
+      // Single match - autocomplete
+      setInput(matches[0].display);
+    } else if (matches.length > 1) {
+      // Multiple matches - show list
+      addLine('result', displayText);
+    }
+  }, [input, getCompletions, addLine]);
 
   const handleInputChange = useCallback((value: string) => {
     setInput(value);
-    resetCompletion();
-  }, [resetCompletion]);
+  }, []);
 
   // Focus terminal on click
   const handleTerminalClick = useCallback(() => {

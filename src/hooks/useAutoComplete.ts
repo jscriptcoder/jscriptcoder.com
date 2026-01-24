@@ -1,41 +1,49 @@
-import { useCallback, useRef } from 'react';
+import { useCallback } from 'react';
 
-export const useAutoComplete = (commandNames: string[]) => {
-  const matchIndexRef = useRef(0);
-  const lastInputRef = useRef('');
+export interface CompletionMatch {
+  name: string;
+  display: string; // name with () for functions
+}
 
-  const complete = useCallback((input: string): string => {
+export interface CompletionResult {
+  matches: CompletionMatch[];
+  displayText: string; // comma-separated list
+}
+
+export const useAutoComplete = (
+  commandNames: string[],
+  variableNames: string[] = []
+) => {
+  const getCompletions = useCallback((input: string): CompletionResult => {
     const trimmed = input.trim();
 
-    if (!trimmed) return input;
-
-    // Find matches that start with the input
-    const matches = commandNames.filter((name) =>
-      name.toLowerCase().startsWith(trimmed.toLowerCase())
-    );
-
-    if (matches.length === 0) return input;
-
-    // If input changed, reset the match index
-    if (trimmed !== lastInputRef.current) {
-      matchIndexRef.current = 0;
-      lastInputRef.current = trimmed;
-    } else {
-      // Cycle through matches on repeated tab presses
-      matchIndexRef.current = (matchIndexRef.current + 1) % matches.length;
+    if (!trimmed) {
+      return { matches: [], displayText: '' };
     }
 
-    // Return the matched command with parentheses
-    return matches[matchIndexRef.current] + '()';
-  }, [commandNames]);
+    // Build completion items: commands get (), variables don't
+    const commandItems = commandNames.map((name) => ({
+      name,
+      display: name + '()',
+    }));
+    const variableItems = variableNames.map((name) => ({
+      name,
+      display: name,
+    }));
 
-  const resetCompletion = useCallback(() => {
-    matchIndexRef.current = 0;
-    lastInputRef.current = '';
-  }, []);
+    const allItems = [...commandItems, ...variableItems];
+
+    // Find matches that start with the input, sorted alphabetically
+    const matches = allItems
+      .filter((item) => item.name.toLowerCase().startsWith(trimmed.toLowerCase()))
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    const displayText = matches.map((m) => m.display).join(', ');
+
+    return { matches, displayText };
+  }, [commandNames, variableNames]);
 
   return {
-    complete,
-    resetCompletion,
+    getCompletions,
   };
 };

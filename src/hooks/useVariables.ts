@@ -31,6 +31,10 @@ export const useVariables = () => {
     return result;
   }, [variables]);
 
+  const getVariableNames = useCallback((): string[] => {
+    return Object.keys(variables);
+  }, [variables]);
+
   const parseExpression = useCallback((
     expression: string,
     context: Record<string, unknown>
@@ -154,6 +158,7 @@ export const useVariables = () => {
   return {
     variables,
     getVariables,
+    getVariableNames,
     handleVariableOperation,
   };
 };
