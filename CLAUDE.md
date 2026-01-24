@@ -32,7 +32,7 @@ src/
 │   └── types.ts            # TypeScript interfaces
 ├── hooks/
 │   ├── useCommandHistory.ts # Up/down arrow command history
-│   ├── useAutoComplete.ts   # Tab completion for commands
+│   ├── useAutoComplete.ts   # Tab completion for commands and variables
 │   └── useVariables.ts      # const/let variable management
 ├── commands/
 │   ├── index.ts            # Command registry
@@ -48,7 +48,11 @@ src/
 
 - **ASCII Banner**: Displays "JSCRIPTCODER v0.1.0" on startup
 - **Command History**: Up/down arrows navigate previous commands
-- **Tab Autocompletion**: Completes command names, cycles through matches
+- **Tab Autocompletion**: Completes both commands and variables
+  - Multiple matches: displays comma-separated list (e.g., `hello, help()`)
+  - Single match: autocompletes directly
+  - Commands shown with `()`, variables without
+  - Matches sorted alphabetically
 - **Variable Support**: `const`/`let` declarations with immutability enforcement
 
 ### Command Execution Flow
