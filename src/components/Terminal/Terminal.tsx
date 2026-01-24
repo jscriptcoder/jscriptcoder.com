@@ -3,6 +3,7 @@ import { TerminalOutput } from './TerminalOutput';
 import { TerminalInput } from './TerminalInput';
 import { useCommandHistory } from '../../hooks/useCommandHistory';
 import { useAutoComplete } from '../../hooks/useAutoComplete';
+import { useVariables } from '../../hooks/useVariables';
 import { createExecutionContext, getCommandNames } from '../../commands';
 import type { OutputLine, AuthorData } from './types';
 
@@ -30,6 +31,7 @@ export const Terminal = () => {
 
   const { addCommand, navigateUp, navigateDown, resetNavigation } = useCommandHistory();
   const { complete, resetCompletion } = useAutoComplete(getCommandNames());
+  const { getVariables, handleVariableOperation } = useVariables();
 
   // Auto-scroll to bottom when new output is added
   useEffect(() => {
@@ -57,13 +59,34 @@ export const Terminal = () => {
 
     try {
       // Create execution context with all registered commands
-      const context = createExecutionContext();
+      const commandContext = createExecutionContext();
+
+      // Check if this is a variable operation (declaration or assignment)
+      const variableResult = handleVariableOperation(trimmedCommand, commandContext);
+
+      if (variableResult !== null) {
+        // This was a variable operation
+        if (!variableResult.success) {
+          addLine('error', `Error: ${variableResult.error}`);
+        } else if (variableResult.value !== undefined) {
+          const resultStr = typeof variableResult.value === 'string'
+            ? variableResult.value
+            : JSON.stringify(variableResult.value, null, 2);
+          addLine('result', resultStr);
+        }
+        return;
+      }
+
+      // Not a variable operation, execute as normal command
+      // Combine commands and variables into execution context
+      const variables = getVariables();
+      const context = { ...commandContext, ...variables };
 
       // Build function with context variables
       const contextKeys = Object.keys(context);
       const contextValues = Object.values(context);
 
-      // Create a function that has access to all commands
+      // Create a function that has access to all commands and variables
       const fn = new Function(...contextKeys, `return ${trimmedCommand}`);
 
       // Execute and get result
@@ -85,7 +108,7 @@ export const Terminal = () => {
       const errorMessage = error instanceof Error ? error.message : String(error);
       addLine('error', `Error: ${errorMessage}`);
     }
-  }, [addCommand, addLine]);
+  }, [addCommand, addLine, handleVariableOperation, getVariables]);
 
   const handleSubmit = useCallback(() => {
     executeCommand(input);
