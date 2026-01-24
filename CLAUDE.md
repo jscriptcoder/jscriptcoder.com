@@ -30,6 +30,8 @@ src/
 │   ├── TerminalInput.tsx   # Input line with prompt
 │   ├── TerminalOutput.tsx  # Output display (text, errors, cards)
 │   └── types.ts            # TypeScript interfaces
+├── context/
+│   └── SessionContext.tsx  # Global session state (user, machine, prompt)
 ├── hooks/
 │   ├── useCommandHistory.ts # Up/down arrow command history
 │   ├── useAutoComplete.ts   # Tab completion for commands and variables
@@ -39,7 +41,7 @@ src/
 │   ├── help.ts             # help() - lists available commands
 │   ├── echo.ts             # echo(value) - outputs stringified value
 │   └── author.ts           # author() - displays author profile card
-└── App.tsx                 # Root component (renders Terminal)
+└── App.tsx                 # Root component (wraps Terminal with SessionProvider)
 ```
 
 ## Architecture
@@ -47,6 +49,10 @@ src/
 ### Terminal Features
 
 - **ASCII Banner**: Displays "JSCRIPTCODER v0.1.0" on startup
+- **Dynamic Prompt**: Format `username@machine>` (e.g., `jscriptcoder@localhost>`)
+  - Managed via `SessionContext` for future multi-user/machine support
+  - User types: `root`, `user`, `guest`
+  - Machine names: `localhost` or IP addresses (e.g., `10.145.45.2`)
 - **Command History**: Up/down arrows navigate previous commands
 - **Tab Autocompletion**: Completes both commands and variables
   - Multiple matches: displays comma-separated list (e.g., `hello, help()`)
@@ -102,6 +108,31 @@ return {
 ```
 
 The `TerminalOutput` component checks for `__type` and renders appropriate UI (e.g., `AuthorCard` for author type).
+
+### Session Context
+
+Global state for terminal session managed via React Context (`src/context/SessionContext.tsx`):
+
+```typescript
+interface Session {
+  username: string;    // Current user (default: 'jscriptcoder')
+  userType: UserType;  // 'root' | 'user' | 'guest'
+  machine: string;     // Current machine (default: 'localhost')
+}
+```
+
+**Available methods:**
+- `getPrompt()` - Returns formatted prompt (e.g., `jscriptcoder@localhost>`)
+- `setUsername(name, type)` - Change current user
+- `setMachine(name)` - Change current machine (for future remote connections)
+
+**Usage in commands:**
+```typescript
+const { setUsername, setMachine } = useSession();
+setUsername('guest', 'guest');
+setMachine('10.145.45.2');
+// Prompt becomes: guest@10.145.45.2>
+```
 
 ## Styling
 

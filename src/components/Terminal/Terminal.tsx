@@ -4,6 +4,7 @@ import { TerminalInput } from './TerminalInput';
 import { useCommandHistory } from '../../hooks/useCommandHistory';
 import { useAutoComplete } from '../../hooks/useAutoComplete';
 import { useVariables } from '../../hooks/useVariables';
+import { useSession } from '../../context/SessionContext';
 import { createExecutionContext, getCommandNames } from '../../commands';
 import type { OutputLine, AuthorData } from './types';
 
@@ -32,6 +33,7 @@ export const Terminal = () => {
   const { addCommand, navigateUp, navigateDown, resetNavigation } = useCommandHistory();
   const { getVariables, getVariableNames, handleVariableOperation } = useVariables();
   const { getCompletions } = useAutoComplete(getCommandNames(), getVariableNames());
+  const { getPrompt } = useSession();
 
   // Auto-scroll to bottom when new output is added
   useEffect(() => {
@@ -40,10 +42,10 @@ export const Terminal = () => {
     }
   }, [lines]);
 
-  const addLine = useCallback((type: OutputLine['type'], content: string | AuthorData) => {
+  const addLine = useCallback((type: OutputLine['type'], content: string | AuthorData, prompt?: string) => {
     setLines((prev) => [
       ...prev,
-      { id: lineIdRef.current++, type, content },
+      { id: lineIdRef.current++, type, content, prompt },
     ]);
   }, []);
 
@@ -51,8 +53,8 @@ export const Terminal = () => {
     const trimmedCommand = command.trim();
     if (!trimmedCommand) return;
 
-    // Add command to output
-    addLine('command', trimmedCommand);
+    // Add command to output with current prompt
+    addLine('command', trimmedCommand, getPrompt());
 
     // Add to history
     addCommand(trimmedCommand);
@@ -108,7 +110,7 @@ export const Terminal = () => {
       const errorMessage = error instanceof Error ? error.message : String(error);
       addLine('error', `Error: ${errorMessage}`);
     }
-  }, [addCommand, addLine, handleVariableOperation, getVariables]);
+  }, [addCommand, addLine, handleVariableOperation, getVariables, getPrompt]);
 
   const handleSubmit = useCallback(() => {
     executeCommand(input);

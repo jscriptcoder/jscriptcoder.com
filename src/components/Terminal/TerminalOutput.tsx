@@ -41,7 +41,7 @@ export const TerminalOutput = ({ lines }: TerminalOutputProps) => {
           )}
           {line.type === 'command' && (
             <div className="text-amber-400">
-              <span className="text-amber-300">&gt; </span>
+              <span className="text-amber-300">{line.prompt} </span>
               {line.content as string}
             </div>
           )}

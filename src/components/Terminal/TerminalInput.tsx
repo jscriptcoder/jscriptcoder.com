@@ -1,4 +1,5 @@
 import { useRef, useEffect } from 'react';
+import { useSession } from '../../context/SessionContext';
 
 interface TerminalInputProps {
   value: string;
@@ -18,6 +19,7 @@ export const TerminalInput = ({
   onTab,
 }: TerminalInputProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
+  const { getPrompt } = useSession();
 
   // Focus input on mount and when clicking anywhere
   useEffect(() => {
@@ -54,7 +56,7 @@ export const TerminalInput = ({
       className="flex items-center p-4 border-t border-amber-900/30"
       onClick={handleContainerClick}
     >
-      <span className="text-amber-300 mr-2">&gt;</span>
+      <span className="text-amber-300 mr-2">{getPrompt()}</span>
       <input
         ref={inputRef}
         type="text"

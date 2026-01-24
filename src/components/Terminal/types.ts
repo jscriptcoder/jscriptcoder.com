@@ -9,6 +9,7 @@ export interface OutputLine {
   id: number;
   type: 'command' | 'result' | 'error' | 'banner' | 'author';
   content: string | AuthorData;
+  prompt?: string; // The prompt displayed when the command was executed
 }
 
 export interface Command {
