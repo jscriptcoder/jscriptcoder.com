@@ -49,6 +49,10 @@ export const Terminal = () => {
     ]);
   }, []);
 
+  const clearLines = useCallback(() => {
+    setLines([]);
+  }, []);
+
   const executeCommand = useCallback((command: string) => {
     const trimmedCommand = command.trim();
     if (!trimmedCommand) return;
@@ -98,6 +102,10 @@ export const Terminal = () => {
       if (result !== undefined) {
         // Check for special result types
         if (result && typeof result === 'object' && '__type' in result) {
+          if (result.__type === 'clear') {
+            clearLines();
+            return;
+          }
           if (result.__type === 'author') {
             addLine('author', result as AuthorData);
             return;
@@ -110,7 +118,7 @@ export const Terminal = () => {
       const errorMessage = error instanceof Error ? error.message : String(error);
       addLine('error', `Error: ${errorMessage}`);
     }
-  }, [addCommand, addLine, handleVariableOperation, getVariables, getPrompt]);
+  }, [addCommand, addLine, clearLines, handleVariableOperation, getVariables, getPrompt]);
 
   const handleSubmit = useCallback(() => {
     executeCommand(input);
