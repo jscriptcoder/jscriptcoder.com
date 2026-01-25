@@ -11,6 +11,13 @@ export interface AuthorInfo {
 export const authorCommand: Command = {
   name: 'author',
   description: 'Display information about the author',
+  manual: {
+    synopsis: 'author()',
+    description: 'Display a profile card with information about the author of this terminal, including avatar, description, and social links.',
+    examples: [
+      { command: 'author()', description: 'Show author profile card' },
+    ],
+  },
   fn: (): AuthorInfo => ({
     __type: 'author',
     name: 'jscriptcoder',

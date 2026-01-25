@@ -12,8 +12,16 @@ export interface OutputLine {
   prompt?: string; // The prompt displayed when the command was executed
 }
 
+export interface CommandManual {
+  synopsis: string;
+  description: string;
+  arguments?: { name: string; description: string; required?: boolean }[];
+  examples?: { command: string; description: string }[];
+}
+
 export interface Command {
   name: string;
   description: string;
+  manual?: CommandManual;
   fn: (...args: unknown[]) => unknown;
 }

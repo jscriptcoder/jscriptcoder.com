@@ -13,6 +13,20 @@ interface CdContext {
 export const createCdCommand = (context: CdContext): Command => ({
   name: 'cd',
   description: 'Change current directory',
+  manual: {
+    synopsis: 'cd([path])',
+    description: 'Change the current working directory. If no path is specified, changes to the home directory of the current user.',
+    arguments: [
+      { name: 'path', description: 'Path to the directory to change to (absolute or relative)', required: false },
+    ],
+    examples: [
+      { command: 'cd()', description: 'Change to home directory' },
+      { command: 'cd("/")', description: 'Change to root directory' },
+      { command: 'cd("/etc")', description: 'Change to /etc directory' },
+      { command: 'cd("..")', description: 'Change to parent directory' },
+      { command: 'cd("subdir")', description: 'Change to a subdirectory' },
+    ],
+  },
   fn: (...args: unknown[]): undefined => {
     const path = args[0] as string | undefined;
     const { resolvePath, getNode, setCurrentPath, getUserType, getHomePath } = context;

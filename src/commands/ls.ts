@@ -12,6 +12,19 @@ interface LsContext {
 export const createLsCommand = (context: LsContext): Command => ({
   name: 'ls',
   description: 'List directory contents',
+  manual: {
+    synopsis: 'ls([path])',
+    description: 'List the contents of a directory. Directories are shown with a trailing slash. If no path is specified, lists the current directory.',
+    arguments: [
+      { name: 'path', description: 'Path to the directory to list (absolute or relative)', required: false },
+    ],
+    examples: [
+      { command: 'ls()', description: 'List contents of current directory' },
+      { command: 'ls("/")', description: 'List contents of root directory' },
+      { command: 'ls("/home")', description: 'List contents of /home directory' },
+      { command: 'ls("..")', description: 'List contents of parent directory' },
+    ],
+  },
   fn: (...args: unknown[]): string => {
     const path = args[0] as string | undefined;
     const { getCurrentPath, resolvePath, getNode, getUserType } = context;

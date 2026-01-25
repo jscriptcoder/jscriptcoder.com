@@ -11,6 +11,18 @@ interface CatContext {
 export const createCatCommand = (context: CatContext): Command => ({
   name: 'cat',
   description: 'Display file contents',
+  manual: {
+    synopsis: 'cat(path)',
+    description: 'Display the contents of a file. The file must be readable by the current user.',
+    arguments: [
+      { name: 'path', description: 'Path to the file to display (absolute or relative)', required: true },
+    ],
+    examples: [
+      { command: 'cat("/etc/passwd")', description: 'Display the passwd file' },
+      { command: 'cat("readme.txt")', description: 'Display a file in the current directory' },
+      { command: 'cat("../file.txt")', description: 'Display a file in the parent directory' },
+    ],
+  },
   fn: (...args: unknown[]): string => {
     const path = args[0] as string | undefined;
     if (!path) {
