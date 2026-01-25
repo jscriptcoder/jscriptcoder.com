@@ -73,8 +73,8 @@ export const Terminal = () => {
     addCommand(trimmedCommand);
 
     try {
-      // Create execution context with all registered commands
-      const commandContext = createExecutionContext();
+      // Create execution context with all registered commands, including filesystem commands
+      const commandContext = createExecutionContext(fileSystemCommands);
 
       // Check if this is a variable operation (declaration or assignment)
       const variableResult = handleVariableOperation(trimmedCommand, commandContext);
@@ -93,13 +93,9 @@ export const Terminal = () => {
       }
 
       // Not a variable operation, execute as normal command
-      // Combine commands, filesystem commands, and variables into execution context
+      // Combine commands and variables into execution context
       const variables = getVariables();
-      const fsContext: Record<string, (...args: unknown[]) => unknown> = {};
-      fileSystemCommands.forEach((cmd, name) => {
-        fsContext[name] = cmd.fn;
-      });
-      const context = { ...commandContext, ...fsContext, ...variables };
+      const context = { ...commandContext, ...variables };
 
       // Build function with context variables
       const contextKeys = Object.keys(context);
