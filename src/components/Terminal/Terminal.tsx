@@ -1,12 +1,11 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { TerminalOutput } from './TerminalOutput';
 import { TerminalInput } from './TerminalInput';
 import { useCommandHistory } from '../../hooks/useCommandHistory';
 import { useAutoComplete } from '../../hooks/useAutoComplete';
 import { useVariables } from '../../hooks/useVariables';
+import { useCommands } from '../../hooks/useCommands';
 import { useSession } from '../../context/SessionContext';
-import { createExecutionContext, getCommandNames } from '../../commands';
-import { useFileSystemCommands } from '../../commands/useFileSystemCommands';
 import type { OutputLine, AuthorData } from './types';
 
 const BANNER = `
@@ -34,15 +33,9 @@ export const Terminal = () => {
   const { addCommand, navigateUp, navigateDown, resetNavigation } = useCommandHistory();
   const { getVariables, getVariableNames, handleVariableOperation } = useVariables();
   const { getPrompt } = useSession();
-  const fileSystemCommands = useFileSystemCommands();
+  const { executionContext, commandNames } = useCommands();
 
-  // Combine all command names for autocomplete
-  const allCommandNames = useMemo(() => {
-    const fsCommandNames = Array.from(fileSystemCommands.keys());
-    return [...getCommandNames(), ...fsCommandNames];
-  }, [fileSystemCommands]);
-
-  const { getCompletions } = useAutoComplete(allCommandNames, getVariableNames());
+  const { getCompletions } = useAutoComplete(commandNames, getVariableNames());
 
   // Auto-scroll to bottom when new output is added
   useEffect(() => {
@@ -73,11 +66,8 @@ export const Terminal = () => {
     addCommand(trimmedCommand);
 
     try {
-      // Create execution context with all registered commands, including filesystem commands
-      const commandContext = createExecutionContext(fileSystemCommands);
-
       // Check if this is a variable operation (declaration or assignment)
-      const variableResult = handleVariableOperation(trimmedCommand, commandContext);
+      const variableResult = handleVariableOperation(trimmedCommand, executionContext);
 
       if (variableResult !== null) {
         // This was a variable operation
@@ -95,7 +85,7 @@ export const Terminal = () => {
       // Not a variable operation, execute as normal command
       // Combine commands and variables into execution context
       const variables = getVariables();
-      const context = { ...commandContext, ...variables };
+      const context = { ...executionContext, ...variables };
 
       // Build function with context variables
       const contextKeys = Object.keys(context);
@@ -127,7 +117,7 @@ export const Terminal = () => {
       const errorMessage = error instanceof Error ? error.message : String(error);
       addLine('error', `Error: ${errorMessage}`);
     }
-  }, [addCommand, addLine, clearLines, handleVariableOperation, getVariables, getPrompt, fileSystemCommands]);
+  }, [addCommand, addLine, clearLines, handleVariableOperation, getVariables, getPrompt, executionContext]);
 
   const handleSubmit = useCallback(() => {
     executeCommand(input);

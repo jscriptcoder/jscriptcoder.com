@@ -1,10 +1,10 @@
 import { useMemo } from 'react';
 import { useFileSystem } from '../filesystem';
 import { useSession } from '../context/SessionContext';
-import { createPwdCommand } from './pwd';
-import { createLsCommand } from './ls';
-import { createCdCommand } from './cd';
-import { createCatCommand } from './cat';
+import { createPwdCommand } from '../commands/pwd';
+import { createLsCommand } from '../commands/ls';
+import { createCdCommand } from '../commands/cd';
+import { createCatCommand } from '../commands/cat';
 import type { Command } from '../components/Terminal/types';
 
 export const useFileSystemCommands = (): Map<string, Command> => {

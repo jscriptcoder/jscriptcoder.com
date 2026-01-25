@@ -40,9 +40,9 @@ src/
 │   ├── useCommandHistory.ts      # Up/down arrow command history
 │   ├── useAutoComplete.ts        # Tab completion for commands and variables
 │   ├── useVariables.ts           # const/let variable management
-│   └── useFileSystemCommands.ts  # pwd, ls, cd, cat command implementations
+│   ├── useFileSystemCommands.ts  # pwd, ls, cd, cat command creation
+│   └── useCommands.ts            # Command registry and execution context
 ├── commands/
-│   ├── index.ts            # Command registry and execution context
 │   ├── help.ts             # help() - lists available commands
 │   ├── man.ts              # man(cmd) - detailed command documentation
 │   ├── echo.ts             # echo(value) - outputs stringified value
@@ -82,7 +82,7 @@ User input flows through `Terminal.tsx`:
 
 ### Adding New Commands
 
-Commands are registered in `src/commands/index.ts`. Each command implements the `Command` interface:
+Commands are registered in `src/hooks/useCommands.ts`. Each command implements the `Command` interface:
 
 ```typescript
 interface CommandManual {
@@ -103,7 +103,7 @@ interface Command {
 To add a command:
 1. Create a new file in `src/commands/` (e.g., `myCommand.ts`)
 2. Export a `Command` object with `manual` field for documentation
-3. Import and register it in `src/commands/index.ts` using `commands.set('name', myCommand)`
+3. Import and register it in `src/hooks/useCommands.ts` using `commands.set('name', myCommand)`
 
 ### Available Commands
 
