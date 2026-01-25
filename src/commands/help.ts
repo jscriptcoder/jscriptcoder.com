@@ -7,7 +7,10 @@ export const createHelpCommand = (getCommands: () => Map<string, Command>): Comm
     const commands = getCommands();
     const lines = ['Available commands:', ''];
 
-    commands.forEach((cmd) => {
+    const sortedCommands = Array.from(commands.values())
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    sortedCommands.forEach((cmd) => {
       lines.push(`  ${cmd.name}() - ${cmd.description}`);
     });
 

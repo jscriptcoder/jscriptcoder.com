@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { TerminalOutput } from './TerminalOutput';
 import { TerminalInput } from './TerminalInput';
 import { useCommandHistory } from '../../hooks/useCommandHistory';
@@ -6,6 +6,7 @@ import { useAutoComplete } from '../../hooks/useAutoComplete';
 import { useVariables } from '../../hooks/useVariables';
 import { useSession } from '../../context/SessionContext';
 import { createExecutionContext, getCommandNames } from '../../commands';
+import { useFileSystemCommands } from '../../commands/useFileSystemCommands';
 import type { OutputLine, AuthorData } from './types';
 
 const BANNER = `
@@ -32,8 +33,16 @@ export const Terminal = () => {
 
   const { addCommand, navigateUp, navigateDown, resetNavigation } = useCommandHistory();
   const { getVariables, getVariableNames, handleVariableOperation } = useVariables();
-  const { getCompletions } = useAutoComplete(getCommandNames(), getVariableNames());
   const { getPrompt } = useSession();
+  const fileSystemCommands = useFileSystemCommands();
+
+  // Combine all command names for autocomplete
+  const allCommandNames = useMemo(() => {
+    const fsCommandNames = Array.from(fileSystemCommands.keys());
+    return [...getCommandNames(), ...fsCommandNames];
+  }, [fileSystemCommands]);
+
+  const { getCompletions } = useAutoComplete(allCommandNames, getVariableNames());
 
   // Auto-scroll to bottom when new output is added
   useEffect(() => {
@@ -84,9 +93,13 @@ export const Terminal = () => {
       }
 
       // Not a variable operation, execute as normal command
-      // Combine commands and variables into execution context
+      // Combine commands, filesystem commands, and variables into execution context
       const variables = getVariables();
-      const context = { ...commandContext, ...variables };
+      const fsContext: Record<string, (...args: unknown[]) => unknown> = {};
+      fileSystemCommands.forEach((cmd, name) => {
+        fsContext[name] = cmd.fn;
+      });
+      const context = { ...commandContext, ...fsContext, ...variables };
 
       // Build function with context variables
       const contextKeys = Object.keys(context);
@@ -118,7 +131,7 @@ export const Terminal = () => {
       const errorMessage = error instanceof Error ? error.message : String(error);
       addLine('error', `Error: ${errorMessage}`);
     }
-  }, [addCommand, addLine, clearLines, handleVariableOperation, getVariables, getPrompt]);
+  }, [addCommand, addLine, clearLines, handleVariableOperation, getVariables, getPrompt, fileSystemCommands]);
 
   const handleSubmit = useCallback(() => {
     executeCommand(input);

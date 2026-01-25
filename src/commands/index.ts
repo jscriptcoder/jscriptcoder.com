@@ -16,6 +16,17 @@ commands.set('echo', echoCommand);
 commands.set('author', authorCommand);
 commands.set('clear', clearCommand);
 
+// Filesystem commands (stubs for help listing - actual implementations in useFileSystemCommands)
+const fsCommandStub = (description: string): Command => ({
+  name: '',
+  description,
+  fn: () => { throw new Error('Command not available'); },
+});
+commands.set('pwd', { ...fsCommandStub('Print current working directory'), name: 'pwd' });
+commands.set('ls', { ...fsCommandStub('List directory contents'), name: 'ls' });
+commands.set('cd', { ...fsCommandStub('Change current directory'), name: 'cd' });
+commands.set('cat', { ...fsCommandStub('Display file contents'), name: 'cat' });
+
 // Export command registry
 export { commands };
 

@@ -1,10 +1,13 @@
 import { Terminal } from './components/Terminal';
 import { SessionProvider } from './context/SessionContext';
+import { FileSystemProvider } from './filesystem';
 
 function App() {
   return (
     <SessionProvider>
-      <Terminal />
+      <FileSystemProvider>
+        <Terminal />
+      </FileSystemProvider>
     </SessionProvider>
   );
 }
