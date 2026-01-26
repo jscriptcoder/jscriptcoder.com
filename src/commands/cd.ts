@@ -14,7 +14,7 @@ export const createCdCommand = (context: CdContext): Command => ({
   name: 'cd',
   description: 'Change current directory',
   manual: {
-    synopsis: 'cd([path])',
+    synopsis: 'cd([path: string])',
     description: 'Change the current working directory. If no path is specified, changes to the home directory of the current user.',
     arguments: [
       { name: 'path', description: 'Path to the directory to change to (absolute or relative)', required: false },

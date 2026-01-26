@@ -4,7 +4,7 @@ export const createManCommand = (getCommands: () => Map<string, Command>): Comma
   name: 'man',
   description: 'Display manual for a command',
   manual: {
-    synopsis: 'man(command)',
+    synopsis: 'man(command: string)',
     description: 'Display detailed documentation for a command, including description, arguments, and usage examples.',
     arguments: [
       { name: 'command', description: 'The name of the command to get help for', required: true },

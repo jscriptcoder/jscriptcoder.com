@@ -17,7 +17,7 @@ export const createHelpCommand = (getCommands: () => Command[]): Command => ({
     const sortedCommands = [...commands].sort((a, b) => a.name.localeCompare(b.name));
 
     sortedCommands.forEach((cmd) => {
-      lines.push(`  ${cmd.name}() - ${cmd.description}`);
+      lines.push(` ${cmd.manual?.synopsis ?? cmd.name + '()'} - ${cmd.description}`);
     });
 
     return lines.join('\n');
