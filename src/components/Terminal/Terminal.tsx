@@ -39,7 +39,7 @@ export const Terminal = () => {
   const { getVariables, getVariableNames, handleVariableOperation } = useVariables();
   const { getPrompt, setUsername } = useSession();
   const { executionContext, commandNames } = useCommands();
-  const { readFile } = useFileSystem();
+  const { readFile, setCurrentPath } = useFileSystem();
 
   const { getCompletions } = useAutoComplete(commandNames, getVariableNames());
 
@@ -158,12 +158,19 @@ export const Terminal = () => {
     addLine('command', maskedPassword, 'Password:');
 
     if (validatePassword(input)) {
-      // Determine user type based on username
+      // Determine user type and home directory based on username
       let userType: UserType = 'user';
-      if (targetUser === 'root') userType = 'root';
-      else if (targetUser === 'guest') userType = 'guest';
+      let homePath = `/home/${targetUser}`;
+
+      if (targetUser === 'root') {
+        userType = 'root';
+        homePath = '/root';
+      } else if (targetUser === 'guest') {
+        userType = 'guest';
+      }
 
       setUsername(targetUser!, userType);
+      setCurrentPath(homePath);
       addLine('result', `Switched to user: ${targetUser}`);
     } else {
       addLine('error', 'su: Authentication failure');
