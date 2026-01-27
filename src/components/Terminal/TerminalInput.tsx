@@ -69,9 +69,6 @@ export const TerminalInput = ({
         e.preventDefault();
         if (!passwordMode) onTab();
         break;
-      default:
-        // Update cursor position after the key event is processed
-        setTimeout(updateCursorPosition, 0);
     }
   };
 
