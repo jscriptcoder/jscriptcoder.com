@@ -118,5 +118,15 @@ export const createInitialFileSystem = (): FileNode => ({
       },
       children: {},
     },
+    '.secret': {
+      name: '.secret',
+      type: 'file',
+      owner: 'root',
+      permissions: {
+        read: ['root', 'user', 'guest'],
+        write: ['root'],
+      },
+      content: 'FLAG{hidden_in_plain_sight}',
+    },
   },
 });
