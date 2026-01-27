@@ -33,7 +33,18 @@ export const createInitialFileSystem = (): FileNode => ({
         read: ['root'],
         write: ['root'],
       },
-      children: {},
+      children: {
+        '.secret': {
+          name: '.secret',
+          type: 'file',
+          owner: 'root',
+          permissions: {
+            read: ['root'],
+            write: ['root'],
+          },
+          content: 'FLAG{hidden_in_plain_sight}',
+        },
+      },
     },
     home: {
       name: 'home',
@@ -117,16 +128,6 @@ export const createInitialFileSystem = (): FileNode => ({
         write: ['root', 'user', 'guest'],
       },
       children: {},
-    },
-    '.secret': {
-      name: '.secret',
-      type: 'file',
-      owner: 'root',
-      permissions: {
-        read: ['root', 'user', 'guest'],
-        write: ['root'],
-      },
-      content: 'FLAG{hidden_in_plain_sight}',
     },
   },
 });
