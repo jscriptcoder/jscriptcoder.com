@@ -1,15 +1,10 @@
 import type { FileNode } from './types';
 
-// Helper to base64 encode passwords
-const encodePassword = (password: string): string => {
-  return btoa(password);
-};
-
-// Initial passwords (base64 encoded for easy "cracking")
+// Initial passwords (MD5 hashed - weak enough to crack with rainbow tables)
 const PASSWORDS = {
-  root: encodePassword('toor'), // Classic reversed 'root'
-  jscriptcoder: encodePassword('javascript'),
-  guest: encodePassword('guest123'),
+  root: '7b24afc8bc80e548d66c4e7ff72171c5',
+  jscriptcoder: 'de9b9ed78d7e2e1dceeffee780e2f919',
+  guest: 'fcf41657f02f88137a1bcf068a32c0a3',
 };
 
 // Generate passwd file content
