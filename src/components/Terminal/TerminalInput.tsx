@@ -69,6 +69,9 @@ export const TerminalInput = ({
         e.preventDefault();
         if (!passwordMode) onTab();
         break;
+      default:
+        // Update cursor position after the key event is processed
+        setTimeout(updateCursorPosition, 0);
     }
   };
 
@@ -107,9 +110,7 @@ export const TerminalInput = ({
           value={value}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
-          onKeyUp={updateCursorPosition}
           onClick={updateCursorPosition}
-          onSelect={updateCursorPosition}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           className="absolute inset-0 w-full bg-transparent text-transparent caret-transparent outline-none"
