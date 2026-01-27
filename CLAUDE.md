@@ -51,7 +51,10 @@ src/
 │   ├── pwd.ts              # pwd() - print working directory
 │   ├── ls.ts               # ls([path]) - list directory contents
 │   ├── cd.ts               # cd([path]) - change directory
-│   └── cat.ts              # cat(path) - display file contents
+│   ├── cat.ts              # cat(path) - display file contents
+│   └── su.ts               # su(user) - switch user with password prompt
+├── utils/
+│   └── md5.ts              # MD5 hashing for password validation
 └── App.tsx                 # Root component (wraps Terminal with providers)
 ```
 
@@ -118,6 +121,7 @@ To add a command:
 | `ls([path])` | List directory contents |
 | `cd([path])` | Change current directory |
 | `cat(path)` | Display file contents |
+| `su(user)` | Switch user (prompts for password) |
 
 ### Virtual File System
 
@@ -131,7 +135,7 @@ The terminal includes a virtual Unix-like file system (`src/filesystem/`):
 │   ├── jscriptcoder/  # Default user home
 │   └── guest/         # Guest user home
 ├── etc/
-│   └── passwd      # User passwords (base64 encoded)
+│   └── passwd      # User passwords (MD5 hashed)
 ├── var/
 │   └── log/        # Log files
 └── tmp/            # Temporary files (world writable)
@@ -174,9 +178,12 @@ return {
 
 // Example: clear command
 return { __type: 'clear' };
+
+// Example: su command triggers password prompt mode
+return { __type: 'password_prompt', targetUser: 'root' };
 ```
 
-The `TerminalOutput` component checks for `__type` and renders appropriate UI (e.g., `AuthorCard` for author type).
+The `TerminalOutput` component checks for `__type` and renders appropriate UI (e.g., `AuthorCard` for author type). The `password_prompt` type is handled by `Terminal.tsx` which enters password mode, masking input with asterisks.
 
 ### Session Context
 

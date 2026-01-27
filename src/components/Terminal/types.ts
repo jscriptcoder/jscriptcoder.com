@@ -5,6 +5,11 @@ export interface AuthorData {
   links: { label: string; url: string }[];
 }
 
+export interface PasswordPromptData {
+  __type: 'password_prompt';
+  targetUser: string;
+}
+
 export interface OutputLine {
   id: number;
   type: 'command' | 'result' | 'error' | 'banner' | 'author';

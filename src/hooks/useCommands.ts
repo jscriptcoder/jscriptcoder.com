@@ -3,6 +3,7 @@ import type { Command } from '../components/Terminal/types';
 import { echoCommand } from '../commands/echo';
 import { authorCommand } from '../commands/author';
 import { clearCommand } from '../commands/clear';
+import { suCommand } from '../commands/su';
 import { createHelpCommand } from '../commands/help';
 import { createManCommand } from '../commands/man';
 import { useFileSystemCommands } from './useFileSystemCommands';
@@ -22,6 +23,7 @@ export const useCommands = (): UseCommandsResult => {
     commands.set('echo', echoCommand);
     commands.set('author', authorCommand);
     commands.set('clear', clearCommand);
+    commands.set('su', suCommand);
 
     // Filesystem commands
     fileSystemCommands.forEach((cmd, name) => commands.set(name, cmd));

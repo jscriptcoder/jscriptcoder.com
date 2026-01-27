@@ -6,7 +6,10 @@ import { useAutoComplete } from '../../hooks/useAutoComplete';
 import { useVariables } from '../../hooks/useVariables';
 import { useCommands } from '../../hooks/useCommands';
 import { useSession } from '../../context/SessionContext';
-import type { OutputLine, AuthorData } from './types';
+import { useFileSystem } from '../../filesystem/FileSystemContext';
+import { md5 } from '../../utils/md5';
+import type { OutputLine, AuthorData, PasswordPromptData } from './types';
+import type { UserType } from '../../context/SessionContext';
 
 const BANNER = `
      ██╗███████╗ ██████╗██████╗ ██╗██████╗ ████████╗ ██████╗ ██████╗ ██████╗ ███████╗██████╗
@@ -27,13 +30,16 @@ const getInitialLines = (): OutputLine[] => [
 export const Terminal = () => {
   const [input, setInput] = useState('');
   const [lines, setLines] = useState<OutputLine[]>(getInitialLines);
+  const [passwordMode, setPasswordMode] = useState(false);
+  const [targetUser, setTargetUser] = useState<string | null>(null);
   const lineIdRef = useRef(1);
   const outputRef = useRef<HTMLDivElement>(null);
 
   const { addCommand, navigateUp, navigateDown, resetNavigation } = useCommandHistory();
   const { getVariables, getVariableNames, handleVariableOperation } = useVariables();
-  const { getPrompt } = useSession();
+  const { getPrompt, setUsername } = useSession();
   const { executionContext, commandNames } = useCommands();
+  const { readFile } = useFileSystem();
 
   const { getCompletions } = useAutoComplete(commandNames, getVariableNames());
 
@@ -109,6 +115,13 @@ export const Terminal = () => {
             addLine('author', result as AuthorData);
             return;
           }
+          if (result.__type === 'password_prompt') {
+            const promptData = result as PasswordPromptData;
+            setTargetUser(promptData.targetUser);
+            setPasswordMode(true);
+            addLine('result', 'Password:');
+            return;
+          }
         }
         const resultStr = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
         addLine('result', resultStr);
@@ -119,11 +132,58 @@ export const Terminal = () => {
     }
   }, [addCommand, addLine, clearLines, handleVariableOperation, getVariables, getPrompt, executionContext]);
 
-  const handleSubmit = useCallback(() => {
-    executeCommand(input);
+  const validatePassword = useCallback((password: string): boolean => {
+    if (!targetUser) return false;
+
+    // Read passwd file as root to get hashes
+    const passwdContent = readFile('/etc/passwd', 'root');
+    if (!passwdContent) return false;
+
+    // Parse passwd file to find user's hash
+    const lines = passwdContent.split('\n');
+    for (const line of lines) {
+      const parts = line.split(':');
+      if (parts[0] === targetUser && parts[1]) {
+        const storedHash = parts[1];
+        const inputHash = md5(password);
+        return storedHash === inputHash;
+      }
+    }
+    return false;
+  }, [targetUser, readFile]);
+
+  const handlePasswordSubmit = useCallback(() => {
+    // Show masked password in output
+    const maskedPassword = '*'.repeat(input.length);
+    addLine('command', maskedPassword, 'Password:');
+
+    if (validatePassword(input)) {
+      // Determine user type based on username
+      let userType: UserType = 'user';
+      if (targetUser === 'root') userType = 'root';
+      else if (targetUser === 'guest') userType = 'guest';
+
+      setUsername(targetUser!, userType);
+      addLine('result', `Switched to user: ${targetUser}`);
+    } else {
+      addLine('error', 'su: Authentication failure');
+    }
+
+    // Exit password mode
+    setPasswordMode(false);
+    setTargetUser(null);
     setInput('');
+  }, [input, targetUser, validatePassword, setUsername, addLine]);
+
+  const handleSubmit = useCallback(() => {
+    if (passwordMode) {
+      handlePasswordSubmit();
+    } else {
+      executeCommand(input);
+      setInput('');
+    }
     resetNavigation();
-  }, [input, executeCommand, resetNavigation]);
+  }, [input, passwordMode, executeCommand, handlePasswordSubmit, resetNavigation]);
 
   const handleHistoryUp = useCallback(() => {
     const cmd = navigateUp();
@@ -170,6 +230,7 @@ export const Terminal = () => {
         onHistoryUp={handleHistoryUp}
         onHistoryDown={handleHistoryDown}
         onTab={handleTab}
+        passwordMode={passwordMode}
       />
     </div>
   );

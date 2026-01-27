@@ -55,6 +55,7 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 | `ls([path])` | List directory contents |
 | `cd([path])` | Change current directory |
 | `cat(path)` | Display file contents |
+| `su(user)` | Switch user (prompts for password) |
 
 ### Examples
 
@@ -74,6 +75,9 @@ cat("passwd")            // View file contents
 
 // Help
 man("ls")                // Show manual for ls command
+
+// Switch user (will prompt for password)
+su("root")               // Attempt to switch to root
 ```
 
 ## Virtual File System
