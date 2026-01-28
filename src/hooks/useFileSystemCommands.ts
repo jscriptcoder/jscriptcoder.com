@@ -5,6 +5,7 @@ import { createPwdCommand } from '../commands/pwd';
 import { createLsCommand } from '../commands/ls';
 import { createCdCommand } from '../commands/cd';
 import { createCatCommand } from '../commands/cat';
+import { createWhoamiCommand } from '../commands/whoami';
 import type { Command } from '../components/Terminal/types';
 
 export const useFileSystemCommands = (): Map<string, Command> => {
@@ -16,6 +17,7 @@ export const useFileSystemCommands = (): Map<string, Command> => {
 
     const getCurrentPath = () => currentPath;
     const getUserType = () => session.userType;
+    const getUsername = () => session.username;
     const getHomePath = () => {
       if (session.userType === 'root') return '/root';
       if (session.userType === 'guest') return '/home/guest';
@@ -24,6 +26,9 @@ export const useFileSystemCommands = (): Map<string, Command> => {
 
     // pwd command
     commands.set('pwd', createPwdCommand(getCurrentPath));
+
+    // whoami command
+    commands.set('whoami', createWhoamiCommand(getUsername));
 
     // ls command
     commands.set('ls', createLsCommand({
