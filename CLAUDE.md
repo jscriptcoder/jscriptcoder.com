@@ -40,8 +40,14 @@ src/
 │   ├── useCommandHistory.ts      # Up/down arrow command history
 │   ├── useAutoComplete.ts        # Tab completion for commands and variables
 │   ├── useVariables.ts           # const/let variable management
-│   ├── useFileSystemCommands.ts  # pwd, ls, cd, cat command creation
+│   ├── useFileSystemCommands.ts  # pwd, ls, cd, cat, whoami command creation
+│   ├── useNetworkCommands.ts     # ifconfig and network command creation
 │   └── useCommands.ts            # Command registry and execution context
+├── network/
+│   ├── NetworkContext.tsx     # Network state and topology
+│   ├── initialNetwork.ts      # Network configuration (machines, ports)
+│   ├── types.ts               # NetworkInterface, RemoteMachine types
+│   └── index.ts               # Module exports
 ├── commands/
 │   ├── help.ts             # help() - lists available commands
 │   ├── man.ts              # man(cmd) - detailed command documentation
@@ -52,7 +58,9 @@ src/
 │   ├── ls.ts               # ls([path]) - list directory contents
 │   ├── cd.ts               # cd([path]) - change directory
 │   ├── cat.ts              # cat(path) - display file contents
-│   └── su.ts               # su(user) - switch user with password prompt
+│   ├── su.ts               # su(user) - switch user with password prompt
+│   ├── whoami.ts           # whoami() - display current username
+│   └── ifconfig.ts         # ifconfig() - display network interfaces
 ├── utils/
 │   └── md5.ts              # MD5 hashing for password validation
 └── App.tsx                 # Root component (wraps Terminal with providers)
@@ -122,6 +130,8 @@ To add a command:
 | `cd([path])` | Change current directory |
 | `cat(path)` | Display file contents |
 | `su(user)` | Switch user (prompts for password) |
+| `whoami()` | Display current username |
+| `ifconfig([iface])` | Display network interface configuration |
 
 ### Virtual File System
 
@@ -161,6 +171,56 @@ interface FileNode {
   content?: string;        // For files
   children?: Record<string, FileNode>;  // For directories
 }
+```
+
+### Network System
+
+The terminal simulates a network environment for CTF puzzles (`src/network/`):
+
+**Network Topology:**
+```
+192.168.1.0/24 Network
+├── 192.168.1.1   (gateway)    - Router, HTTP/HTTPS open
+├── 192.168.1.50  (fileserver) - FTP and SSH open
+├── 192.168.1.75  (webserver)  - SSH, HTTP, MySQL open
+└── 192.168.1.100 (localhost)  - Current machine
+```
+
+**NetworkInterface Structure:**
+```typescript
+interface NetworkInterface {
+  name: string;        // e.g., 'eth0'
+  flags: string[];     // e.g., ['UP', 'BROADCAST', 'RUNNING']
+  inet: string;        // IP address
+  netmask: string;     // Subnet mask
+  gateway: string;     // Gateway IP
+  mac: string;         // MAC address
+}
+```
+
+**RemoteMachine Structure:**
+```typescript
+interface RemoteMachine {
+  ip: string;
+  hostname: string;
+  ports: {
+    port: number;
+    service: string;  // 'ssh', 'ftp', 'http', etc.
+    open: boolean;
+  }[];
+  users: {
+    username: string;
+    passwordHash: string;  // MD5 hashed
+    userType: 'root' | 'user' | 'guest';
+  }[];
+}
+```
+
+**Usage in commands:**
+```typescript
+const { getInterfaces, getMachines, getGateway } = useNetwork();
+const eth0 = getInterface('eth0');
+// eth0.inet = '192.168.1.100', eth0.gateway = '192.168.1.1'
 ```
 
 ### Special Output Types
