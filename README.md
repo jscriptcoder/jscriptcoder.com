@@ -25,8 +25,8 @@ Start with `help()` to see available commands. Good luck, hacker.
 - **Command History** - Navigate previous commands with up/down arrows
 - **Tab Autocompletion** - Complete commands and variables with Tab key
 - **Variable Support** - Create variables with `const` and `let` declarations
-- **Virtual File System** - Unix-like directory structure with permission system
-- **Network Simulation** - Simulated network with discoverable machines and services
+- **Virtual Environment** - Explore a simulated system with secrets to uncover
+- **Network Simulation** - Discover and hack into remote machines
 - **Retro CRT Theme** - Classic amber-on-black terminal aesthetic
 
 ## Tech Stack
@@ -103,28 +103,6 @@ ifconfig()               // Show network interfaces
 whoami()                 // Display current user
 ping("localhost")        // Test connectivity
 ```
-
-## Virtual File System
-
-The terminal includes a virtual Unix-like file system with permissions:
-
-```
-/
-├── root/              # Root user home (restricted)
-├── home/
-│   ├── jscriptcoder/  # Default user home
-│   └── guest/         # Guest user home
-├── etc/
-│   └── passwd         # User passwords
-├── var/
-│   └── log/           # Log files
-└── tmp/               # Temporary files (world writable)
-```
-
-**User Types:**
-- `root` - Full access to everything
-- `user` - Access to home directory and shared files
-- `guest` - Limited access
 
 ## Network Simulation
 
