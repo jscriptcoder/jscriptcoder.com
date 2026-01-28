@@ -1,8 +1,23 @@
 # JscriptCoder
 
-A web-based JavaScript terminal emulator with a retro amber-on-black CRT aesthetic. Execute JavaScript expressions and custom commands in a terminal-like interface, featuring a virtual Unix-like file system with permissions for CTF-style hacking puzzles.
+A web-based JavaScript terminal emulator with a retro amber-on-black CRT aesthetic. Execute JavaScript expressions and custom commands in a terminal-like interface, featuring a virtual Unix-like file system and network simulation for CTF-style hacking puzzles.
 
 **Live Demo:** [jscriptcoder.com](https://jscriptcoder.com)
+
+## The Challenge
+
+You start as a regular user on a machine connected to a network. Hidden throughout the system are **flags** - secret strings in the format `FLAG{...}` that prove you've successfully completed a challenge.
+
+Your mission:
+- **Explore** the local file system for clues
+- **Escalate privileges** to access restricted areas
+- **Discover** other machines on the network
+- **Hack** your way into remote systems
+- **Find all the flags**
+
+Some flags are hidden in plain sight. Others require cracking passwords, exploiting misconfigurations, or pivoting through multiple machines. Use your knowledge of Linux commands, networking, and creative thinking to uncover them all.
+
+Start with `help()` to see available commands. Good luck, hacker.
 
 ## Features
 
@@ -86,7 +101,7 @@ su("root")               // Attempt to switch to root
 // Network
 ifconfig()               // Show network interfaces
 whoami()                 // Display current user
-ping("192.168.1.1")      // Ping the gateway
+ping("localhost")        // Test connectivity
 ```
 
 ## Virtual File System
@@ -113,17 +128,15 @@ The terminal includes a virtual Unix-like file system with permissions:
 
 ## Network Simulation
 
-The terminal simulates a local network with discoverable machines:
+Your machine is connected to a local network. You're not alone - there are other machines out there, each running different services and hiding their own secrets.
 
-```
-192.168.1.0/24 Network
-├── 192.168.1.1   (gateway)    - Router
-├── 192.168.1.50  (fileserver) - FTP/SSH server
-├── 192.168.1.75  (webserver)  - Web/MySQL server
-└── 192.168.1.100 (localhost)  - Your machine
-```
+Use network reconnaissance commands to:
+- Discover your network configuration
+- Find other machines on the network
+- Identify running services and open ports
+- Connect to remote systems
 
-Use `ifconfig()` to view your network configuration and discover the gateway IP.
+The network holds flags waiting to be captured. Can you find them all?
 
 ## Development
 
