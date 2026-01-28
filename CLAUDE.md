@@ -60,7 +60,8 @@ src/
 │   ├── cat.ts              # cat(path) - display file contents
 │   ├── su.ts               # su(user) - switch user with password prompt
 │   ├── whoami.ts           # whoami() - display current username
-│   └── ifconfig.ts         # ifconfig() - display network interfaces
+│   ├── ifconfig.ts         # ifconfig() - display network interfaces
+│   └── ping.ts             # ping(host) - test network connectivity
 ├── utils/
 │   └── md5.ts              # MD5 hashing for password validation
 └── App.tsx                 # Root component (wraps Terminal with providers)
@@ -132,6 +133,7 @@ To add a command:
 | `su(user)` | Switch user (prompts for password) |
 | `whoami()` | Display current username |
 | `ifconfig([iface])` | Display network interface configuration |
+| `ping(host, [count])` | Send ICMP echo request to network host |
 
 ### Virtual File System
 

@@ -59,6 +59,7 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 | `su(user)` | Switch user (prompts for password) |
 | `whoami()` | Display current username |
 | `ifconfig([iface])` | Display network interface configuration |
+| `ping(host, [count])` | Test connectivity to a network host |
 
 ### Examples
 
@@ -85,6 +86,7 @@ su("root")               // Attempt to switch to root
 // Network
 ifconfig()               // Show network interfaces
 whoami()                 // Display current user
+ping("192.168.1.1")      // Ping the gateway
 ```
 
 ## Virtual File System
