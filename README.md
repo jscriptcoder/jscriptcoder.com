@@ -11,6 +11,7 @@ A web-based JavaScript terminal emulator with a retro amber-on-black CRT aesthet
 - **Tab Autocompletion** - Complete commands and variables with Tab key
 - **Variable Support** - Create variables with `const` and `let` declarations
 - **Virtual File System** - Unix-like directory structure with permission system
+- **Network Simulation** - Simulated network with discoverable machines and services
 - **Retro CRT Theme** - Classic amber-on-black terminal aesthetic
 
 ## Tech Stack
@@ -56,6 +57,8 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 | `cd([path])` | Change current directory |
 | `cat(path)` | Display file contents |
 | `su(user)` | Switch user (prompts for password) |
+| `whoami()` | Display current username |
+| `ifconfig([iface])` | Display network interface configuration |
 
 ### Examples
 
@@ -78,6 +81,10 @@ man("ls")                // Show manual for ls command
 
 // Switch user (will prompt for password)
 su("root")               // Attempt to switch to root
+
+// Network
+ifconfig()               // Show network interfaces
+whoami()                 // Display current user
 ```
 
 ## Virtual File System
@@ -102,6 +109,20 @@ The terminal includes a virtual Unix-like file system with permissions:
 - `user` - Access to home directory and shared files
 - `guest` - Limited access
 
+## Network Simulation
+
+The terminal simulates a local network with discoverable machines:
+
+```
+192.168.1.0/24 Network
+├── 192.168.1.1   (gateway)    - Router
+├── 192.168.1.50  (fileserver) - FTP/SSH server
+├── 192.168.1.75  (webserver)  - Web/MySQL server
+└── 192.168.1.100 (localhost)  - Your machine
+```
+
+Use `ifconfig()` to view your network configuration and discover the gateway IP.
+
 ## Development
 
 ```bash
@@ -118,6 +139,7 @@ src/
 ├── components/Terminal/    # Terminal UI components
 ├── context/                # React contexts (Session)
 ├── filesystem/             # Virtual file system
+├── network/                # Network simulation
 ├── hooks/                  # Custom React hooks
 ├── commands/               # Terminal commands
 └── App.tsx                 # Root component
