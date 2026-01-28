@@ -27,7 +27,7 @@ const FileSystemContext = createContext<FileSystemContextValue | null>(null);
 
 export const FileSystemProvider = ({ children }: { children: ReactNode }) => {
   const [fileSystem, setFileSystem] = useState<FileNode>(createInitialFileSystem);
-  const [currentPath, setCurrentPath] = useState('/home/jscriptcoder');
+  const [currentPath, setCurrentPath] = useState('/home/jshacker');
 
   // Resolve relative paths to absolute paths
   const resolvePath = useCallback((path: string): string => {

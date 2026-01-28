@@ -16,7 +16,7 @@ interface SessionContextValue {
 }
 
 const defaultSession: Session = {
-  username: 'jscriptcoder',
+  username: 'jshacker',
   userType: 'user',
   machine: 'localhost',
 };

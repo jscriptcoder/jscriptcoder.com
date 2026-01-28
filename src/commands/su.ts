@@ -31,7 +31,7 @@ export const suCommand: Command = {
       throw new Error('su: missing username\nUsage: su("username")');
     }
 
-    const validUsers = ['root', 'jscriptcoder', 'guest'];
+    const validUsers = ['root', 'jshacker', 'guest'];
     if (!validUsers.includes(username)) {
       throw new Error(`su: user ${username} does not exist`);
     }

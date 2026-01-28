@@ -3,7 +3,7 @@ import type { FileNode } from './types';
 // Initial passwords (MD5 hashed - weak enough to crack with rainbow tables)
 const PASSWORDS = {
   root: '7b24afc8bc80e548d66c4e7ff72171c5',
-  jscriptcoder: 'de9b9ed78d7e2e1dceeffee780e2f919',
+  jshacker: 'de9b9ed78d7e2e1dceeffee780e2f919',
   guest: 'fcf41657f02f88137a1bcf068a32c0a3',
 };
 
@@ -11,7 +11,7 @@ const PASSWORDS = {
 const generatePasswdContent = (): string => {
   return [
     `root:${PASSWORDS.root}:0:0:root:/root:/bin/bash`,
-    `jscriptcoder:${PASSWORDS.jscriptcoder}:1000:1000:jscriptcoder:/home/jscriptcoder:/bin/bash`,
+    `jshacker:${PASSWORDS.jshacker}:1000:1000:jshacker:/home/jshacker:/bin/bash`,
     `guest:${PASSWORDS.guest}:1001:1001:guest:/home/guest:/bin/bash`,
   ].join('\n');
 };
@@ -55,8 +55,8 @@ export const createInitialFileSystem = (): FileNode => ({
         write: ['root'],
       },
       children: {
-        jscriptcoder: {
-          name: 'jscriptcoder',
+        jshacker: {
+          name: 'jshacker',
           type: 'directory',
           owner: 'user',
           permissions: {
