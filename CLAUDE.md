@@ -9,10 +9,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Build & Development Commands
 
 ```bash
-npm run dev      # Start Vite dev server (http://localhost:5173)
-npm run build    # TypeScript compile + Vite production build
-npm run lint     # Run ESLint
-npm run preview  # Preview production build
+npm run dev           # Start Vite dev server (http://localhost:5173)
+npm run build         # TypeScript compile + Vite production build
+npm run lint          # Run ESLint
+npm run preview       # Preview production build
+npm test              # Run tests in watch mode
+npm run test:run      # Run tests once
+npm run test:coverage # Run tests with coverage
 ```
 
 ## Tech Stack
@@ -20,6 +23,7 @@ npm run preview  # Preview production build
 - **React 19** + **TypeScript** - UI framework
 - **Vite** - Build tool and dev server
 - **Tailwind CSS v4** - Styling (via `@tailwindcss/vite` plugin)
+- **Vitest** + **React Testing Library** - Testing
 
 ## Project Structure
 
@@ -66,6 +70,8 @@ src/
 ├── utils/
 │   ├── md5.ts              # MD5 hashing for password validation
 │   └── network.ts          # Network utilities (IP validation, range parsing)
+├── test/
+│   └── setup.ts            # Test setup with jest-dom
 └── App.tsx                 # Root component (wraps Terminal with providers)
 ```
 

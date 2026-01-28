@@ -34,6 +34,7 @@ Start with `help()` to see available commands. Good luck, hacker.
 - **React 19** + **TypeScript**
 - **Vite** - Build tool and dev server
 - **Tailwind CSS v4** - Styling
+- **Vitest** + **React Testing Library** - Testing
 
 ## Getting Started
 
@@ -120,10 +121,13 @@ The network holds flags waiting to be captured. Can you find them all?
 ## Development
 
 ```bash
-npm run dev      # Start development server
-npm run build    # Production build
-npm run lint     # Run ESLint
-npm run preview  # Preview production build
+npm run dev           # Start development server
+npm run build         # Production build
+npm run lint          # Run ESLint
+npm run preview       # Preview production build
+npm test              # Run tests in watch mode
+npm run test:run      # Run tests once
+npm run test:coverage # Run tests with coverage
 ```
 
 ## Project Structure
