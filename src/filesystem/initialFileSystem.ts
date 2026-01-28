@@ -63,7 +63,44 @@ export const createInitialFileSystem = (): FileNode => ({
             read: ['root', 'user'],
             write: ['root', 'user'],
           },
-          children: {},
+          children: {
+            'README.md': {
+              name: 'README.md',
+              type: 'file',
+              owner: 'user',
+              permissions: {
+                read: ['root', 'user'],
+                write: ['root', 'user'],
+              },
+              content: `# Welcome to JSHACK.ME
+
+You are a hacker on a machine connected to a network.
+Your mission is to find all the hidden FLAGS.
+
+## Rules
+
+- Flags are in the format: FLAG{...}
+- Some flags are on this machine, others are on remote systems
+- You'll need to escalate privileges and pivot through the network
+- Use your knowledge of Linux, networking, and hacking
+
+## Getting Started
+
+1. Explore the file system with ls() and cd()
+2. Check your network configuration with ifconfig()
+3. Discover other machines with ping() and nmap()
+4. Crack passwords, exploit misconfigurations, find the flags
+
+## Hints
+
+- The /etc directory often contains useful information
+- Hidden files start with a dot (use ls("-a") to see them)
+- Weak passwords can be cracked with rainbow tables
+
+Good luck, hacker.
+`,
+            },
+          },
         },
         guest: {
           name: 'guest',
