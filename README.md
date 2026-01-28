@@ -75,6 +75,7 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 | `whoami()` | Display current username |
 | `ifconfig([iface])` | Display network interface configuration |
 | `ping(host, [count])` | Test connectivity to a network host |
+| `nmap(target)` | Scan for open ports or discover hosts in a range |
 
 ### Examples
 
