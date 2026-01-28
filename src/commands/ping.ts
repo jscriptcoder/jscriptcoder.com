@@ -1,5 +1,6 @@
 import type { Command } from '../components/Terminal/types';
 import type { RemoteMachine } from '../network/types';
+import { isValidIP } from '../utils/network';
 
 interface PingContext {
   getMachine: (ip: string) => RemoteMachine | undefined;
@@ -73,7 +74,7 @@ export const createPingCommand = (context: PingContext): Command => ({
     let targetIP: string;
 
     // Check if it's an IP address
-    const isIP = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host);
+    const isIP = isValidIP(host);
 
     if (isIP) {
       targetMachine = getMachine(host);

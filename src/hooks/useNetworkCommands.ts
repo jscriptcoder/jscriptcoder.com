@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useNetwork } from '../network';
 import { createIfconfigCommand } from '../commands/ifconfig';
 import { createPingCommand } from '../commands/ping';
+import { createNmapCommand } from '../commands/nmap';
 import type { Command } from '../components/Terminal/types';
 
 export const useNetworkCommands = (): Map<string, Command> => {
@@ -18,6 +19,13 @@ export const useNetworkCommands = (): Map<string, Command> => {
 
     // ping command
     commands.set('ping', createPingCommand({
+      getMachine,
+      getMachines,
+      getLocalIP,
+    }));
+
+    // nmap command
+    commands.set('nmap', createNmapCommand({
       getMachine,
       getMachines,
       getLocalIP,
