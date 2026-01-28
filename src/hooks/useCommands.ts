@@ -7,6 +7,7 @@ import { suCommand } from '../commands/su';
 import { createHelpCommand } from '../commands/help';
 import { createManCommand } from '../commands/man';
 import { useFileSystemCommands } from './useFileSystemCommands';
+import { useNetworkCommands } from './useNetworkCommands';
 
 interface UseCommandsResult {
   executionContext: Record<string, (...args: unknown[]) => unknown>;
@@ -15,6 +16,7 @@ interface UseCommandsResult {
 
 export const useCommands = (): UseCommandsResult => {
   const fileSystemCommands = useFileSystemCommands();
+  const networkCommands = useNetworkCommands();
 
   return useMemo(() => {
     const commands = new Map<string, Command>();
@@ -27,6 +29,9 @@ export const useCommands = (): UseCommandsResult => {
 
     // Filesystem commands
     fileSystemCommands.forEach((cmd, name) => commands.set(name, cmd));
+
+    // Network commands
+    networkCommands.forEach((cmd, name) => commands.set(name, cmd));
 
     // Create help and man with access to all commands
     const getCommandsArray = () => Array.from(commands.values());
@@ -48,5 +53,5 @@ export const useCommands = (): UseCommandsResult => {
     const commandNames = Array.from(commands.keys());
 
     return { executionContext, commandNames };
-  }, [fileSystemCommands]);
+  }, [fileSystemCommands, networkCommands]);
 };
