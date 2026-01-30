@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
-import type { NetworkConfig, NetworkInterface, RemoteMachine } from './types';
+import type { NetworkConfig, NetworkInterface, RemoteMachine, DnsRecord } from './types';
 import { createInitialNetwork } from './initialNetwork';
 
 interface NetworkContextType {
@@ -10,6 +10,8 @@ interface NetworkContextType {
   getMachines: () => RemoteMachine[];
   getGateway: () => string;
   getLocalIP: () => string;
+  resolveDomain: (domain: string) => DnsRecord | undefined;
+  getDnsRecords: () => DnsRecord[];
 }
 
 const NetworkContext = createContext<NetworkContextType | null>(null);
@@ -43,6 +45,15 @@ export const NetworkProvider = ({ children }: { children: ReactNode }) => {
     return eth0?.inet ?? '0.0.0.0';
   }, [config.interfaces]);
 
+  const resolveDomain = useCallback((domain: string): DnsRecord | undefined => {
+    const normalizedDomain = domain.toLowerCase();
+    return config.dnsRecords.find(record => record.domain.toLowerCase() === normalizedDomain);
+  }, [config.dnsRecords]);
+
+  const getDnsRecords = useCallback((): DnsRecord[] => {
+    return config.dnsRecords;
+  }, [config.dnsRecords]);
+
   return (
     <NetworkContext.Provider value={{
       config,
@@ -52,6 +63,8 @@ export const NetworkProvider = ({ children }: { children: ReactNode }) => {
       getMachines,
       getGateway,
       getLocalIP,
+      resolveDomain,
+      getDnsRecords,
     }}>
       {children}
     </NetworkContext.Provider>

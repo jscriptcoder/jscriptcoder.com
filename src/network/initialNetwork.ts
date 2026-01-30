@@ -52,5 +52,27 @@ export const createInitialNetwork = (): NetworkConfig => ({
         { username: 'www-data', passwordHash: 'a384b6463fc216a5f8ecb6670f86456a', userType: 'user' }, // webmaster
       ],
     },
+    // External secret server (outside local network)
+    {
+      ip: '203.0.113.42',
+      hostname: 'darknet',
+      ports: [
+        { port: 22, service: 'ssh', open: true },
+        { port: 8080, service: 'http-alt', open: true },
+      ],
+      users: [
+        { username: 'root', passwordHash: '5f4dcc3b5aa765d61d8327deb882cf99', userType: 'root' }, // password
+        { username: 'ghost', passwordHash: '7c6a180b36896a65c3ccdc6e70b6b8f7', userType: 'user' }, // fun123
+      ],
+    },
+  ],
+  dnsRecords: [
+    // Local network hostnames
+    { domain: 'gateway.local', ip: '192.168.1.1', type: 'A' },
+    { domain: 'fileserver.local', ip: '192.168.1.50', type: 'A' },
+    { domain: 'webserver.local', ip: '192.168.1.75', type: 'A' },
+    // External domains
+    { domain: 'darknet.ctf', ip: '203.0.113.42', type: 'A' },
+    { domain: 'www.darknet.ctf', ip: '203.0.113.42', type: 'A' },
   ],
 });

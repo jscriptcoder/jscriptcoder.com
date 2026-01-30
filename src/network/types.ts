@@ -23,7 +23,14 @@ export interface RemoteMachine {
   }[];
 }
 
+export interface DnsRecord {
+  domain: string;
+  ip: string;
+  type: 'A'; // Only A records for now
+}
+
 export interface NetworkConfig {
   interfaces: NetworkInterface[];
   machines: RemoteMachine[];
+  dnsRecords: DnsRecord[];
 }

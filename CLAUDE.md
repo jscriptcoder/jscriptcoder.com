@@ -66,7 +66,8 @@ src/
 │   ├── whoami.ts           # whoami() - display current username
 │   ├── ifconfig.ts         # ifconfig() - display network interfaces
 │   ├── ping.ts             # ping(host) - test network connectivity
-│   └── nmap.ts             # nmap(target) - network scanning and port discovery
+│   ├── nmap.ts             # nmap(target) - network scanning and port discovery
+│   └── nslookup.ts         # nslookup(domain) - DNS domain resolution
 ├── utils/
 │   ├── md5.ts              # MD5 hashing for password validation
 │   └── network.ts          # Network utilities (IP validation, range parsing)
@@ -143,6 +144,7 @@ To add a command:
 | `ifconfig([iface])` | Display network interface configuration |
 | `ping(host, [count])` | Send ICMP echo request to network host (async, streams output) |
 | `nmap(target)` | Network exploration and port scanning (async, streams output) |
+| `nslookup(domain)` | Query DNS to resolve domain name to IP address (async) |
 
 ### Virtual File System
 
@@ -190,11 +192,23 @@ The terminal simulates a network environment for CTF puzzles (`src/network/`):
 
 **Network Topology:**
 ```
-192.168.1.0/24 Network
+192.168.1.0/24 Network (Local)
 ├── 192.168.1.1   (gateway)    - Router, HTTP/HTTPS open
 ├── 192.168.1.50  (fileserver) - FTP and SSH open
 ├── 192.168.1.75  (webserver)  - SSH, HTTP, MySQL open
 └── 192.168.1.100 (localhost)  - Current machine
+
+External Network
+└── 203.0.113.42  (darknet)    - SSH, HTTP-ALT open (darknet.ctf)
+```
+
+**DNS Records:**
+```
+gateway.local    -> 192.168.1.1
+fileserver.local -> 192.168.1.50
+webserver.local  -> 192.168.1.75
+darknet.ctf      -> 203.0.113.42
+www.darknet.ctf  -> 203.0.113.42
 ```
 
 **NetworkInterface Structure:**
@@ -227,11 +241,23 @@ interface RemoteMachine {
 }
 ```
 
+**DnsRecord Structure:**
+```typescript
+interface DnsRecord {
+  domain: string;  // e.g., 'darknet.ctf'
+  ip: string;      // e.g., '203.0.113.42'
+  type: 'A';       // Only A records for now
+}
+```
+
 **Usage in commands:**
 ```typescript
-const { getInterfaces, getMachines, getGateway } = useNetwork();
+const { getInterfaces, getMachines, getGateway, resolveDomain } = useNetwork();
 const eth0 = getInterface('eth0');
 // eth0.inet = '192.168.1.100', eth0.gateway = '192.168.1.1'
+
+const record = resolveDomain('darknet.ctf');
+// record.ip = '203.0.113.42'
 ```
 
 ### Special Output Types
@@ -304,6 +330,7 @@ fn: (...args: unknown[]): AsyncOutput => {
 **Commands using AsyncOutput:**
 - `ping(host, [count])` - ~800ms delay between each ICMP response
 - `nmap(target)` - Progressive scanning with ~150ms per IP (range) or ~300ms per port (single host)
+- `nslookup(domain)` - ~600ms delay for DNS lookup
 
 ### Session Context
 
