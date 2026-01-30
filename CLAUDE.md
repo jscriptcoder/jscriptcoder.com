@@ -33,7 +33,7 @@ src/
 │   ├── Terminal.tsx        # Main orchestrator component
 │   ├── TerminalInput.tsx   # Input line with prompt
 │   ├── TerminalOutput.tsx  # Output display (text, errors, cards)
-│   └── types.ts            # TypeScript interfaces (Command, CommandManual)
+│   └── types.ts            # TypeScript interfaces (Command, CommandManual, AsyncOutput)
 ├── context/
 │   └── SessionContext.tsx  # Global session state (user, machine, prompt)
 ├── filesystem/
@@ -79,8 +79,8 @@ src/
 
 ### Terminal Features
 
-- **ASCII Banner**: Displays "JSCRIPTCODER v0.1.0" on startup
-- **Dynamic Prompt**: Format `username@machine>` (e.g., `jscriptcoder@localhost>`)
+- **ASCII Banner**: Displays "JSHACK.ME v0.1.0" on startup
+- **Dynamic Prompt**: Format `username@machine>` (e.g., `jshacker@localhost>`)
   - Managed via `SessionContext` for future multi-user/machine support
   - User types: `root`, `user`, `guest`
   - Machine names: `localhost` or IP addresses (e.g., `10.145.45.2`)
@@ -141,8 +141,8 @@ To add a command:
 | `su(user)` | Switch user (prompts for password) |
 | `whoami()` | Display current username |
 | `ifconfig([iface])` | Display network interface configuration |
-| `ping(host, [count])` | Send ICMP echo request to network host |
-| `nmap(target)` | Network exploration and port scanning |
+| `ping(host, [count])` | Send ICMP echo request to network host (async, streams output) |
+| `nmap(target)` | Network exploration and port scanning (async, streams output) |
 
 ### Virtual File System
 
@@ -153,8 +153,8 @@ The terminal includes a virtual Unix-like file system (`src/filesystem/`):
 /
 ├── root/           # Root user home (root only)
 ├── home/
-│   ├── jscriptcoder/  # Default user home
-│   └── guest/         # Guest user home
+│   ├── jshacker/   # Default user home
+│   └── guest/      # Guest user home
 ├── etc/
 │   └── passwd      # User passwords (MD5 hashed)
 ├── var/
@@ -242,7 +242,7 @@ Commands can return special objects with `__type` property for custom rendering:
 // Example: author command returns rich card data
 return {
   __type: 'author',
-  name: 'jscriptcoder',
+  name: 'jshacker',
   avatar: 'https://...',
   links: [...]
 };
@@ -256,20 +256,69 @@ return { __type: 'password_prompt', targetUser: 'root' };
 
 The `TerminalOutput` component checks for `__type` and renders appropriate UI (e.g., `AuthorCard` for author type). The `password_prompt` type is handled by `Terminal.tsx` which enters password mode, masking input with asterisks.
 
+### Async Output (Streaming Commands)
+
+Commands that simulate network operations (like `ping` and `nmap`) can return an `AsyncOutput` object to stream output with realistic delays:
+
+```typescript
+interface AsyncOutput {
+  __type: 'async';
+  start: (onLine: (line: string) => void, onComplete: () => void) => void;
+  cancel?: () => void;
+}
+```
+
+**How it works:**
+1. Command returns `AsyncOutput` instead of a string
+2. Terminal detects `__type: 'async'` and calls `start()`
+3. Command uses `setTimeout` to emit lines via `onLine()` callback
+4. Input is disabled while async command is running
+5. Command calls `onComplete()` when finished
+
+**Example implementation:**
+```typescript
+fn: (...args: unknown[]): AsyncOutput => {
+  let cancelled = false;
+  const timeoutIds: ReturnType<typeof setTimeout>[] = [];
+
+  return {
+    __type: 'async',
+    start: (onLine, onComplete) => {
+      onLine('Starting scan...');
+
+      const timeoutId = setTimeout(() => {
+        if (cancelled) return;
+        onLine('Scan complete.');
+        onComplete();
+      }, 1000);
+      timeoutIds.push(timeoutId);
+    },
+    cancel: () => {
+      cancelled = true;
+      timeoutIds.forEach(id => clearTimeout(id));
+    },
+  };
+}
+```
+
+**Commands using AsyncOutput:**
+- `ping(host, [count])` - ~800ms delay between each ICMP response
+- `nmap(target)` - Progressive scanning with ~150ms per IP (range) or ~300ms per port (single host)
+
 ### Session Context
 
 Global state for terminal session managed via React Context (`src/context/SessionContext.tsx`):
 
 ```typescript
 interface Session {
-  username: string;    // Current user (default: 'jscriptcoder')
+  username: string;    // Current user (default: 'jshacker')
   userType: UserType;  // 'root' | 'user' | 'guest'
   machine: string;     // Current machine (default: 'localhost')
 }
 ```
 
 **Available methods:**
-- `getPrompt()` - Returns formatted prompt (e.g., `jscriptcoder@localhost>`)
+- `getPrompt()` - Returns formatted prompt (e.g., `jshacker@localhost>`)
 - `setUsername(name, type)` - Change current user
 - `setMachine(name)` - Change current machine (for future remote connections)
 

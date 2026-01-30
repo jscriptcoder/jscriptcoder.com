@@ -9,6 +9,7 @@ interface TerminalInputProps {
   onHistoryDown: () => void;
   onTab: () => void;
   passwordMode?: boolean;
+  disabled?: boolean;
 }
 
 export const TerminalInput = ({
@@ -19,6 +20,7 @@ export const TerminalInput = ({
   onHistoryDown,
   onTab,
   passwordMode = false,
+  disabled = false,
 }: TerminalInputProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [cursorPosition, setCursorPosition] = useState(0);
@@ -52,6 +54,10 @@ export const TerminalInput = ({
   }, [value.length]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (disabled) {
+      e.preventDefault();
+      return;
+    }
     switch (e.key) {
       case 'Enter':
         e.preventDefault();
@@ -76,6 +82,7 @@ export const TerminalInput = ({
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (disabled) return;
     isUserInput.current = true;
     onChange(e.target.value);
     // Update cursor position after change
@@ -121,7 +128,7 @@ export const TerminalInput = ({
         />
         {/* Visible display with cursor at correct position */}
         <span className="text-amber-400">{beforeCursor}</span>
-        {isFocused && <span className="animate-pulse inline-block w-2 h-4 bg-amber-400 align-middle" />}
+        {isFocused && !disabled && <span className="animate-pulse inline-block w-2 h-4 bg-amber-400 align-middle" />}
         <span className="text-amber-400">{afterCursor}</span>
       </div>
     </div>

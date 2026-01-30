@@ -8,7 +8,7 @@ import { useCommands } from '../../hooks/useCommands';
 import { useSession } from '../../context/SessionContext';
 import { useFileSystem } from '../../filesystem/FileSystemContext';
 import { md5 } from '../../utils/md5';
-import type { OutputLine, AuthorData, PasswordPromptData } from './types';
+import type { OutputLine, AuthorData, PasswordPromptData, AsyncOutput } from './types';
 import type { UserType } from '../../context/SessionContext';
 
 const BANNER = `
@@ -32,8 +32,10 @@ export const Terminal = () => {
   const [lines, setLines] = useState<OutputLine[]>(getInitialLines);
   const [passwordMode, setPasswordMode] = useState(false);
   const [targetUser, setTargetUser] = useState<string | null>(null);
+  const [asyncRunning, setAsyncRunning] = useState(false);
   const lineIdRef = useRef(1);
   const outputRef = useRef<HTMLDivElement>(null);
+  const asyncCancelRef = useRef<(() => void) | null>(null);
 
   const { addCommand, navigateUp, navigateDown, resetNavigation } = useCommandHistory();
   const { getVariables, getVariableNames, handleVariableOperation } = useVariables();
@@ -120,6 +122,24 @@ export const Terminal = () => {
             setTargetUser(promptData.targetUser);
             setPasswordMode(true);
             addLine('result', 'Password:');
+            return;
+          }
+          if (result.__type === 'async') {
+            const asyncResult = result as AsyncOutput;
+            setAsyncRunning(true);
+            asyncCancelRef.current = asyncResult.cancel ?? null;
+
+            asyncResult.start(
+              // onLine callback
+              (line: string) => {
+                addLine('result', line);
+              },
+              // onComplete callback
+              () => {
+                setAsyncRunning(false);
+                asyncCancelRef.current = null;
+              }
+            );
             return;
           }
         }
@@ -238,6 +258,7 @@ export const Terminal = () => {
         onHistoryDown={handleHistoryDown}
         onTab={handleTab}
         passwordMode={passwordMode}
+        disabled={asyncRunning}
       />
     </div>
   );

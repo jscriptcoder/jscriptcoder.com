@@ -1,4 +1,4 @@
-import type { Command } from '../components/Terminal/types';
+import type { Command, AsyncOutput } from '../components/Terminal/types';
 import type { RemoteMachine } from '../network/types';
 import { isValidIP } from '../utils/network';
 
@@ -17,6 +17,9 @@ const formatPingResponse = (ip: string, seq: number, ttl: number, time: number):
   return `64 bytes from ${ip}: icmp_seq=${seq} ttl=${ttl} time=${time.toFixed(2)} ms`;
 };
 
+// Delay between ping responses (simulates real network timing)
+const PING_DELAY_MS = 800;
+
 export const createPingCommand = (context: PingContext): Command => ({
   name: 'ping',
   description: 'Send ICMP echo request to network host',
@@ -34,7 +37,7 @@ export const createPingCommand = (context: PingContext): Command => ({
       { command: 'ping("192.168.1.50", 2)', description: 'Send only 2 packets' },
     ],
   },
-  fn: (...args: unknown[]): string => {
+  fn: (...args: unknown[]): AsyncOutput | string => {
     const { getMachine, getMachines, getLocalIP } = context;
 
     const host = args[0] as string | undefined;
@@ -48,72 +51,92 @@ export const createPingCommand = (context: PingContext): Command => ({
       throw new Error('ping: count must be between 1 and 10');
     }
 
-    // Check if pinging localhost
     const localIP = getLocalIP();
-    if (host === 'localhost' || host === '127.0.0.1' || host === localIP) {
-      const lines: string[] = [`PING ${host} (${host === 'localhost' ? '127.0.0.1' : host}): 56 data bytes`];
-      let totalTime = 0;
-
-      for (let i = 0; i < count; i++) {
-        const time = generateLatency() * 0.1; // localhost is very fast
-        totalTime += time;
-        lines.push(formatPingResponse(host === 'localhost' ? '127.0.0.1' : host, i + 1, 64, time));
-      }
-
-      lines.push('');
-      lines.push(`--- ${host} ping statistics ---`);
-      lines.push(`${count} packets transmitted, ${count} received, 0% packet loss`);
-      lines.push(`rtt min/avg/max = ${(totalTime / count * 0.5).toFixed(2)}/${(totalTime / count).toFixed(2)}/${(totalTime / count * 1.5).toFixed(2)} ms`);
-
-      return lines.join('\n');
-    }
+    const isLocalhost = host === 'localhost' || host === '127.0.0.1' || host === localIP;
 
     // Find machine by IP or hostname
     const machines = getMachines();
     let targetMachine: RemoteMachine | undefined;
     let targetIP: string;
 
-    // Check if it's an IP address
-    const isIP = isValidIP(host);
-
-    if (isIP) {
-      targetMachine = getMachine(host);
-      targetIP = host;
+    if (isLocalhost) {
+      targetIP = host === 'localhost' ? '127.0.0.1' : host;
     } else {
-      // Search by hostname
-      targetMachine = machines.find(m => m.hostname === host);
-      targetIP = targetMachine?.ip ?? host;
-    }
-
-    if (!targetMachine) {
-      // Check if it's in the same subnet but just not a known machine
-      if (isIP && host.startsWith('192.168.1.')) {
-        return `PING ${host} (${host}): 56 data bytes\n\n--- ${host} ping statistics ---\n${count} packets transmitted, 0 received, 100% packet loss`;
+      const isIP = isValidIP(host);
+      if (isIP) {
+        targetMachine = getMachine(host);
+        targetIP = host;
+      } else {
+        targetMachine = machines.find(m => m.hostname === host);
+        targetIP = targetMachine?.ip ?? host;
       }
-      throw new Error(`ping: ${host}: Name or service not known`);
+
+      // Check for unknown host (not localhost, not a known machine)
+      if (!targetMachine && !isValidIP(host)) {
+        throw new Error(`ping: ${host}: Name or service not known`);
+      }
     }
 
-    // Generate ping responses
-    const lines: string[] = [`PING ${host} (${targetIP}): 56 data bytes`];
-    let totalTime = 0;
-    const times: number[] = [];
+    // Track if cancelled
+    let cancelled = false;
+    const timeoutIds: ReturnType<typeof setTimeout>[] = [];
 
-    for (let i = 0; i < count; i++) {
-      const time = generateLatency();
-      times.push(time);
-      totalTime += time;
-      lines.push(formatPingResponse(targetIP, i + 1, 64, time));
-    }
+    return {
+      __type: 'async',
+      start: (onLine, onComplete) => {
+        const times: number[] = [];
+        let totalTime = 0;
+        let received = 0;
 
-    const minTime = Math.min(...times);
-    const maxTime = Math.max(...times);
-    const avgTime = totalTime / count;
+        // Show header immediately
+        onLine(`PING ${host} (${targetIP}): 56 data bytes`);
 
-    lines.push('');
-    lines.push(`--- ${host} ping statistics ---`);
-    lines.push(`${count} packets transmitted, ${count} received, 0% packet loss`);
-    lines.push(`rtt min/avg/max = ${minTime.toFixed(2)}/${avgTime.toFixed(2)}/${maxTime.toFixed(2)} ms`);
+        // Schedule ping responses
+        for (let i = 0; i < count; i++) {
+          const timeoutId = setTimeout(() => {
+            if (cancelled) return;
 
-    return lines.join('\n');
+            // Unknown IP in subnet = packet loss
+            if (!isLocalhost && !targetMachine && targetIP.startsWith('192.168.1.')) {
+              // Packet lost, don't output anything for this one
+            } else {
+              const time = isLocalhost ? generateLatency() * 0.1 : generateLatency();
+              times.push(time);
+              totalTime += time;
+              received++;
+              onLine(formatPingResponse(targetIP, i + 1, 64, time));
+            }
+
+            // After last ping, show statistics
+            if (i === count - 1) {
+              const statsTimeoutId = setTimeout(() => {
+                if (cancelled) return;
+
+                onLine('');
+                onLine(`--- ${host} ping statistics ---`);
+
+                const packetLoss = Math.round(((count - received) / count) * 100);
+                onLine(`${count} packets transmitted, ${received} received, ${packetLoss}% packet loss`);
+
+                if (received > 0) {
+                  const minTime = Math.min(...times);
+                  const maxTime = Math.max(...times);
+                  const avgTime = totalTime / received;
+                  onLine(`rtt min/avg/max = ${minTime.toFixed(2)}/${avgTime.toFixed(2)}/${maxTime.toFixed(2)} ms`);
+                }
+
+                onComplete();
+              }, 200);
+              timeoutIds.push(statsTimeoutId);
+            }
+          }, (i + 1) * PING_DELAY_MS);
+          timeoutIds.push(timeoutId);
+        }
+      },
+      cancel: () => {
+        cancelled = true;
+        timeoutIds.forEach(id => clearTimeout(id));
+      },
+    };
   },
 });

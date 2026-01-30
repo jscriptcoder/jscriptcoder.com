@@ -30,3 +30,14 @@ export interface Command {
   manual?: CommandManual;
   fn: (...args: unknown[]) => unknown;
 }
+
+// Async output for commands that stream results with delays
+export interface AsyncOutput {
+  __type: 'async';
+  // Called by Terminal to start receiving output
+  // onLine: callback to add a line of output
+  // onComplete: callback when all output is done
+  start: (onLine: (line: string) => void, onComplete: () => void) => void;
+  // Called to cancel ongoing operation (e.g., Ctrl+C)
+  cancel?: () => void;
+}
