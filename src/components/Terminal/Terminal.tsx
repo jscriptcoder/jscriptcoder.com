@@ -7,8 +7,9 @@ import { useVariables } from '../../hooks/useVariables';
 import { useCommands } from '../../hooks/useCommands';
 import { useSession } from '../../context/SessionContext';
 import { useFileSystem } from '../../filesystem/FileSystemContext';
+import { useNetwork } from '../../network';
 import { md5 } from '../../utils/md5';
-import type { OutputLine, AuthorData, PasswordPromptData, AsyncOutput } from './types';
+import type { OutputLine, AuthorData, PasswordPromptData, AsyncOutput, SshPromptData } from './types';
 import type { UserType } from '../../context/SessionContext';
 
 const BANNER = `
@@ -32,6 +33,7 @@ export const Terminal = () => {
   const [lines, setLines] = useState<OutputLine[]>(getInitialLines);
   const [passwordMode, setPasswordMode] = useState(false);
   const [targetUser, setTargetUser] = useState<string | null>(null);
+  const [sshTargetIP, setSshTargetIP] = useState<string | null>(null);
   const [asyncRunning, setAsyncRunning] = useState(false);
   const lineIdRef = useRef(1);
   const outputRef = useRef<HTMLDivElement>(null);
@@ -39,9 +41,10 @@ export const Terminal = () => {
 
   const { addCommand, navigateUp, navigateDown, resetNavigation } = useCommandHistory();
   const { getVariables, getVariableNames, handleVariableOperation } = useVariables();
-  const { getPrompt, setUsername } = useSession();
+  const { getPrompt, setUsername, setMachine } = useSession();
   const { executionContext, commandNames } = useCommands();
   const { readFile, setCurrentPath } = useFileSystem();
+  const { getMachine } = useNetwork();
 
   const { getCompletions } = useAutoComplete(commandNames, getVariableNames());
 
@@ -134,10 +137,18 @@ export const Terminal = () => {
               (line: string) => {
                 addLine('result', line);
               },
-              // onComplete callback
-              () => {
+              // onComplete callback with optional follow-up
+              (followUp?: SshPromptData) => {
                 setAsyncRunning(false);
                 asyncCancelRef.current = null;
+
+                // Handle SSH prompt follow-up
+                if (followUp && followUp.__type === 'ssh_prompt') {
+                  setTargetUser(followUp.targetUser);
+                  setSshTargetIP(followUp.targetIP);
+                  setPasswordMode(true);
+                  addLine('result', `${followUp.targetUser}@${followUp.targetIP}'s password:`);
+                }
               }
             );
             return;
@@ -155,7 +166,19 @@ export const Terminal = () => {
   const validatePassword = useCallback((password: string): boolean => {
     if (!targetUser) return false;
 
-    // Read passwd file as root to get hashes
+    // SSH mode: validate against remote machine's users
+    if (sshTargetIP) {
+      const machine = getMachine(sshTargetIP);
+      if (!machine) return false;
+
+      const remoteUser = machine.users.find(u => u.username === targetUser);
+      if (!remoteUser) return false;
+
+      const inputHash = md5(password);
+      return remoteUser.passwordHash === inputHash;
+    }
+
+    // Local su mode: Read passwd file as root to get hashes
     const passwdContent = readFile('/etc/passwd', 'root');
     if (!passwdContent) return false;
 
@@ -170,37 +193,60 @@ export const Terminal = () => {
       }
     }
     return false;
-  }, [targetUser, readFile]);
+  }, [targetUser, sshTargetIP, readFile, getMachine]);
 
   const handlePasswordSubmit = useCallback(() => {
     // Show masked password in output
     const maskedPassword = '*'.repeat(input.length);
-    addLine('command', maskedPassword, 'Password:');
+    const promptLabel = sshTargetIP
+      ? `${targetUser}@${sshTargetIP}'s password:`
+      : 'Password:';
+    addLine('command', maskedPassword, promptLabel);
 
     if (validatePassword(input)) {
-      // Determine user type and home directory based on username
-      let userType: UserType = 'user';
-      let homePath = `/home/${targetUser}`;
+      if (sshTargetIP) {
+        // SSH mode: switch to remote machine
+        const machine = getMachine(sshTargetIP);
+        const remoteUser = machine?.users.find(u => u.username === targetUser);
+        const userType: UserType = remoteUser?.userType ?? 'user';
 
-      if (targetUser === 'root') {
-        userType = 'root';
-        homePath = '/root';
-      } else if (targetUser === 'guest') {
-        userType = 'guest';
+        setUsername(targetUser!, userType);
+        setMachine(sshTargetIP);
+        // Set home path based on remote user
+        const homePath = targetUser === 'root' ? '/root' : `/home/${targetUser}`;
+        setCurrentPath(homePath);
+        addLine('result', `Connected to ${sshTargetIP}`);
+        addLine('result', `Welcome to ${machine?.hostname ?? sshTargetIP}!`);
+      } else {
+        // Local su mode
+        let userType: UserType = 'user';
+        let homePath = `/home/${targetUser}`;
+
+        if (targetUser === 'root') {
+          userType = 'root';
+          homePath = '/root';
+        } else if (targetUser === 'guest') {
+          userType = 'guest';
+        }
+
+        setUsername(targetUser!, userType);
+        setCurrentPath(homePath);
+        addLine('result', `Switched to user: ${targetUser}`);
       }
-
-      setUsername(targetUser!, userType);
-      setCurrentPath(homePath);
-      addLine('result', `Switched to user: ${targetUser}`);
     } else {
-      addLine('error', 'su: Authentication failure');
+      if (sshTargetIP) {
+        addLine('error', `Permission denied, please try again.`);
+      } else {
+        addLine('error', 'su: Authentication failure');
+      }
     }
 
     // Exit password mode
     setPasswordMode(false);
     setTargetUser(null);
+    setSshTargetIP(null);
     setInput('');
-  }, [input, targetUser, validatePassword, setUsername, addLine]);
+  }, [input, targetUser, sshTargetIP, validatePassword, setUsername, setMachine, setCurrentPath, getMachine, addLine]);
 
   const handleSubmit = useCallback(() => {
     if (passwordMode) {

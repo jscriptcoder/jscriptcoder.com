@@ -10,6 +10,12 @@ export interface PasswordPromptData {
   targetUser: string;
 }
 
+export interface SshPromptData {
+  __type: 'ssh_prompt';
+  targetUser: string;
+  targetIP: string;
+}
+
 export interface OutputLine {
   id: number;
   type: 'command' | 'result' | 'error' | 'banner' | 'author';
@@ -36,8 +42,11 @@ export interface AsyncOutput {
   __type: 'async';
   // Called by Terminal to start receiving output
   // onLine: callback to add a line of output
-  // onComplete: callback when all output is done
-  start: (onLine: (line: string) => void, onComplete: () => void) => void;
+  // onComplete: callback when all output is done, optionally with a follow-up action
+  start: (
+    onLine: (line: string) => void,
+    onComplete: (followUp?: SshPromptData) => void
+  ) => void;
   // Called to cancel ongoing operation (e.g., Ctrl+C)
   cancel?: () => void;
 }

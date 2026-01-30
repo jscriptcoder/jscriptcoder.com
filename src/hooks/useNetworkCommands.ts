@@ -4,6 +4,7 @@ import { createIfconfigCommand } from '../commands/ifconfig';
 import { createPingCommand } from '../commands/ping';
 import { createNmapCommand } from '../commands/nmap';
 import { createNslookupCommand } from '../commands/nslookup';
+import { createSshCommand } from '../commands/ssh';
 import type { Command } from '../components/Terminal/types';
 
 export const useNetworkCommands = (): Map<string, Command> => {
@@ -36,6 +37,12 @@ export const useNetworkCommands = (): Map<string, Command> => {
     commands.set('nslookup', createNslookupCommand({
       resolveDomain,
       getGateway,
+    }));
+
+    // ssh command
+    commands.set('ssh', createSshCommand({
+      getMachine,
+      getLocalIP,
     }));
 
     return commands;

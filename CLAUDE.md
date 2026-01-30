@@ -67,7 +67,8 @@ src/
 │   ├── ifconfig.ts         # ifconfig() - display network interfaces
 │   ├── ping.ts             # ping(host) - test network connectivity
 │   ├── nmap.ts             # nmap(target) - network scanning and port discovery
-│   └── nslookup.ts         # nslookup(domain) - DNS domain resolution
+│   ├── nslookup.ts         # nslookup(domain) - DNS domain resolution
+│   └── ssh.ts              # ssh(user, host) - secure shell connection
 ├── utils/
 │   ├── md5.ts              # MD5 hashing for password validation
 │   └── network.ts          # Network utilities (IP validation, range parsing)
@@ -145,6 +146,7 @@ To add a command:
 | `ping(host, [count])` | Send ICMP echo request to network host (async, streams output) |
 | `nmap(target)` | Network exploration and port scanning (async, streams output) |
 | `nslookup(domain)` | Query DNS to resolve domain name to IP address (async) |
+| `ssh(user, host)` | Connect to remote machine via SSH (async, prompts for password) |
 
 ### Virtual File System
 
@@ -331,6 +333,7 @@ fn: (...args: unknown[]): AsyncOutput => {
 - `ping(host, [count])` - ~800ms delay between each ICMP response
 - `nmap(target)` - Progressive scanning with ~150ms per IP (range) or ~300ms per port (single host)
 - `nslookup(domain)` - ~600ms delay for DNS lookup
+- `ssh(user, host)` - ~1.4s connection delay, then password prompt
 
 ### Session Context
 
