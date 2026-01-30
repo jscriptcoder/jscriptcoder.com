@@ -46,7 +46,9 @@ export const TerminalOutput = ({ lines }: TerminalOutputProps) => {
             </div>
           )}
           {line.type === 'result' && (
-            <div className="text-amber-500 pl-4">{line.content as string}</div>
+            <div className="text-amber-500 pl-4">
+              {(line.content as string) || '\u00A0'}
+            </div>
           )}
           {line.type === 'error' && (
             <div className="text-red-500 pl-4">{line.content as string}</div>
