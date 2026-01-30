@@ -116,8 +116,8 @@ const add32 = (a: number, b: number) => {
 };
 
 const md5core = (s: string) => {
-  let n = s.length;
-  let state = [1732584193, -271733879, -1732584194, 271733878];
+  const n = s.length;
+  const state = [1732584193, -271733879, -1732584194, 271733878];
   let i: number;
 
   for (i = 64; i <= n; i += 64) {
