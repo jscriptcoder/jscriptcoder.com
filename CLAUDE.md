@@ -2,6 +2,29 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Code Style: Functional Programming
+
+**IMPORTANT:** Always follow the functional programming patterns defined in `.claude/skills/functional/SKILL.md`. Key rules:
+
+- **Immutability**: All types use `readonly` modifiers. Never mutate data.
+- **Pure functions**: No side effects where avoidable. Isolate impurity at boundaries.
+- **No array mutations**: Use `slice()`, `map()`, `filter()`, spread operators. Never `push()`, `pop()`, `splice()`.
+- **Array methods over loops**: Prefer `map`, `filter`, `reduce` over `for`/`for...of`.
+- **Early returns**: Flatten nested conditions with guard clauses.
+- **Self-documenting code**: No comments explaining what code does. Use clear naming.
+- **Max 2 levels nesting**: Extract functions if deeper.
+
+Example of correct immutable update:
+```typescript
+// ✅ Correct
+const updated = { ...session, machine: newMachine };
+const withoutLast = items.slice(0, -1);
+
+// ❌ Wrong
+session.machine = newMachine;
+items.pop();
+```
+
 ## Project Overview
 
 **JscriptCoder** is a web-based JavaScript terminal emulator with a retro amber-on-black CRT aesthetic. It allows users to execute JavaScript expressions and custom commands in a terminal-like interface. Features a virtual file system with Unix-like permissions for CTF-style hacking puzzles. Deployed on Vercel at jscriptcoder.com.
@@ -108,17 +131,17 @@ Commands are registered in `src/hooks/useCommands.ts`. Each command implements t
 
 ```typescript
 interface CommandManual {
-  synopsis: string;
-  description: string;
-  arguments?: { name: string; description: string; required?: boolean }[];
-  examples?: { command: string; description: string }[];
+  readonly synopsis: string;
+  readonly description: string;
+  readonly arguments?: readonly CommandArgument[];
+  readonly examples?: readonly CommandExample[];
 }
 
 interface Command {
-  name: string;
-  description: string;
-  manual?: CommandManual;  // For man() command documentation
-  fn: (...args: unknown[]) => unknown;
+  readonly name: string;
+  readonly description: string;
+  readonly manual?: CommandManual;
+  readonly fn: (...args: unknown[]) => unknown;
 }
 ```
 
@@ -176,15 +199,15 @@ The terminal includes a virtual Unix-like file system (`src/filesystem/`):
 **FileNode Structure:**
 ```typescript
 interface FileNode {
-  name: string;
-  type: 'file' | 'directory';
-  permissions: {
-    read: UserType[];
-    write: UserType[];
-    execute: UserType[];
+  readonly name: string;
+  readonly type: 'file' | 'directory';
+  readonly owner: UserType;
+  readonly permissions: {
+    readonly read: readonly UserType[];
+    readonly write: readonly UserType[];
   };
-  content?: string;        // For files
-  children?: Record<string, FileNode>;  // For directories
+  readonly content?: string;
+  readonly children?: Readonly<Record<string, FileNode>>;
 }
 ```
 
@@ -216,39 +239,43 @@ www.darknet.ctf  -> 203.0.113.42
 **NetworkInterface Structure:**
 ```typescript
 interface NetworkInterface {
-  name: string;        // e.g., 'eth0'
-  flags: string[];     // e.g., ['UP', 'BROADCAST', 'RUNNING']
-  inet: string;        // IP address
-  netmask: string;     // Subnet mask
-  gateway: string;     // Gateway IP
-  mac: string;         // MAC address
+  readonly name: string;
+  readonly flags: readonly string[];
+  readonly inet: string;
+  readonly netmask: string;
+  readonly gateway: string;
+  readonly mac: string;
 }
 ```
 
 **RemoteMachine Structure:**
 ```typescript
+interface Port {
+  readonly port: number;
+  readonly service: string;
+  readonly open: boolean;
+}
+
+interface RemoteUser {
+  readonly username: string;
+  readonly passwordHash: string;
+  readonly userType: 'root' | 'user' | 'guest';
+}
+
 interface RemoteMachine {
-  ip: string;
-  hostname: string;
-  ports: {
-    port: number;
-    service: string;  // 'ssh', 'ftp', 'http', etc.
-    open: boolean;
-  }[];
-  users: {
-    username: string;
-    passwordHash: string;  // MD5 hashed
-    userType: 'root' | 'user' | 'guest';
-  }[];
+  readonly ip: string;
+  readonly hostname: string;
+  readonly ports: readonly Port[];
+  readonly users: readonly RemoteUser[];
 }
 ```
 
 **DnsRecord Structure:**
 ```typescript
 interface DnsRecord {
-  domain: string;  // e.g., 'darknet.ctf'
-  ip: string;      // e.g., '203.0.113.42'
-  type: 'A';       // Only A records for now
+  readonly domain: string;
+  readonly ip: string;
+  readonly type: 'A';
 }
 ```
 
@@ -290,11 +317,16 @@ Commands that simulate network operations (like `ping` and `nmap`) can return an
 
 ```typescript
 interface AsyncOutput {
-  __type: 'async';
-  start: (onLine: (line: string) => void, onComplete: () => void) => void;
-  cancel?: () => void;
+  readonly __type: 'async';
+  readonly start: (
+    onLine: (line: string) => void,
+    onComplete: (followUp?: SshPromptData) => void
+  ) => void;
+  readonly cancel?: () => void;
 }
 ```
+
+The `onComplete` callback can optionally return a `SshPromptData` to trigger password prompt mode after the async phase (used by `ssh` command).
 
 **How it works:**
 1. Command returns `AsyncOutput` instead of a string
@@ -341,9 +373,9 @@ Global state for terminal session managed via React Context (`src/context/Sessio
 
 ```typescript
 interface Session {
-  username: string;    // Current user (default: 'jshacker')
-  userType: UserType;  // 'root' | 'user' | 'guest'
-  machine: string;     // Current machine (default: 'localhost')
+  readonly username: string;
+  readonly userType: UserType;
+  readonly machine: string;
 }
 ```
 
