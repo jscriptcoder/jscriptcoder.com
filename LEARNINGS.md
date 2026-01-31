@@ -34,6 +34,16 @@
 - **Why it works**: Simulates realistic delays, supports interruption, keeps Terminal in control
 - **Example**: ping, nmap, nslookup all use this pattern
 
+### Immutable file system updates with recursive helpers
+- **What**: Pure functions `updateNodeAtPath()` and `addChildAtPath()` for immutable tree updates
+- **Why it works**: Avoids deep cloning with JSON.parse/stringify, proper immutable updates
+- **Example**: `setFileSystem(prev => updateNodeAtPath(prev, parts, node => ({ ...node, content })))`
+
+### Readonly types throughout
+- **What**: All interface properties marked `readonly`, arrays as `readonly T[]`
+- **Why it works**: TypeScript enforces immutability at compile time, prevents accidental mutations
+- **Example**: `readonly ports: readonly Port[]` instead of `ports: Port[]`
+
 ## Decisions Made
 
 ### MD5 for password hashing
@@ -53,6 +63,12 @@
 - **Decision**: SessionContext with username, userType, machine
 - **Rationale**: Terminal prompt needs this everywhere, natural fit for context
 - **Trade-offs**: Context re-renders, but minimal impact
+
+### Functional programming style
+- **Options considered**: OOP with classes, imperative style, functional
+- **Decision**: Functional with immutable data, pure functions, readonly types
+- **Rationale**: Better for React (immutability helps reconciliation), easier to test, prevents bugs
+- **Trade-offs**: More verbose updates (spread operators), learning curve for mutation-heavy code
 
 ## Edge Cases
 
