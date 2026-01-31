@@ -29,17 +29,17 @@ Immutable data is the foundation of functional programming. Understanding WHY he
 **Example of the problem:**
 ```typescript
 // ❌ WRONG - Mutation creates unpredictable behavior
-const user = { name: 'Alice', permissions: ['read'] };
-grantPermission(user, 'write'); // Mutates user.permissions internally
-console.log(user.permissions); // ['read', 'write'] - SURPRISE! user changed
+const session = { username: 'jshacker', machine: 'localhost' };
+connectToMachine(session, '192.168.1.50'); // Mutates session internally
+console.log(session.machine); // '192.168.1.50' - SURPRISE! session changed
 ```
 
 ```typescript
 // ✅ CORRECT - Immutable approach is predictable
-const user = { name: 'Alice', permissions: ['read'] };
-const updatedUser = grantPermission(user, 'write'); // Returns new object
-console.log(user.permissions); // ['read'] - original unchanged
-console.log(updatedUser.permissions); // ['read', 'write'] - new version
+const session = { username: 'jshacker', machine: 'localhost' };
+const newSession = connectToMachine(session, '192.168.1.50'); // Returns new object
+console.log(session.machine); // 'localhost' - original unchanged
+console.log(newSession.machine); // '192.168.1.50' - new version
 ```
 
 ---
@@ -65,16 +65,16 @@ We follow "Functional Light" principles - practical functional patterns without 
 **Example - Keep it simple:**
 ```typescript
 // ✅ GOOD - Simple, clear, functional
-const activeUsers = users.filter(u => u.active);
-const userNames = activeUsers.map(u => u.name);
+const openPorts = machine.ports.filter(p => p.open);
+const serviceNames = openPorts.map(p => p.service);
 
 // ❌ OVER-ENGINEERED - Unnecessary abstraction
 const compose = <T>(...fns: Array<(arg: T) => T>) => (x: T) =>
   fns.reduceRight((v, f) => f(v), x);
-const activeUsers = compose(
-  filter((u: User) => u.active),
-  map((u: User) => u.name)
-)(users);
+const openPorts = compose(
+  filter((p: Port) => p.open),
+  map((p: Port) => p.service)
+)(machine.ports);
 ```
 
 ---
@@ -89,14 +89,14 @@ Code should be clear through naming and structure. Comments indicate unclear cod
 
 ❌ **WRONG - Comments explaining unclear code**
 ```typescript
-// Get the user and check if active and has permission
-function check(u: any) {
-  // Check user exists
-  if (u) {
-    // Check if active
-    if (u.a) {
-      // Check permission
-      if (u.p) {
+// Check if user can read the file
+function check(f: any, u: any) {
+  // Check file exists
+  if (f) {
+    // Check permissions array
+    if (f.p && f.p.r) {
+      // Check user type in array
+      if (f.p.r.includes(u)) {
         return true;
       }
     }
@@ -107,16 +107,15 @@ function check(u: any) {
 
 ✅ **CORRECT - Self-documenting code**
 ```typescript
-function canUserAccessResource(user: User | undefined): boolean {
-  if (!user) return false;
-  if (!user.isActive) return false;
-  if (!user.hasPermission) return false;
+function canUserReadFile(file: FileNode | undefined, userType: UserType): boolean {
+  if (!file) return false;
+  if (!file.permissions.read.includes(userType)) return false;
   return true;
 }
 
 // Even better - compose predicates
-function canUserAccessResource(user: User | undefined): boolean {
-  return user?.isActive && user?.hasPermission;
+function canUserReadFile(file: FileNode | undefined, userType: UserType): boolean {
+  return file?.permissions.read.includes(userType) ?? false;
 }
 ```
 
@@ -151,57 +150,57 @@ Prefer `map`, `filter`, `reduce` for transformations. They're declarative (what,
 
 ❌ **WRONG - Imperative loop**
 ```typescript
-const scenarioIds = [];
-for (const scenario of scenarios) {
-  scenarioIds.push(scenario.id);
+const commandNames = [];
+for (const command of commands) {
+  commandNames.push(command.name);
 }
 ```
 
 ✅ **CORRECT - Functional map**
 ```typescript
-const scenarioIds = scenarios.map(s => s.id);
+const commandNames = commands.map(cmd => cmd.name);
 ```
 
 ### Filter - Select Subset
 
 ❌ **WRONG - Imperative loop**
 ```typescript
-const activeScenarios = [];
-for (const scenario of scenarios) {
-  if (scenario.active) {
-    activeScenarios.push(scenario);
+const openPorts = [];
+for (const port of machine.ports) {
+  if (port.open) {
+    openPorts.push(port);
   }
 }
 ```
 
 ✅ **CORRECT - Functional filter**
 ```typescript
-const activeScenarios = scenarios.filter(s => s.active);
+const openPorts = machine.ports.filter(p => p.open);
 ```
 
 ### Reduce - Aggregate Values
 
 ❌ **WRONG - Imperative loop**
 ```typescript
-let total = 0;
-for (const item of items) {
-  total += item.price * item.quantity;
+let totalOpen = 0;
+for (const machine of machines) {
+  totalOpen += machine.ports.filter(p => p.open).length;
 }
 ```
 
 ✅ **CORRECT - Functional reduce**
 ```typescript
-const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+const totalOpen = machines.reduce((sum, m) => sum + m.ports.filter(p => p.open).length, 0);
 ```
 
 ### Chaining Multiple Operations
 
 ✅ **CORRECT - Compose array methods**
 ```typescript
-const total = items
-  .filter(item => item.active)
-  .map(item => item.price * item.quantity)
-  .reduce((sum, price) => sum + price, 0);
+const sshServices = machines
+  .filter(m => m.ports.some(p => p.port === 22 && p.open))
+  .map(m => m.hostname)
+  .join(', ');
 ```
 
 ### When Loops Are Acceptable
@@ -234,44 +233,41 @@ Default to options objects for function parameters. This improves readability an
 
 ❌ **WRONG - Positional parameters**
 ```typescript
-function createPayment(
-  amount: number,
-  currency: string,
-  cardId: string,
-  cvv: string,
-  saveCard: boolean,
-  sendReceipt: boolean
-): Payment {
+function createRemoteMachine(
+  ip: string,
+  hostname: string,
+  sshOpen: boolean,
+  httpOpen: boolean,
+  rootPassword: string,
+  userPassword: string
+): RemoteMachine {
   // ...
 }
 
 // Call site - unclear what parameters mean
-createPayment(100, 'GBP', 'card_123', '123', true, false);
+createRemoteMachine('192.168.1.50', 'fileserver', true, false, 'root123', 'password');
 ```
 
 ✅ **CORRECT - Options object**
 ```typescript
-type CreatePaymentOptions = {
-  amount: number;
-  currency: string;
-  cardId: string;
-  cvv: string;
-  saveCard?: boolean;
-  sendReceipt?: boolean;
+type CreateMachineOptions = {
+  ip: string;
+  hostname: string;
+  ports: { port: number; service: string; open: boolean }[];
+  users: { username: string; passwordHash: string; userType: UserType }[];
 };
 
-function createPayment(options: CreatePaymentOptions): Payment {
-  const { amount, currency, cardId, cvv, saveCard = false, sendReceipt = true } = options;
+function createRemoteMachine(options: CreateMachineOptions): RemoteMachine {
+  const { ip, hostname, ports, users } = options;
   // ...
 }
 
 // Call site - crystal clear
-createPayment({
-  amount: 100,
-  currency: 'GBP',
-  cardId: 'card_123',
-  cvv: '123',
-  saveCard: true,
+createRemoteMachine({
+  ip: '192.168.1.50',
+  hostname: 'fileserver',
+  ports: [{ port: 22, service: 'ssh', open: true }],
+  users: [{ username: 'ftpuser', passwordHash: '5f4dcc3b...', userType: 'user' }],
 });
 ```
 
@@ -284,12 +280,12 @@ Use positional parameters when:
 
 ```typescript
 // ✅ OK - Obvious ordering, few parameters
-function add(a: number, b: number): number {
-  return a + b;
+function md5(input: string): string {
+  return hash(input);
 }
 
-function updateUser(user: User, changes: Partial<User>): User {
-  return { ...user, ...changes };
+function updateSession(session: Session, changes: Partial<Session>): Session {
+  return { ...session, ...changes };
 }
 ```
 
@@ -317,28 +313,28 @@ Pure functions have no side effects and always return the same output for the sa
 
 ❌ **WRONG - Impure function (mutations)**
 ```typescript
-function addScenario(scenarios: Scenario[], newScenario: Scenario): void {
-  scenarios.push(newScenario); // ❌ Mutates input
+function addOutputLine(lines: OutputLine[], newLine: OutputLine): void {
+  lines.push(newLine); // ❌ Mutates input
 }
 
-let count = 0;
-function increment(): number {
-  count++; // ❌ Modifies external state
-  return count;
+let lineId = 0;
+function getNextLineId(): number {
+  lineId++; // ❌ Modifies external state
+  return lineId;
 }
 ```
 
 ✅ **CORRECT - Pure functions**
 ```typescript
-function addScenario(
-  scenarios: ReadonlyArray<Scenario>,
-  newScenario: Scenario,
-): ReadonlyArray<Scenario> {
-  return [...scenarios, newScenario]; // ✅ Returns new array
+function addOutputLine(
+  lines: ReadonlyArray<OutputLine>,
+  newLine: OutputLine,
+): ReadonlyArray<OutputLine> {
+  return [...lines, newLine]; // ✅ Returns new array
 }
 
-function increment(count: number): number {
-  return count + 1; // ✅ No external state
+function getNextLineId(currentId: number): number {
+  return currentId + 1; // ✅ No external state
 }
 ```
 
@@ -357,14 +353,21 @@ Some functions must be impure (I/O, randomness, side effects). Isolate them:
 ```typescript
 // ✅ CORRECT - Isolate impure functions at edges
 // Pure core
-function calculateTotal(items: ReadonlyArray<Item>): number {
-  return items.reduce((sum, item) => sum + item.price, 0);
+function validatePassword(inputHash: string, storedHash: string): boolean {
+  return inputHash === storedHash;
 }
 
-// Impure shell (isolated)
-async function saveOrder(order: Order): Promise<void> {
-  const total = calculateTotal(order.items); // Pure
-  await database.save({ ...order, total }); // Impure (I/O)
+function findUserInMachine(machine: RemoteMachine, username: string): RemoteUser | undefined {
+  return machine.users.find(u => u.username === username);
+}
+
+// Impure shell (isolated) - uses React state
+function handleSshLogin(password: string, machine: RemoteMachine, targetUser: string): void {
+  const user = findUserInMachine(machine, targetUser); // Pure
+  const isValid = user && validatePassword(md5(password), user.passwordHash); // Pure
+  if (isValid) {
+    setSession({ username: targetUser, machine: machine.ip }); // Impure (state)
+  }
 }
 ```
 
@@ -387,76 +390,78 @@ Compose small functions into larger ones. Each function does one thing well.
 
 ❌ **WRONG - Complex monolithic function**
 ```typescript
-function registerScenario(input: unknown) {
-  if (typeof input !== 'object' || !input) {
+function executeCommand(input: string, context: ExecutionContext) {
+  if (!input || typeof input !== 'string') {
     throw new Error('Invalid input');
   }
-  if (!('id' in input) || typeof input.id !== 'string') {
-    throw new Error('Missing id');
+  const trimmed = input.trim();
+  if (trimmed.startsWith('const ') || trimmed.startsWith('let ')) {
+    // Handle variable declaration...
+    // ... 30 lines of variable parsing
   }
-  if (!('name' in input) || typeof input.name !== 'string') {
-    throw new Error('Missing name');
-  }
-  if (!('mocks' in input) || !Array.isArray(input.mocks)) {
-    throw new Error('Missing mocks');
-  }
-  // ... 50 more lines of validation and registration
+  // Try to find command
+  // ... 20 more lines of command lookup and execution
 }
 ```
 
 ✅ **CORRECT - Composed functions**
 ```typescript
 // Small, focused functions
-const validate = (input: unknown) => ScenarioSchema.parse(input);
-const register = (scenario: Scenario) => registry.register(scenario);
+const isVariableDeclaration = (input: string) =>
+  input.startsWith('const ') || input.startsWith('let ');
+
+const parseVariableDeclaration = (input: string) =>
+  VariableSchema.parse(input);
+
+const executeAsCommand = (input: string, context: ExecutionContext) =>
+  new Function(...Object.keys(context), `return ${input}`)(...Object.values(context));
 
 // Compose them
-const registerScenario = (input: unknown) => register(validate(input));
-
-// Even better - use pipe/compose utilities
-const registerScenario = pipe(
-  validate,
-  register,
-);
+function executeCommand(input: string, context: ExecutionContext) {
+  const trimmed = input.trim();
+  if (isVariableDeclaration(trimmed)) {
+    return parseVariableDeclaration(trimmed);
+  }
+  return executeAsCommand(trimmed, context);
+}
 ```
 
 ### Composing Immutable Transformations
 
 ```typescript
 // Small transformation functions
-const addDiscount = (order: Order, percent: number): Order => ({
-  ...order,
-  total: order.total * (1 - percent / 100),
+const setUsername = (session: Session, username: string, userType: UserType): Session => ({
+  ...session,
+  username,
+  userType,
 });
 
-const addShipping = (order: Order, cost: number): Order => ({
-  ...order,
-  total: order.total + cost,
+const setMachine = (session: Session, machine: string): Session => ({
+  ...session,
+  machine,
 });
 
-const addTax = (order: Order, rate: number): Order => ({
-  ...order,
-  total: order.total * (1 + rate),
+const resetToDefault = (session: Session): Session => ({
+  ...session,
+  username: 'jshacker',
+  userType: 'user',
+  machine: 'localhost',
 });
 
-// Compose them
-const finalizeOrder = (order: Order): Order => {
-  return addTax(
-    addShipping(
-      addDiscount(order, 10),
-      5.99
-    ),
-    0.2
+// Compose them for SSH login
+const loginToRemote = (session: Session, user: string, userType: UserType, ip: string): Session => {
+  return setMachine(
+    setUsername(session, user, userType),
+    ip
   );
 };
 
 // Or use pipe for left-to-right reading
-const finalizeOrder = (order: Order): Order =>
+const loginToRemote = (session: Session, user: string, userType: UserType, ip: string): Session =>
   pipe(
-    order,
-    o => addDiscount(o, 10),
-    o => addShipping(o, 5.99),
-    o => addTax(o, 0.2),
+    session,
+    s => setUsername(s, user, userType),
+    s => setMachine(s, ip),
   );
 ```
 
@@ -470,16 +475,16 @@ Use `readonly` on all data structures to signal immutability intent.
 
 ```typescript
 // ✅ CORRECT - Immutable data structure
-type Scenario = {
-  readonly id: string;
+type Command = {
   readonly name: string;
   readonly description: string;
+  readonly fn: (...args: unknown[]) => unknown;
 };
 
 // ❌ WRONG - Mutable
-type Scenario = {
-  id: string;
+type Command = {
   name: string;
+  description: string;
 };
 ```
 
@@ -487,13 +492,14 @@ type Scenario = {
 
 ```typescript
 // ✅ CORRECT - Immutable array
-type Scenario = {
-  readonly mocks: ReadonlyArray<Mock>;
+type RemoteMachine = {
+  readonly ports: ReadonlyArray<Port>;
+  readonly users: ReadonlyArray<RemoteUser>;
 };
 
 // ❌ WRONG - Mutable array
-type Scenario = {
-  readonly mocks: Mock[];
+type RemoteMachine = {
+  readonly ports: Port[];
 };
 ```
 
@@ -501,11 +507,13 @@ type Scenario = {
 
 ```typescript
 // ✅ CORRECT - Deep immutability
-type Mock = {
-  readonly method: 'GET' | 'POST';
-  readonly response: {
-    readonly status: number;
-    readonly body: readonly unknown[];
+type FileNode = {
+  readonly name: string;
+  readonly type: 'file' | 'directory';
+  readonly permissions: {
+    readonly read: ReadonlyArray<UserType>;
+    readonly write: ReadonlyArray<UserType>;
+    readonly execute: ReadonlyArray<UserType>;
   };
 };
 ```
@@ -534,12 +542,15 @@ type Mock = {
 
 ❌ **WRONG - Deep nesting (4+ levels)**
 ```typescript
-function processOrder(order: Order) {
-  if (order.items.length > 0) {
-    if (order.customer.verified) {
-      if (order.total > 0) {
-        if (order.payment.valid) {
-          // ... deeply nested logic
+function handleSshConnection(user: string, host: string, password: string) {
+  const machine = getMachine(host);
+  if (machine) {
+    const sshPort = machine.ports.find(p => p.port === 22);
+    if (sshPort && sshPort.open) {
+      const remoteUser = machine.users.find(u => u.username === user);
+      if (remoteUser) {
+        if (md5(password) === remoteUser.passwordHash) {
+          // ... deeply nested login logic
         }
       }
     }
@@ -549,29 +560,35 @@ function processOrder(order: Order) {
 
 ✅ **CORRECT - Flat with early returns**
 ```typescript
-function processOrder(order: Order) {
-  if (order.items.length === 0) return;
-  if (!order.customer.verified) return;
-  if (order.total <= 0) return;
-  if (!order.payment.valid) return;
+function handleSshConnection(user: string, host: string, password: string) {
+  const machine = getMachine(host);
+  if (!machine) throw new Error('Connection refused');
 
-  // Main logic at top level
+  const sshPort = machine.ports.find(p => p.port === 22);
+  if (!sshPort?.open) throw new Error('Connection refused');
+
+  const remoteUser = machine.users.find(u => u.username === user);
+  if (!remoteUser) throw new Error('Permission denied');
+
+  if (md5(password) !== remoteUser.passwordHash) throw new Error('Permission denied');
+
+  // Main login logic at top level
 }
 ```
 
 ✅ **CORRECT - Extract to functions**
 ```typescript
-function processOrder(order: Order) {
-  if (!canProcessOrder(order)) return;
-  const validated = validateOrder(order);
-  return executeOrder(validated);
+function handleSshConnection(user: string, host: string, password: string) {
+  const machine = validateMachineAccess(host);
+  const remoteUser = validateUserCredentials(machine, user, password);
+  return connectToMachine(machine, remoteUser);
 }
 
-function canProcessOrder(order: Order): boolean {
-  return order.items.length > 0
-    && order.customer.verified
-    && order.total > 0
-    && order.payment.valid;
+function validateMachineAccess(host: string): RemoteMachine {
+  const machine = getMachine(host);
+  if (!machine) throw new Error('Connection refused');
+  if (!machine.ports.some(p => p.port === 22 && p.open)) throw new Error('Connection refused');
+  return machine;
 }
 ```
 
@@ -631,11 +648,11 @@ const inserted = [
 
 ```typescript
 // ❌ WRONG
-user.name = "New";
-Object.assign(user, { name: "New" });
+session.machine = "192.168.1.50";
+Object.assign(session, { machine: "192.168.1.50" });
 
 // ✅ CORRECT
-const updated = { ...user, name: "New" };
+const updated = { ...session, machine: "192.168.1.50" };
 ```
 
 ---
@@ -644,20 +661,20 @@ const updated = { ...user, name: "New" };
 
 ```typescript
 // ✅ CORRECT - Immutable nested update
-const updatedCart = {
-  ...cart,
-  items: cart.items.map((item, i) =>
-    i === targetIndex ? { ...item, quantity: newQuantity } : item
+const updatedMachine = {
+  ...machine,
+  ports: machine.ports.map(port =>
+    port.port === 22 ? { ...port, open: false } : port
   ),
 };
 
 // ✅ CORRECT - Immutable nested array update
-const updatedOrder = {
-  ...order,
-  items: [
-    ...order.items.slice(0, index),
-    updatedItem,
-    ...order.items.slice(index + 1),
+const updatedNetwork = {
+  ...network,
+  machines: [
+    ...network.machines.slice(0, index),
+    updatedMachine,
+    ...network.machines.slice(index + 1),
   ],
 };
 ```
@@ -668,20 +685,20 @@ const updatedOrder = {
 
 ```typescript
 // ❌ WRONG - Nested conditions
-if (user) {
-  if (user.isActive) {
-    if (user.hasPermission) {
-      // do something
+if (file) {
+  if (file.type === 'file') {
+    if (file.permissions.read.includes(userType)) {
+      // read file content
     }
   }
 }
 
 // ✅ CORRECT - Early returns (guard clauses)
-if (!user) return;
-if (!user.isActive) return;
-if (!user.hasPermission) return;
+if (!file) return;
+if (file.type !== 'file') return;
+if (!file.permissions.read.includes(userType)) return;
 
-// do something
+// read file content
 ```
 
 ---
@@ -694,24 +711,27 @@ type Result<T, E = Error> =
   | { readonly success: false; readonly error: E };
 
 // Usage
-function processPayment(payment: Payment): Result<Transaction> {
-  if (payment.amount <= 0) {
-    return { success: false, error: new Error('Invalid amount') };
+function readFileContent(path: string, userType: UserType): Result<string> {
+  const file = resolveFile(path);
+  if (!file) {
+    return { success: false, error: new Error(`cat: ${path}: No such file`) };
+  }
+  if (!file.permissions.read.includes(userType)) {
+    return { success: false, error: new Error(`cat: ${path}: Permission denied`) };
   }
 
-  const transaction = executePayment(payment);
-  return { success: true, data: transaction };
+  return { success: true, data: file.content ?? '' };
 }
 
 // Caller handles both cases explicitly
-const result = processPayment(payment);
+const result = readFileContent('/etc/passwd', 'guest');
 if (!result.success) {
-  console.error(result.error);
+  addLine('error', result.error.message);
   return;
 }
 
 // TypeScript knows result.data exists here
-console.log(result.data.transactionId);
+addLine('result', result.data);
 ```
 
 ---
