@@ -25,6 +25,40 @@ session.machine = newMachine;
 items.pop();
 ```
 
+## Code Style: TypeScript Strict
+
+**IMPORTANT:** Always follow the TypeScript strict patterns defined in `.claude/skills/typescript-strict/SKILL.md`. Key rules:
+
+- **`type` over `interface`**: Use `type` for data structures. Reserve `interface` for behavior contracts (rare).
+- **`readonly` everywhere**: All properties must be `readonly`. Arrays as `readonly T[]`.
+- **No type assertions**: Never use `as Type`. Use type guards or proper typing instead.
+- **Discriminated unions**: Use `__type` property for variants, with type guard functions.
+- **No `any`**: Use `unknown` and narrow with type guards.
+- **Explicit return types**: All exported functions must have explicit return types.
+
+Example of correct type definition:
+```typescript
+// ✅ Correct - type with readonly
+type Session = {
+  readonly username: string;
+  readonly userType: UserType;
+  readonly machine: string;
+};
+
+// ✅ Correct - type guard for discriminated union
+const isAuthorData = (value: unknown): value is AuthorData =>
+  isSpecialOutput(value) && value.__type === 'author';
+
+// ❌ Wrong - interface without readonly
+interface Session {
+  username: string;
+  userType: UserType;
+}
+
+// ❌ Wrong - type assertion
+const data = result as AuthorData;
+```
+
 ## Project Overview
 
 **JscriptCoder** is a web-based JavaScript terminal emulator with a retro amber-on-black CRT aesthetic. It allows users to execute JavaScript expressions and custom commands in a terminal-like interface. Features a virtual file system with Unix-like permissions for CTF-style hacking puzzles. Deployed on Vercel at jscriptcoder.com.
@@ -56,7 +90,7 @@ src/
 │   ├── Terminal.tsx        # Main orchestrator component
 │   ├── TerminalInput.tsx   # Input line with prompt
 │   ├── TerminalOutput.tsx  # Output display (text, errors, cards)
-│   └── types.ts            # TypeScript interfaces (Command, CommandManual, AsyncOutput)
+│   └── types.ts            # TypeScript types (Command, CommandManual, AsyncOutput, type guards)
 ├── context/
 │   └── SessionContext.tsx  # Global session state (user, machine, prompt)
 ├── filesystem/
@@ -127,22 +161,22 @@ User input flows through `Terminal.tsx`:
 
 ### Adding New Commands
 
-Commands are registered in `src/hooks/useCommands.ts`. Each command implements the `Command` interface:
+Commands are registered in `src/hooks/useCommands.ts`. Each command implements the `Command` type:
 
 ```typescript
-interface CommandManual {
+type CommandManual = {
   readonly synopsis: string;
   readonly description: string;
   readonly arguments?: readonly CommandArgument[];
   readonly examples?: readonly CommandExample[];
-}
+};
 
-interface Command {
+type Command = {
   readonly name: string;
   readonly description: string;
   readonly manual?: CommandManual;
   readonly fn: (...args: unknown[]) => unknown;
-}
+};
 ```
 
 To add a command:
@@ -198,7 +232,7 @@ The terminal includes a virtual Unix-like file system (`src/filesystem/`):
 
 **FileNode Structure:**
 ```typescript
-interface FileNode {
+type FileNode = {
   readonly name: string;
   readonly type: 'file' | 'directory';
   readonly owner: UserType;
@@ -208,7 +242,7 @@ interface FileNode {
   };
   readonly content?: string;
   readonly children?: Readonly<Record<string, FileNode>>;
-}
+};
 ```
 
 ### Network System
@@ -238,45 +272,45 @@ www.darknet.ctf  -> 203.0.113.42
 
 **NetworkInterface Structure:**
 ```typescript
-interface NetworkInterface {
+type NetworkInterface = {
   readonly name: string;
   readonly flags: readonly string[];
   readonly inet: string;
   readonly netmask: string;
   readonly gateway: string;
   readonly mac: string;
-}
+};
 ```
 
 **RemoteMachine Structure:**
 ```typescript
-interface Port {
+type Port = {
   readonly port: number;
   readonly service: string;
   readonly open: boolean;
-}
+};
 
-interface RemoteUser {
+type RemoteUser = {
   readonly username: string;
   readonly passwordHash: string;
   readonly userType: 'root' | 'user' | 'guest';
-}
+};
 
-interface RemoteMachine {
+type RemoteMachine = {
   readonly ip: string;
   readonly hostname: string;
   readonly ports: readonly Port[];
   readonly users: readonly RemoteUser[];
-}
+};
 ```
 
 **DnsRecord Structure:**
 ```typescript
-interface DnsRecord {
+type DnsRecord = {
   readonly domain: string;
   readonly ip: string;
   readonly type: 'A';
-}
+};
 ```
 
 **Usage in commands:**
@@ -316,14 +350,14 @@ The `TerminalOutput` component checks for `__type` and renders appropriate UI (e
 Commands that simulate network operations (like `ping` and `nmap`) can return an `AsyncOutput` object to stream output with realistic delays:
 
 ```typescript
-interface AsyncOutput {
+type AsyncOutput = {
   readonly __type: 'async';
   readonly start: (
     onLine: (line: string) => void,
     onComplete: (followUp?: SshPromptData) => void
   ) => void;
   readonly cancel?: () => void;
-}
+};
 ```
 
 The `onComplete` callback can optionally return a `SshPromptData` to trigger password prompt mode after the async phase (used by `ssh` command).
@@ -372,11 +406,11 @@ fn: (...args: unknown[]): AsyncOutput => {
 Global state for terminal session managed via React Context (`src/context/SessionContext.tsx`):
 
 ```typescript
-interface Session {
+type Session = {
   readonly username: string;
   readonly userType: UserType;
   readonly machine: string;
-}
+};
 ```
 
 **Available methods:**

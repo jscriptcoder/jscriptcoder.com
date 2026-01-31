@@ -1,19 +1,19 @@
 import { useState, useCallback } from 'react';
 
-interface Variable {
-  value: unknown;
-  isConst: boolean;
-}
+type Variable = {
+  readonly value: unknown;
+  readonly isConst: boolean;
+};
 
-interface VariableStore {
-  [key: string]: Variable;
-}
+type VariableStore = {
+  readonly [key: string]: Variable;
+};
 
-export interface VariableResult {
-  success: boolean;
-  value?: unknown;
-  error?: string;
-}
+export type VariableResult = {
+  readonly success: boolean;
+  readonly value?: unknown;
+  readonly error?: string;
+};
 
 // Regex patterns for variable declarations and assignments
 const CONST_DECLARATION = /^const\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*=\s*(.+)$/;

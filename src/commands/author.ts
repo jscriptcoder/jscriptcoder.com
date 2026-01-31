@@ -1,12 +1,4 @@
-import type { Command } from '../components/Terminal/types';
-
-export interface AuthorInfo {
-  __type: 'author';
-  name: string;
-  description: string;
-  avatar: string;
-  links: { label: string; url: string }[];
-}
+import type { Command, AuthorData } from '../components/Terminal/types';
 
 export const authorCommand: Command = {
   name: 'author',
@@ -18,7 +10,7 @@ export const authorCommand: Command = {
       { command: 'author()', description: 'Show author profile card' },
     ],
   },
-  fn: (): AuthorInfo => ({
+  fn: (): AuthorData => ({
     __type: 'author',
     name: 'jscriptcoder',
     description: 'TODO: description about myself',

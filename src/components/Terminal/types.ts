@@ -1,63 +1,95 @@
-export interface AuthorLink {
+export type AuthorLink = {
   readonly label: string;
   readonly url: string;
-}
+};
 
-export interface AuthorData {
+export type AuthorData = {
+  readonly __type: 'author';
   readonly name: string;
   readonly description: string;
   readonly avatar: string;
   readonly links: readonly AuthorLink[];
-}
+};
 
-export interface PasswordPromptData {
+export type PasswordPromptData = {
   readonly __type: 'password_prompt';
   readonly targetUser: string;
-}
+};
 
-export interface SshPromptData {
+export type SshPromptData = {
   readonly __type: 'ssh_prompt';
   readonly targetUser: string;
   readonly targetIP: string;
-}
+};
 
-export interface OutputLine {
-  readonly id: number;
-  readonly type: 'command' | 'result' | 'error' | 'banner' | 'author';
-  readonly content: string | AuthorData;
-  readonly prompt?: string;
-}
+export type ClearOutput = {
+  readonly __type: 'clear';
+};
 
-export interface CommandArgument {
-  readonly name: string;
-  readonly description: string;
-  readonly required?: boolean;
-}
-
-export interface CommandExample {
-  readonly command: string;
-  readonly description: string;
-}
-
-export interface CommandManual {
-  readonly synopsis: string;
-  readonly description: string;
-  readonly arguments?: readonly CommandArgument[];
-  readonly examples?: readonly CommandExample[];
-}
-
-export interface Command {
-  readonly name: string;
-  readonly description: string;
-  readonly manual?: CommandManual;
-  readonly fn: (...args: unknown[]) => unknown;
-}
-
-export interface AsyncOutput {
+export type AsyncOutput = {
   readonly __type: 'async';
   readonly start: (
     onLine: (line: string) => void,
     onComplete: (followUp?: SshPromptData) => void
   ) => void;
   readonly cancel?: () => void;
-}
+};
+
+// Discriminated union for special command results
+export type SpecialOutput =
+  | AuthorData
+  | PasswordPromptData
+  | SshPromptData
+  | ClearOutput
+  | AsyncOutput;
+
+export type OutputLine = {
+  readonly id: number;
+  readonly type: 'command' | 'result' | 'error' | 'banner' | 'author';
+  readonly content: string | AuthorData;
+  readonly prompt?: string;
+};
+
+export type CommandArgument = {
+  readonly name: string;
+  readonly description: string;
+  readonly required?: boolean;
+};
+
+export type CommandExample = {
+  readonly command: string;
+  readonly description: string;
+};
+
+export type CommandManual = {
+  readonly synopsis: string;
+  readonly description: string;
+  readonly arguments?: readonly CommandArgument[];
+  readonly examples?: readonly CommandExample[];
+};
+
+export type Command = {
+  readonly name: string;
+  readonly description: string;
+  readonly manual?: CommandManual;
+  readonly fn: (...args: unknown[]) => unknown;
+};
+
+// Type guards for discriminated unions
+export const isSpecialOutput = (value: unknown): value is SpecialOutput =>
+  typeof value === 'object' && value !== null && '__type' in value;
+
+export const isAuthorData = (value: unknown): value is AuthorData =>
+  isSpecialOutput(value) && value.__type === 'author';
+
+export const isPasswordPrompt = (value: unknown): value is PasswordPromptData =>
+  isSpecialOutput(value) && value.__type === 'password_prompt';
+
+export const isSshPrompt = (value: unknown): value is SshPromptData =>
+  isSpecialOutput(value) && value.__type === 'ssh_prompt';
+
+export const isClearOutput = (value: unknown): value is ClearOutput =>
+  isSpecialOutput(value) && value.__type === 'clear';
+
+export const isAsyncOutput = (value: unknown): value is AsyncOutput =>
+  isSpecialOutput(value) && value.__type === 'async';

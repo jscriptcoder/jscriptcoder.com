@@ -2,18 +2,18 @@ import { createContext, useContext, useState, useCallback, type ReactNode } from
 
 export type UserType = 'root' | 'user' | 'guest';
 
-export interface Session {
-  username: string;
-  userType: UserType;
-  machine: string;
-}
+export type Session = {
+  readonly username: string;
+  readonly userType: UserType;
+  readonly machine: string;
+};
 
-interface SessionContextValue {
-  session: Session;
-  setUsername: (username: string, userType?: UserType) => void;
-  setMachine: (machine: string) => void;
-  getPrompt: () => string;
-}
+type SessionContextValue = {
+  readonly session: Session;
+  readonly setUsername: (username: string, userType?: UserType) => void;
+  readonly setMachine: (machine: string) => void;
+  readonly getPrompt: () => string;
+};
 
 const defaultSession: Session = {
   username: 'jshacker',

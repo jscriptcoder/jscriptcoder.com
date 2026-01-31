@@ -1,18 +1,18 @@
 import { useCallback } from 'react';
 
-export interface CompletionMatch {
-  name: string;
-  display: string; // name with () for functions
-}
+export type CompletionMatch = {
+  readonly name: string;
+  readonly display: string; // name with () for functions
+};
 
-export interface CompletionResult {
-  matches: CompletionMatch[];
-  displayText: string; // comma-separated list
-}
+export type CompletionResult = {
+  readonly matches: readonly CompletionMatch[];
+  readonly displayText: string; // comma-separated list
+};
 
 export const useAutoComplete = (
-  commandNames: string[],
-  variableNames: string[] = []
+  commandNames: readonly string[],
+  variableNames: readonly string[] = []
 ) => {
   const getCompletions = useCallback((input: string): CompletionResult => {
     const trimmed = input.trim();

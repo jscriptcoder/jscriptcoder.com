@@ -17,6 +17,16 @@
 - **Issue**: Single `validatePassword` function needed to handle both cases
 - **Solution**: Check `sshTargetIP` state to determine which validation path to use
 
+### Type assertions hide bugs
+- **Context**: Using `result as AuthorData` to tell TypeScript the type
+- **Issue**: Assertions bypass type checking; if result isn't actually AuthorData, runtime error
+- **Solution**: Use type guards that verify the structure: `if (isAuthorData(result)) { ... }`
+
+### Readonly arrays need explicit parameter types
+- **Context**: Passing `readonly string[]` to a function expecting `string[]`
+- **Issue**: TypeScript error "readonly cannot be assigned to mutable type"
+- **Solution**: Update function parameters to accept `readonly string[]`
+
 ## Patterns That Worked
 
 ### Command factory pattern with context injection
@@ -40,9 +50,19 @@
 - **Example**: `setFileSystem(prev => updateNodeAtPath(prev, parts, node => ({ ...node, content })))`
 
 ### Readonly types throughout
-- **What**: All interface properties marked `readonly`, arrays as `readonly T[]`
+- **What**: All type properties marked `readonly`, arrays as `readonly T[]`
 - **Why it works**: TypeScript enforces immutability at compile time, prevents accidental mutations
 - **Example**: `readonly ports: readonly Port[]` instead of `ports: Port[]`
+
+### Type guards for discriminated unions
+- **What**: Create predicate functions like `isAuthorData(value): value is AuthorData`
+- **Why it works**: Replaces type assertions (`as Type`) with type-safe narrowing, compiler verifies correctness
+- **Example**: `if (isAsyncOutput(result)) { result.start(...) }` - no assertion needed
+
+### `type` over `interface` for data structures
+- **What**: Use `type` for all data shapes, reserve `interface` for behavior contracts (rare)
+- **Why it works**: Types support unions, intersections, mapped types better; interfaces imply extensibility we don't want
+- **Example**: `type Session = { readonly username: string; ... }` instead of `interface Session { ... }`
 
 ## Decisions Made
 
@@ -69,6 +89,18 @@
 - **Decision**: Functional with immutable data, pure functions, readonly types
 - **Rationale**: Better for React (immutability helps reconciliation), easier to test, prevents bugs
 - **Trade-offs**: More verbose updates (spread operators), learning curve for mutation-heavy code
+
+### Type guards over type assertions
+- **Options considered**: Type assertions (`as Type`), type guards, runtime validation libraries
+- **Decision**: Type guard functions for discriminated unions
+- **Rationale**: Compiler-verified correctness, no runtime overhead, self-documenting code
+- **Trade-offs**: More boilerplate (one function per variant), but safer and cleaner usage
+
+### `type` keyword for all data structures
+- **Options considered**: `interface` everywhere, `type` everywhere, mixed approach
+- **Decision**: `type` for data, `interface` only for behavior contracts (none currently)
+- **Rationale**: Consistent style, types handle unions/intersections better, no accidental extension
+- **Trade-offs**: Slightly different syntax (= vs {), but more explicit about intent
 
 ## Edge Cases
 

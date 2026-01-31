@@ -1,24 +1,24 @@
 import type { UserType } from '../context/SessionContext';
 
-export interface FilePermissions {
+export type FilePermissions = {
   readonly read: readonly UserType[];
   readonly write: readonly UserType[];
-}
+};
 
-export interface FileNode {
+export type FileNode = {
   readonly name: string;
   readonly type: 'file' | 'directory';
   readonly owner: UserType;
   readonly permissions: FilePermissions;
   readonly content?: string;
   readonly children?: Readonly<Record<string, FileNode>>;
-}
+};
 
-export interface FileSystem {
+export type FileSystem = {
   readonly root: FileNode;
-}
+};
 
-export interface PermissionResult {
+export type PermissionResult = {
   readonly allowed: boolean;
   readonly error?: string;
-}
+};

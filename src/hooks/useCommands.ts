@@ -9,10 +9,10 @@ import { createManCommand } from '../commands/man';
 import { useFileSystemCommands } from './useFileSystemCommands';
 import { useNetworkCommands } from './useNetworkCommands';
 
-interface UseCommandsResult {
-  executionContext: Record<string, (...args: unknown[]) => unknown>;
-  commandNames: string[];
-}
+type UseCommandsResult = {
+  readonly executionContext: Record<string, (...args: unknown[]) => unknown>;
+  readonly commandNames: readonly string[];
+};
 
 export const useCommands = (): UseCommandsResult => {
   const fileSystemCommands = useFileSystemCommands();

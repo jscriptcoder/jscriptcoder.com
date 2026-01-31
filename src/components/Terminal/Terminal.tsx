@@ -9,7 +9,8 @@ import { useSession } from '../../context/SessionContext';
 import { useFileSystem } from '../../filesystem/FileSystemContext';
 import { useNetwork } from '../../network';
 import { md5 } from '../../utils/md5';
-import type { OutputLine, AuthorData, PasswordPromptData, AsyncOutput, SshPromptData } from './types';
+import type { OutputLine, AuthorData, SshPromptData } from './types';
+import { isAuthorData, isPasswordPrompt, isClearOutput, isAsyncOutput, isSshPrompt } from './types';
 import type { UserType } from '../../context/SessionContext';
 
 const BANNER = `
@@ -110,49 +111,45 @@ export const Terminal = () => {
 
       // Display result if not undefined
       if (result !== undefined) {
-        // Check for special result types
-        if (result && typeof result === 'object' && '__type' in result) {
-          if (result.__type === 'clear') {
-            clearLines();
-            return;
-          }
-          if (result.__type === 'author') {
-            addLine('author', result as AuthorData);
-            return;
-          }
-          if (result.__type === 'password_prompt') {
-            const promptData = result as PasswordPromptData;
-            setTargetUser(promptData.targetUser);
-            setPasswordMode(true);
-            addLine('result', 'Password:');
-            return;
-          }
-          if (result.__type === 'async') {
-            const asyncResult = result as AsyncOutput;
-            setAsyncRunning(true);
-            asyncCancelRef.current = asyncResult.cancel ?? null;
+        // Check for special result types using type guards
+        if (isClearOutput(result)) {
+          clearLines();
+          return;
+        }
+        if (isAuthorData(result)) {
+          addLine('author', result);
+          return;
+        }
+        if (isPasswordPrompt(result)) {
+          setTargetUser(result.targetUser);
+          setPasswordMode(true);
+          addLine('result', 'Password:');
+          return;
+        }
+        if (isAsyncOutput(result)) {
+          setAsyncRunning(true);
+          asyncCancelRef.current = result.cancel ?? null;
 
-            asyncResult.start(
-              // onLine callback
-              (line: string) => {
-                addLine('result', line);
-              },
-              // onComplete callback with optional follow-up
-              (followUp?: SshPromptData) => {
-                setAsyncRunning(false);
-                asyncCancelRef.current = null;
+          result.start(
+            // onLine callback
+            (line: string) => {
+              addLine('result', line);
+            },
+            // onComplete callback with optional follow-up
+            (followUp?: SshPromptData) => {
+              setAsyncRunning(false);
+              asyncCancelRef.current = null;
 
-                // Handle SSH prompt follow-up
-                if (followUp && followUp.__type === 'ssh_prompt') {
-                  setTargetUser(followUp.targetUser);
-                  setSshTargetIP(followUp.targetIP);
-                  setPasswordMode(true);
-                  addLine('result', `${followUp.targetUser}@${followUp.targetIP}'s password:`);
-                }
+              // Handle SSH prompt follow-up
+              if (isSshPrompt(followUp)) {
+                setTargetUser(followUp.targetUser);
+                setSshTargetIP(followUp.targetIP);
+                setPasswordMode(true);
+                addLine('result', `${followUp.targetUser}@${followUp.targetIP}'s password:`);
               }
-            );
-            return;
-          }
+            }
+          );
+          return;
         }
         const resultStr = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
         addLine('result', resultStr);
