@@ -2,8 +2,8 @@ import type { Command } from '../components/Terminal/types';
 import type { NetworkInterface } from '../network/types';
 
 interface IfconfigContext {
-  getInterfaces: () => NetworkInterface[];
-  getInterface: (name: string) => NetworkInterface | undefined;
+  readonly getInterfaces: () => readonly NetworkInterface[];
+  readonly getInterface: (name: string) => NetworkInterface | undefined;
 }
 
 const formatInterface = (iface: NetworkInterface): string => {

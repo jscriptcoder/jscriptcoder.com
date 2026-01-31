@@ -3,15 +3,15 @@ import type { NetworkConfig, NetworkInterface, RemoteMachine, DnsRecord } from '
 import { createInitialNetwork } from './initialNetwork';
 
 interface NetworkContextType {
-  config: NetworkConfig;
-  getInterface: (name: string) => NetworkInterface | undefined;
-  getInterfaces: () => NetworkInterface[];
-  getMachine: (ip: string) => RemoteMachine | undefined;
-  getMachines: () => RemoteMachine[];
-  getGateway: () => string;
-  getLocalIP: () => string;
-  resolveDomain: (domain: string) => DnsRecord | undefined;
-  getDnsRecords: () => DnsRecord[];
+  readonly config: NetworkConfig;
+  readonly getInterface: (name: string) => NetworkInterface | undefined;
+  readonly getInterfaces: () => readonly NetworkInterface[];
+  readonly getMachine: (ip: string) => RemoteMachine | undefined;
+  readonly getMachines: () => readonly RemoteMachine[];
+  readonly getGateway: () => string;
+  readonly getLocalIP: () => string;
+  readonly resolveDomain: (domain: string) => DnsRecord | undefined;
+  readonly getDnsRecords: () => readonly DnsRecord[];
 }
 
 const NetworkContext = createContext<NetworkContextType | null>(null);
@@ -23,7 +23,7 @@ export const NetworkProvider = ({ children }: { children: ReactNode }) => {
     return config.interfaces.find(iface => iface.name === name);
   }, [config.interfaces]);
 
-  const getInterfaces = useCallback((): NetworkInterface[] => {
+  const getInterfaces = useCallback((): readonly NetworkInterface[] => {
     return config.interfaces;
   }, [config.interfaces]);
 
@@ -31,7 +31,7 @@ export const NetworkProvider = ({ children }: { children: ReactNode }) => {
     return config.machines.find(machine => machine.ip === ip);
   }, [config.machines]);
 
-  const getMachines = useCallback((): RemoteMachine[] => {
+  const getMachines = useCallback((): readonly RemoteMachine[] => {
     return config.machines;
   }, [config.machines]);
 
@@ -50,7 +50,7 @@ export const NetworkProvider = ({ children }: { children: ReactNode }) => {
     return config.dnsRecords.find(record => record.domain.toLowerCase() === normalizedDomain);
   }, [config.dnsRecords]);
 
-  const getDnsRecords = useCallback((): DnsRecord[] => {
+  const getDnsRecords = useCallback((): readonly DnsRecord[] => {
     return config.dnsRecords;
   }, [config.dnsRecords]);
 

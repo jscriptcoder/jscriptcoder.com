@@ -1,36 +1,39 @@
 export interface NetworkInterface {
-  name: string;
-  flags: string[];
-  inet: string;
-  netmask: string;
-  gateway: string;
-  mac: string;
+  readonly name: string;
+  readonly flags: readonly string[];
+  readonly inet: string;
+  readonly netmask: string;
+  readonly gateway: string;
+  readonly mac: string;
+}
+
+export interface Port {
+  readonly port: number;
+  readonly service: string;
+  readonly open: boolean;
+}
+
+export interface RemoteUser {
+  readonly username: string;
+  readonly passwordHash: string;
+  readonly userType: 'root' | 'user' | 'guest';
 }
 
 export interface RemoteMachine {
-  ip: string;
-  hostname: string;
-  ports: {
-    port: number;
-    service: string;
-    open: boolean;
-  }[];
-  // Each remote machine has its own filesystem
-  users: {
-    username: string;
-    passwordHash: string;
-    userType: 'root' | 'user' | 'guest';
-  }[];
+  readonly ip: string;
+  readonly hostname: string;
+  readonly ports: readonly Port[];
+  readonly users: readonly RemoteUser[];
 }
 
 export interface DnsRecord {
-  domain: string;
-  ip: string;
-  type: 'A'; // Only A records for now
+  readonly domain: string;
+  readonly ip: string;
+  readonly type: 'A';
 }
 
 export interface NetworkConfig {
-  interfaces: NetworkInterface[];
-  machines: RemoteMachine[];
-  dnsRecords: DnsRecord[];
+  readonly interfaces: readonly NetworkInterface[];
+  readonly machines: readonly RemoteMachine[];
+  readonly dnsRecords: readonly DnsRecord[];
 }

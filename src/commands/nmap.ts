@@ -3,9 +3,9 @@ import type { RemoteMachine } from '../network/types';
 import { isValidIP, parseIPRange } from '../utils/network';
 
 interface NmapContext {
-  getMachine: (ip: string) => RemoteMachine | undefined;
-  getMachines: () => RemoteMachine[];
-  getLocalIP: () => string;
+  readonly getMachine: (ip: string) => RemoteMachine | undefined;
+  readonly getMachines: () => readonly RemoteMachine[];
+  readonly getLocalIP: () => string;
 }
 
 // Delay constants for realistic scanning simulation
