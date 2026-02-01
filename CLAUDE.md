@@ -95,7 +95,8 @@ src/
 │   └── SessionContext.tsx  # Global session state (user, machine, prompt)
 ├── filesystem/
 │   ├── FileSystemContext.tsx  # Virtual filesystem context and operations
-│   ├── initialFileSystem.ts   # File system structure with passwords
+│   ├── fileSystemFactory.ts   # Factory function for generating filesystems
+│   ├── machineFileSystems.ts  # Per-machine filesystem configurations
 │   └── types.ts               # FileNode, FilePermissions types
 ├── hooks/
 │   ├── useCommandHistory.ts      # Up/down arrow command history
@@ -125,7 +126,11 @@ src/
 │   ├── ping.ts             # ping(host) - test network connectivity
 │   ├── nmap.ts             # nmap(target) - network scanning and port discovery
 │   ├── nslookup.ts         # nslookup(domain) - DNS domain resolution
-│   └── ssh.ts              # ssh(user, host) - secure shell connection
+│   ├── ssh.ts              # ssh(user, host) - secure shell connection
+│   ├── file-system-commands.test.ts  # Tests for ls, cd, cat
+│   ├── utility-commands.test.ts      # Tests for echo, help, man
+│   ├── session-commands.test.ts      # Tests for su
+│   └── network-commands.test.ts      # Tests for ifconfig, ping, nslookup, nmap
 ├── utils/
 │   ├── md5.ts              # MD5 hashing for password validation
 │   └── network.ts          # Network utilities (IP validation, range parsing)
@@ -207,20 +212,37 @@ To add a command:
 
 ### Virtual File System
 
-The terminal includes a virtual Unix-like file system (`src/filesystem/`):
+The terminal includes a virtual Unix-like file system (`src/filesystem/`). Each machine (localhost and remote) has its own filesystem with unique content and users.
 
-**Directory Structure:**
+**Per-Machine Filesystems** (`machineFileSystems.ts`):
+- `localhost` (192.168.1.100): jshacker, guest, root - starting machine
+- `gateway` (192.168.1.1): admin - router with config backups
+- `fileserver` (192.168.1.50): ftpuser, root - FTP server with /srv/ftp
+- `webserver` (192.168.1.75): www-data, root - web server with /var/www
+- `darknet` (203.0.113.42): ghost, root - mysterious server with final flag
+
+**Common Directory Structure:**
 ```
 /
 ├── root/           # Root user home (root only)
 ├── home/
-│   ├── jshacker/   # Default user home
-│   └── guest/      # Guest user home
+│   └── [users]/    # Home directories for each user
 ├── etc/
 │   └── passwd      # User passwords (MD5 hashed)
 ├── var/
-│   └── log/        # Log files
+│   └── log/        # Log files with hints
 └── tmp/            # Temporary files (world writable)
+```
+
+**Filesystem Factory** (`fileSystemFactory.ts`):
+```typescript
+const config: MachineFileSystemConfig = {
+  users: [...],           // Users with password hashes
+  rootContent: {...},     // Custom /root content
+  varLogContent: {...},   // Log files with hints
+  extraDirectories: {...} // Machine-specific directories
+};
+const fs = createFileSystem(config);
 ```
 
 **Permission System:**

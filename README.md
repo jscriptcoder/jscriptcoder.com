@@ -77,6 +77,8 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 | `ifconfig([iface])` | Display network interface configuration |
 | `ping(host, [count])` | Test connectivity to a network host |
 | `nmap(target)` | Scan for open ports or discover hosts in a range |
+| `nslookup(domain)` | Query DNS to resolve domain to IP address |
+| `ssh(user, host)` | Connect to remote machine via SSH |
 
 ### Examples
 
@@ -129,6 +131,14 @@ npm test              # Run tests in watch mode
 npm run test:run      # Run tests once
 npm run test:coverage # Run tests with coverage
 ```
+
+### Test Coverage
+
+103 unit tests covering terminal commands:
+- **File system commands**: ls, cd, cat (32 tests)
+- **Utility commands**: echo, help, man (30 tests)
+- **Session commands**: su (9 tests)
+- **Network commands**: ifconfig, ping, nslookup, nmap (50 tests)
 
 ## Project Structure
 

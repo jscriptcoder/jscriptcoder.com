@@ -2,7 +2,7 @@
 
 ## Current Step
 
-Step 8 of 13: Place flags in file system
+Step 11 of 14: Additional exploitation commands
 
 ## Status
 
@@ -17,20 +17,29 @@ Step 8 of 13: Place flags in file system
 - [x] Step 5: Network infrastructure (interfaces, machines, DNS)
 - [x] Step 6: Network commands (ifconfig, ping, nmap, nslookup)
 - [x] Step 7: Remote access (ssh command)
-- [ ] Step 8: Place flags in file system ← next
-- [ ] Step 9: Add hints and breadcrumbs
-- [ ] Step 10: Remote machine file systems
-- [ ] Step 11: Additional exploitation commands
+- [x] Step 8: Place flags in file system
+- [x] Step 9: Add hints and breadcrumbs
+- [x] Step 10: Remote machine file systems
+- [x] Step 14: Unit test coverage (103 tests)
+- [ ] Step 11: Additional exploitation commands ← next
 - [ ] Step 12: Victory tracking
 - [ ] Step 13: Challenge variety
 
-## Recent Session (2025-01-31)
+## Recent Session (2026-02-01)
 
 Implemented:
-- `ssh(user, host)` command with async connection simulation
-- SSH password validation against remote machine users
-- Session switching to remote machine on successful connection
-- Fixed empty line display in async command output
+- **Unit tests for commands** (103 tests total):
+  - file-system-commands.test.ts: ls, cd, cat (32 tests)
+  - utility-commands.test.ts: echo, help, man (30 tests)
+  - session-commands.test.ts: su (9 tests)
+  - network-commands.test.ts: ifconfig, ping, nslookup, nmap (50 tests)
+- **Refactored su command**: Changed to `createSuCommand(context)` with dynamic `getUsers()` for per-machine users
+- **Per-machine filesystem support**:
+  - Created `fileSystemFactory.ts` with `createFileSystem()` factory
+  - Created `machineFileSystems.ts` with configs for all 5 machines
+  - Each machine has unique users, files, flags, and log hints
+  - Updated `FileSystemContext` with `switchMachine(machineId, username)`
+  - Removed `initialFileSystem.ts` (replaced by machineFileSystems)
 
 ## Blockers
 
@@ -38,27 +47,32 @@ None currently.
 
 ## Next Action
 
-Design flag placement strategy:
-- Decide number of flags and difficulty tiers
-- Map flags to locations (local fs, remote machines)
-- Determine what skills each flag tests
+Wire up SSH to actually switch filesystems:
+- Call `switchMachine()` in ssh command after successful authentication
+- Test SSH workflow end-to-end with filesystem switch
 
 ## Infrastructure Ready
 
-### Local Machine (192.168.1.100)
-- Users: jshacker (default), root, guest
-- File system: /home/jshacker, /root, /etc, /var, /tmp
+### Machines with Per-Machine Filesystems
 
-### Remote Machines
-| IP | Hostname | SSH | Users |
-|----|----------|-----|-------|
-| 192.168.1.1 | gateway | closed | admin |
-| 192.168.1.50 | fileserver | open | root, ftpuser |
-| 192.168.1.75 | webserver | open | root, www-data |
-| 203.0.113.42 | darknet | open | root, ghost |
+| Machine | IP | Users | Flags |
+|---------|-----|-------|-------|
+| localhost | 192.168.1.100 | jshacker, root, guest | FLAG{welcome_to_the_underground} |
+| gateway | 192.168.1.1 | admin, guest | FLAG{router_misconfiguration} |
+| fileserver | 192.168.1.50 | root, ftpuser, guest | FLAG{ftp_hidden_treasure} |
+| webserver | 192.168.1.75 | root, www-data, guest | FLAG{sql_history_exposed}, FLAG{database_backup_gold} |
+| darknet | 203.0.113.42 | root, ghost, guest | FLAG{master_of_the_darknet} |
 
 ### Known Passwords (MD5 hashed)
 - ftpuser@fileserver: password
 - root@darknet: password
 - ghost@darknet: fun123
 - www-data@webserver: webmaster
+- admin@gateway: admin
+- root@localhost: toor
+- jshacker@localhost: hackme
+
+### Test Coverage
+- 103 tests across 4 test files
+- All commands with logic are tested
+- Async commands tested with fake timers

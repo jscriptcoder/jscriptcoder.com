@@ -102,6 +102,28 @@
 - **Rationale**: Consistent style, types handle unions/intersections better, no accidental extension
 - **Trade-offs**: Slightly different syntax (= vs {), but more explicit about intent
 
+## Testing Patterns
+
+### Factory functions for mock contexts
+- **What**: Create `createMockContext(config)` functions that return complete mock objects with sensible defaults
+- **Why it works**: Tests are isolated, each test gets fresh state, easy to override specific values
+- **Example**: `const context = createMockFileSystemContext({ userType: 'guest', fileSystem: { '/root': restrictedDir } })`
+
+### Fake timers for async commands
+- **What**: Use `vi.useFakeTimers()` and `vi.advanceTimersByTime(ms)` to test async streaming commands
+- **Why it works**: Tests run instantly, deterministic timing, can test intermediate states
+- **Example**: `vi.advanceTimersByTime(800)` to trigger first ping response
+
+### Type guards for async output validation
+- **What**: Create `isAsyncOutput(value)` type guard to safely check command returns AsyncOutput
+- **Why it works**: TypeScript narrows the type, tests can safely call `result.start()` and `result.cancel()`
+- **Example**: `if (isAsyncOutput(result)) { result.start(onLine, onComplete); }`
+
+### Behavior-focused test grouping
+- **What**: Group tests by command behavior (e.g., "error handling", "listing", "formatting") not by implementation
+- **Why it works**: Tests remain valid when implementation changes, documents expected behavior
+- **Example**: `describe('error handling', () => { ... })`, `describe('ping execution', () => { ... })`
+
 ## Edge Cases
 
 - SSH to localhost: Rejected with "cannot connect to localhost via SSH"
@@ -109,3 +131,4 @@
 - SSH with non-existent user: "Permission denied (publickey,password)"
 - nmap on IP range: Scans sequentially with delays, shows live hosts only
 - Empty command input: Silently ignored, no error
+- su with dynamic users: Uses `getUsers()` context to support different machines
