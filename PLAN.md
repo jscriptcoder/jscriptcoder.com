@@ -85,3 +85,87 @@ Build a web-based CTF (Capture The Flag) hacking game where players use a JavaSc
 - utility-commands.test.ts: echo, help, man (30 tests)
 - session-commands.test.ts: su (9 tests)
 - network-commands.test.ts: ifconfig, ping, nslookup, nmap (50 tests)
+
+## Future Ideas: Alternative Connection Methods
+
+### FTP Command
+Connect to machines with FTP service (port 21). Limited commands within FTP session:
+- `ftp_ls()` - List remote directory
+- `ftp_cd(path)` - Change remote directory
+- `ftp_get(file)` - Download file to local /tmp
+- `ftp_put(file)` - Upload file to remote (if writable)
+- `ftp_quit()` - Exit FTP session
+
+**Use case**: fileserver (192.168.1.50) has FTP open. Players can explore /srv/ftp anonymously or with ftpuser credentials to find hidden files.
+
+### Telnet Command
+For machines with SSH closed but telnet open (port 23). Less secure, used on legacy/misconfigured systems.
+- `telnet(host)` - Connect to telnet service
+- Would enter a limited shell like FTP
+
+**Use case**: Add a legacy machine with telnet only, no SSH. Forces players to use older protocol.
+
+### Netcat (nc) Command
+Swiss army knife for network connections. Connect to arbitrary ports, useful for:
+- Backdoor connections on unusual ports
+- Banner grabbing
+- Connecting to services without dedicated clients
+
+```javascript
+nc("192.168.1.75", 8080)  // Connect to hidden service
+nc("-l", 4444)            // Listen mode (for reverse shells)
+```
+
+**Use case**: webserver has a hidden backdoor on port 8080 that nc can connect to.
+
+### curl Command
+HTTP client for web exploitation:
+- `curl(url)` - Fetch URL content
+- `curl("-X", "POST", url, data)` - POST requests
+- `curl("-d", "cmd=ls", url)` - Form data
+
+**Use cases**:
+- Fetch robots.txt revealing hidden paths
+- Exploit command injection in web apps
+- Access admin panels with default credentials
+- Download sensitive files via path traversal
+
+### mysql Command
+Database client for machines with MySQL (port 3306):
+- `mysql("-u", "user", "-p", "password", "host")` - Connect
+- Would enter SQL prompt mode with limited commands
+
+**Use case**: webserver has MySQL. Players find DB credentials in config.php, connect to dump user tables with password hashes.
+
+### Limited Shell Concept
+When connected via non-SSH methods (ftp, telnet, nc), players get a restricted environment:
+- Different prompt (e.g., `ftp>`, `telnet>`, `$`)
+- Only method-appropriate commands available
+- Can't access local filesystem
+- `exit` or `quit` returns to normal terminal
+
+### Attack Path Examples
+
+**fileserver via FTP:**
+1. `nmap("192.168.1.50")` - Find FTP open
+2. `ftp("192.168.1.50")` - Connect anonymously
+3. `ftp_cd(".hidden")` - Find hidden directory
+4. `ftp_get("backup.tar.gz")` - Download to /tmp
+5. Back in local shell, `cat("/tmp/backup.tar.gz")` - Find flag
+
+**webserver via curl + mysql:**
+1. `curl("http://192.168.1.75/robots.txt")` - Find /admin
+2. `curl("http://192.168.1.75/admin/config.php.bak")` - Get DB creds
+3. `mysql("-u", "admin", "-p", "db_pass_123", "192.168.1.75")` - Connect
+4. `SELECT * FROM users;` - Find password hashes
+5. Crack hash, SSH in as admin
+
+**gateway via telnet:**
+1. `nmap("192.168.1.1")` - SSH closed, telnet open
+2. `telnet("192.168.1.1")` - Connect with default admin:admin
+3. Navigate to /var/log to find hints about other machines
+
+**darknet via nc backdoor:**
+1. `nmap("203.0.113.42")` - Find unusual port 31337 open
+2. `nc("203.0.113.42", 31337)` - Connect to backdoor
+3. Limited shell access, find breadcrumbs to real credentials
