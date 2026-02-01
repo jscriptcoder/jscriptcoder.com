@@ -7,21 +7,23 @@ import {
 } from 'react';
 import type { FileNode, PermissionResult } from './types';
 import type { UserType } from '../context/SessionContext';
-import { createInitialFileSystem } from './initialFileSystem';
+import { machineFileSystems, getDefaultHomePath, type MachineId } from './machineFileSystems';
 
-interface FileSystemContextValue {
-  fileSystem: FileNode;
-  currentPath: string;
-  setCurrentPath: (path: string) => void;
-  resolvePath: (path: string) => string;
-  getNode: (path: string) => FileNode | null;
-  canRead: (path: string, userType: UserType) => PermissionResult;
-  canWrite: (path: string, userType: UserType) => PermissionResult;
-  listDirectory: (path: string, userType: UserType) => string[] | null;
-  readFile: (path: string, userType: UserType) => string | null;
-  writeFile: (path: string, content: string, userType: UserType) => PermissionResult;
-  createFile: (path: string, content: string, userType: UserType) => PermissionResult;
-}
+type FileSystemContextValue = {
+  readonly fileSystem: FileNode;
+  readonly currentPath: string;
+  readonly currentMachine: MachineId;
+  readonly setCurrentPath: (path: string) => void;
+  readonly resolvePath: (path: string) => string;
+  readonly getNode: (path: string) => FileNode | null;
+  readonly canRead: (path: string, userType: UserType) => PermissionResult;
+  readonly canWrite: (path: string, userType: UserType) => PermissionResult;
+  readonly listDirectory: (path: string, userType: UserType) => string[] | null;
+  readonly readFile: (path: string, userType: UserType) => string | null;
+  readonly writeFile: (path: string, content: string, userType: UserType) => PermissionResult;
+  readonly createFile: (path: string, content: string, userType: UserType) => PermissionResult;
+  readonly switchMachine: (machineId: MachineId, username: string) => void;
+};
 
 const FileSystemContext = createContext<FileSystemContextValue | null>(null);
 
@@ -74,7 +76,8 @@ const addChildAtPath = (
 };
 
 export const FileSystemProvider = ({ children }: { children: ReactNode }) => {
-  const [fileSystem, setFileSystem] = useState<FileNode>(createInitialFileSystem);
+  const [currentMachine, setCurrentMachine] = useState<MachineId>('localhost');
+  const [fileSystem, setFileSystem] = useState<FileNode>(() => machineFileSystems['localhost']);
   const [currentPath, setCurrentPath] = useState('/home/jshacker');
 
   const normalizePath = (path: string): string => {
@@ -187,11 +190,21 @@ export const FileSystemProvider = ({ children }: { children: ReactNode }) => {
     return { allowed: true };
   }, [resolvePath, canWrite, getNode]);
 
+  const switchMachine = useCallback((machineId: MachineId, username: string) => {
+    const newFileSystem = machineFileSystems[machineId];
+    if (!newFileSystem) return;
+
+    setCurrentMachine(machineId);
+    setFileSystem(newFileSystem);
+    setCurrentPath(getDefaultHomePath(machineId, username));
+  }, []);
+
   return (
     <FileSystemContext.Provider
       value={{
         fileSystem,
         currentPath,
+        currentMachine,
         setCurrentPath,
         resolvePath,
         getNode,
@@ -201,6 +214,7 @@ export const FileSystemProvider = ({ children }: { children: ReactNode }) => {
         readFile,
         writeFile,
         createFile,
+        switchMachine,
       }}
     >
       {children}

@@ -1,3 +1,4 @@
 export * from './types';
 export * from './FileSystemContext';
-export * from './initialFileSystem';
+export * from './fileSystemFactory';
+export * from './machineFileSystems';
