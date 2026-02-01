@@ -1,13 +1,17 @@
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import type { Command } from '../components/Terminal/types';
 import { echoCommand } from '../commands/echo';
 import { authorCommand } from '../commands/author';
 import { clearCommand } from '../commands/clear';
-import { suCommand } from '../commands/su';
+import { createSuCommand } from '../commands/su';
 import { createHelpCommand } from '../commands/help';
 import { createManCommand } from '../commands/man';
 import { useFileSystemCommands } from './useFileSystemCommands';
 import { useNetworkCommands } from './useNetworkCommands';
+import { useSession } from '../context/SessionContext';
+import { useNetwork } from '../network';
+
+const LOCAL_USERS = ['root', 'jshacker', 'guest'] as const;
 
 type UseCommandsResult = {
   readonly executionContext: Record<string, (...args: unknown[]) => unknown>;
@@ -17,6 +21,16 @@ type UseCommandsResult = {
 export const useCommands = (): UseCommandsResult => {
   const fileSystemCommands = useFileSystemCommands();
   const networkCommands = useNetworkCommands();
+  const { session } = useSession();
+  const { getMachine } = useNetwork();
+
+  const getUsers = useCallback((): readonly string[] => {
+    if (session.machine === 'localhost') {
+      return LOCAL_USERS;
+    }
+    const machine = getMachine(session.machine);
+    return machine?.users.map((u) => u.username) ?? [];
+  }, [session.machine, getMachine]);
 
   return useMemo(() => {
     const commands = new Map<string, Command>();
@@ -25,6 +39,9 @@ export const useCommands = (): UseCommandsResult => {
     commands.set('echo', echoCommand);
     commands.set('author', authorCommand);
     commands.set('clear', clearCommand);
+
+    // User commands (depends on current machine)
+    const suCommand = createSuCommand({ getUsers });
     commands.set('su', suCommand);
 
     // Filesystem commands
@@ -53,5 +70,5 @@ export const useCommands = (): UseCommandsResult => {
     const commandNames = Array.from(commands.keys());
 
     return { executionContext, commandNames };
-  }, [fileSystemCommands, networkCommands]);
+  }, [fileSystemCommands, networkCommands, getUsers]);
 };

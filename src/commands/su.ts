@@ -1,11 +1,15 @@
 import type { Command } from '../components/Terminal/types';
 
-export interface PasswordPromptData {
-  __type: 'password_prompt';
-  targetUser: string;
-}
+export type PasswordPromptData = {
+  readonly __type: 'password_prompt';
+  readonly targetUser: string;
+};
 
-export const suCommand: Command = {
+type SuContext = {
+  readonly getUsers: () => readonly string[];
+};
+
+export const createSuCommand = (context: SuContext): Command => ({
   name: 'su',
   description: 'Switch user',
   manual: {
@@ -31,15 +35,14 @@ export const suCommand: Command = {
       throw new Error('su: missing username\nUsage: su("username")');
     }
 
-    const validUsers = ['root', 'jshacker', 'guest'];
+    const validUsers = context.getUsers();
     if (!validUsers.includes(username)) {
       throw new Error(`su: user ${username} does not exist`);
     }
 
-    // Return a special object that Terminal will recognize
     return {
       __type: 'password_prompt',
       targetUser: username,
     };
   },
-};
+});
