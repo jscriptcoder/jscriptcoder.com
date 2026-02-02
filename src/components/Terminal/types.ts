@@ -30,11 +30,22 @@ export type ExitOutput = {
   readonly __type: 'exit';
 };
 
+export type FtpPromptData = {
+  readonly __type: 'ftp_prompt';
+  readonly targetIP: string;
+};
+
+export type FtpQuitOutput = {
+  readonly __type: 'ftp_quit';
+};
+
+export type AsyncFollowUp = SshPromptData | FtpPromptData;
+
 export type AsyncOutput = {
   readonly __type: 'async';
   readonly start: (
     onLine: (line: string) => void,
-    onComplete: (followUp?: SshPromptData) => void
+    onComplete: (followUp?: AsyncFollowUp) => void
   ) => void;
   readonly cancel?: () => void;
 };
@@ -46,6 +57,8 @@ export type SpecialOutput =
   | SshPromptData
   | ClearOutput
   | ExitOutput
+  | FtpPromptData
+  | FtpQuitOutput
   | AsyncOutput;
 
 export type OutputLine = {
@@ -98,6 +111,12 @@ export const isClearOutput = (value: unknown): value is ClearOutput =>
 
 export const isExitOutput = (value: unknown): value is ExitOutput =>
   isSpecialOutput(value) && value.__type === 'exit';
+
+export const isFtpPrompt = (value: unknown): value is FtpPromptData =>
+  isSpecialOutput(value) && value.__type === 'ftp_prompt';
+
+export const isFtpQuit = (value: unknown): value is FtpQuitOutput =>
+  isSpecialOutput(value) && value.__type === 'ftp_quit';
 
 export const isAsyncOutput = (value: unknown): value is AsyncOutput =>
   isSpecialOutput(value) && value.__type === 'async';

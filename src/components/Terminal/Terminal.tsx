@@ -5,12 +5,15 @@ import { useCommandHistory } from '../../hooks/useCommandHistory';
 import { useAutoComplete } from '../../hooks/useAutoComplete';
 import { useVariables } from '../../hooks/useVariables';
 import { useCommands } from '../../hooks/useCommands';
+import { useFtpCommands } from '../../hooks/useFtpCommands';
 import { useSession } from '../../context/SessionContext';
+import type { FtpSession } from '../../context/SessionContext';
 import { useFileSystem } from '../../filesystem/FileSystemContext';
 import { useNetwork } from '../../network';
 import { md5 } from '../../utils/md5';
-import type { OutputLine, AuthorData, SshPromptData } from './types';
-import { isAuthorData, isPasswordPrompt, isClearOutput, isExitOutput, isAsyncOutput, isSshPrompt } from './types';
+import type { OutputLine, AuthorData } from './types';
+import { isAuthorData, isPasswordPrompt, isClearOutput, isExitOutput, isAsyncOutput, isSshPrompt, isFtpPrompt, isFtpQuit } from './types';
+import type { AsyncFollowUp } from './types';
 import type { UserType } from '../../context/SessionContext';
 
 const BANNER = `
@@ -35,6 +38,8 @@ export const Terminal = () => {
   const [passwordMode, setPasswordMode] = useState(false);
   const [targetUser, setTargetUser] = useState<string | null>(null);
   const [sshTargetIP, setSshTargetIP] = useState<string | null>(null);
+  const [ftpTargetIP, setFtpTargetIP] = useState<string | null>(null);
+  const [ftpUsernameMode, setFtpUsernameMode] = useState(false);
   const [asyncRunning, setAsyncRunning] = useState(false);
   const lineIdRef = useRef(1);
   const outputRef = useRef<HTMLDivElement>(null);
@@ -42,12 +47,17 @@ export const Terminal = () => {
 
   const { addCommand, navigateUp, navigateDown, resetNavigation } = useCommandHistory();
   const { getVariables, getVariableNames, handleVariableOperation } = useVariables();
-  const { getPrompt, setUsername, setMachine, pushSession, popSession, canReturn } = useSession();
+  const { getPrompt, setUsername, setMachine, pushSession, popSession, canReturn, session, enterFtpMode, exitFtpMode, isInFtpMode } = useSession();
   const { executionContext, commandNames } = useCommands();
-  const { readFile, setCurrentPath, switchMachine, currentPath } = useFileSystem();
+  const ftpCommands = useFtpCommands();
+  const { readFile, setCurrentPath, switchMachine, currentPath, currentMachine } = useFileSystem();
   const { getMachine } = useNetwork();
 
-  const { getCompletions } = useAutoComplete(commandNames, getVariableNames());
+  // Use FTP commands for autocomplete when in FTP mode
+  const activeCommandNames = isInFtpMode() && ftpCommands
+    ? Array.from(ftpCommands.keys())
+    : commandNames;
+  const { getCompletions } = useAutoComplete(activeCommandNames, getVariableNames());
 
   // Auto-scroll to bottom when new output is added
   useEffect(() => {
@@ -95,9 +105,14 @@ export const Terminal = () => {
       }
 
       // Not a variable operation, execute as normal command
+      // Use FTP commands when in FTP mode, otherwise use normal commands
+      const activeContext = isInFtpMode() && ftpCommands
+        ? Object.fromEntries(Array.from(ftpCommands.entries()).map(([k, v]) => [k, v.fn]))
+        : executionContext;
+
       // Combine commands and variables into execution context
       const variables = getVariables();
-      const context = { ...executionContext, ...variables };
+      const context = { ...activeContext, ...variables };
 
       // Build function with context variables
       const contextKeys = Object.keys(context);
@@ -129,6 +144,13 @@ export const Terminal = () => {
           }
           return;
         }
+        if (isFtpQuit(result)) {
+          const ftpSession = exitFtpMode();
+          if (ftpSession) {
+            addLine('result', '221 Goodbye.');
+          }
+          return;
+        }
         if (isAuthorData(result)) {
           addLine('author', result);
           return;
@@ -149,7 +171,7 @@ export const Terminal = () => {
               addLine('result', line);
             },
             // onComplete callback with optional follow-up
-            (followUp?: SshPromptData) => {
+            (followUp?: AsyncFollowUp) => {
               setAsyncRunning(false);
               asyncCancelRef.current = null;
 
@@ -159,6 +181,13 @@ export const Terminal = () => {
                 setSshTargetIP(followUp.targetIP);
                 setPasswordMode(true);
                 addLine('result', `${followUp.targetUser}@${followUp.targetIP}'s password:`);
+              }
+
+              // Handle FTP prompt follow-up
+              if (isFtpPrompt(followUp)) {
+                setFtpTargetIP(followUp.targetIP);
+                setFtpUsernameMode(true);
+                addLine('result', `Name (${followUp.targetIP}:anonymous):`);
               }
             }
           );
@@ -171,7 +200,7 @@ export const Terminal = () => {
       const errorMessage = error instanceof Error ? error.message : String(error);
       addLine('error', `Error: ${errorMessage}`);
     }
-  }, [addCommand, addLine, clearLines, handleVariableOperation, getVariables, getPrompt, executionContext, canReturn, popSession, switchMachine, setCurrentPath]);
+  }, [addCommand, addLine, clearLines, handleVariableOperation, getVariables, getPrompt, executionContext, canReturn, popSession, switchMachine, setCurrentPath, isInFtpMode, ftpCommands, exitFtpMode]);
 
   const validatePassword = useCallback((password: string): boolean => {
     if (!targetUser) return false;
@@ -179,6 +208,18 @@ export const Terminal = () => {
     // SSH mode: validate against remote machine's users
     if (sshTargetIP) {
       const machine = getMachine(sshTargetIP);
+      if (!machine) return false;
+
+      const remoteUser = machine.users.find(u => u.username === targetUser);
+      if (!remoteUser) return false;
+
+      const inputHash = md5(password);
+      return remoteUser.passwordHash === inputHash;
+    }
+
+    // FTP mode: validate against remote machine's users
+    if (ftpTargetIP) {
+      const machine = getMachine(ftpTargetIP);
       if (!machine) return false;
 
       const remoteUser = machine.users.find(u => u.username === targetUser);
@@ -203,18 +244,73 @@ export const Terminal = () => {
       }
     }
     return false;
-  }, [targetUser, sshTargetIP, readFile, getMachine]);
+  }, [targetUser, sshTargetIP, ftpTargetIP, readFile, getMachine]);
+
+  const handleFtpUsernameSubmit = useCallback(() => {
+    if (!ftpTargetIP) return;
+
+    const username = input.trim() || 'anonymous';
+    addLine('command', username, `Name (${ftpTargetIP}:anonymous):`);
+
+    // Check if user exists on remote machine
+    const machine = getMachine(ftpTargetIP);
+    if (!machine) {
+      addLine('error', '530 Login incorrect.');
+      setFtpTargetIP(null);
+      setFtpUsernameMode(false);
+      setInput('');
+      return;
+    }
+
+    const remoteUser = machine.users.find(u => u.username === username);
+    if (!remoteUser) {
+      addLine('error', '530 Login incorrect.');
+      setFtpTargetIP(null);
+      setFtpUsernameMode(false);
+      setInput('');
+      return;
+    }
+
+    // Username valid, prompt for password
+    addLine('result', '331 Please specify the password.');
+    setTargetUser(username);
+    setFtpUsernameMode(false);
+    setPasswordMode(true);
+    setInput('');
+  }, [input, ftpTargetIP, getMachine, addLine]);
 
   const handlePasswordSubmit = useCallback(() => {
     // Show masked password in output
     const maskedPassword = '*'.repeat(input.length);
-    const promptLabel = sshTargetIP
-      ? `${targetUser}@${sshTargetIP}'s password:`
-      : 'Password:';
+    const promptLabel = ftpTargetIP
+      ? 'Password:'
+      : sshTargetIP
+        ? `${targetUser}@${sshTargetIP}'s password:`
+        : 'Password:';
     addLine('command', maskedPassword, promptLabel);
 
     if (validatePassword(input)) {
-      if (sshTargetIP) {
+      if (ftpTargetIP) {
+        // FTP mode: enter FTP session
+        const machine = getMachine(ftpTargetIP);
+        const remoteUser = machine?.users.find(u => u.username === targetUser);
+        const userType: UserType = remoteUser?.userType ?? 'user';
+        const remoteHomePath = targetUser === 'root' ? '/root' : `/home/${targetUser}`;
+
+        const newFtpSession: FtpSession = {
+          remoteMachine: ftpTargetIP,
+          remoteUsername: targetUser!,
+          remoteUserType: userType,
+          remoteCwd: remoteHomePath,
+          originMachine: currentMachine,
+          originUsername: session.username,
+          originUserType: session.userType,
+          originCwd: currentPath,
+        };
+
+        enterFtpMode(newFtpSession);
+        addLine('result', '230 Login successful.');
+      } else if (sshTargetIP) {
         // SSH mode: save current session and switch to remote machine
         pushSession(currentPath);
 
@@ -245,7 +341,9 @@ export const Terminal = () => {
         addLine('result', `Switched to user: ${targetUser}`);
       }
     } else {
-      if (sshTargetIP) {
+      if (ftpTargetIP) {
+        addLine('error', '530 Login incorrect.');
+      } else if (sshTargetIP) {
         addLine('error', `Permission denied, please try again.`);
       } else {
         addLine('error', 'su: Authentication failure');
@@ -256,18 +354,21 @@ export const Terminal = () => {
     setPasswordMode(false);
     setTargetUser(null);
     setSshTargetIP(null);
+    setFtpTargetIP(null);
     setInput('');
-  }, [input, targetUser, sshTargetIP, validatePassword, setUsername, setMachine, setCurrentPath, switchMachine, pushSession, currentPath, getMachine, addLine]);
+  }, [input, targetUser, sshTargetIP, ftpTargetIP, validatePassword, setUsername, setMachine, setCurrentPath, switchMachine, pushSession, currentPath, currentMachine, session, getMachine, enterFtpMode, addLine]);
 
   const handleSubmit = useCallback(() => {
-    if (passwordMode) {
+    if (ftpUsernameMode) {
+      handleFtpUsernameSubmit();
+    } else if (passwordMode) {
       handlePasswordSubmit();
     } else {
       executeCommand(input);
       setInput('');
     }
     resetNavigation();
-  }, [input, passwordMode, executeCommand, handlePasswordSubmit, resetNavigation]);
+  }, [input, passwordMode, ftpUsernameMode, executeCommand, handlePasswordSubmit, handleFtpUsernameSubmit, resetNavigation]);
 
   const handleHistoryUp = useCallback(() => {
     const cmd = navigateUp();
@@ -314,7 +415,7 @@ export const Terminal = () => {
         onHistoryUp={handleHistoryUp}
         onHistoryDown={handleHistoryDown}
         onTab={handleTab}
-        passwordMode={passwordMode}
+        promptMode={passwordMode ? 'password' : ftpUsernameMode ? 'username' : undefined}
         disabled={asyncRunning}
       />
     </div>

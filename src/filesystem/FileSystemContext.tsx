@@ -23,6 +23,15 @@ type FileSystemContextValue = {
   readonly writeFile: (path: string, content: string, userType: UserType) => PermissionResult;
   readonly createFile: (path: string, content: string, userType: UserType) => PermissionResult;
   readonly switchMachine: (machineId: MachineId, username: string) => void;
+  // Cross-machine operations for FTP
+  readonly resolvePathForMachine: (path: string, cwd: string) => string;
+  readonly getNodeFromMachine: (machineId: MachineId, path: string, cwd: string) => FileNode | null;
+  readonly canReadFromMachine: (machineId: MachineId, path: string, cwd: string, userType: UserType) => PermissionResult;
+  readonly canWriteFromMachine: (machineId: MachineId, path: string, cwd: string, userType: UserType) => PermissionResult;
+  readonly listDirectoryFromMachine: (machineId: MachineId, path: string, cwd: string, userType: UserType) => string[] | null;
+  readonly readFileFromMachine: (machineId: MachineId, path: string, cwd: string, userType: UserType) => string | null;
+  readonly writeFileToMachine: (machineId: MachineId, path: string, cwd: string, content: string, userType: UserType) => PermissionResult;
+  readonly createFileOnMachine: (machineId: MachineId, path: string, cwd: string, content: string, userType: UserType) => PermissionResult;
 };
 
 const FileSystemContext = createContext<FileSystemContextValue | null>(null);
@@ -75,12 +84,18 @@ const addChildAtPath = (
   };
 };
 
+type FileSystemsState = Readonly<Record<MachineId, FileNode>>;
+
+const initializeFileSystems = (): FileSystemsState => ({ ...machineFileSystems });
+
 export const FileSystemProvider = ({ children }: { children: ReactNode }) => {
   const [currentMachine, setCurrentMachine] = useState<MachineId>('localhost');
-  const [fileSystem, setFileSystem] = useState<FileNode>(() => machineFileSystems['localhost']);
+  const [fileSystems, setFileSystems] = useState<FileSystemsState>(initializeFileSystems);
   const [currentPath, setCurrentPath] = useState('/home/jshacker');
 
-  const normalizePath = (path: string): string => {
+  const fileSystem = fileSystems[currentMachine];
+
+  const normalizePath = useCallback((path: string): string => {
     const parts = path.split('/').filter(Boolean);
     const resolved = parts.reduce<readonly string[]>((acc, part) => {
       if (part === '..') return acc.slice(0, -1);
@@ -88,89 +103,121 @@ export const FileSystemProvider = ({ children }: { children: ReactNode }) => {
       return acc;
     }, []);
     return '/' + resolved.join('/');
-  };
+  }, []);
 
-  const resolvePath = useCallback((path: string): string => {
+  const resolvePathForMachine = useCallback((path: string, cwd: string): string => {
     if (path.startsWith('/')) return normalizePath(path);
     if (path === '..') {
-      const parts = currentPath.split('/').filter(Boolean);
+      const parts = cwd.split('/').filter(Boolean);
       return '/' + parts.slice(0, -1).join('/') || '/';
     }
-    if (path === '.') return currentPath;
-    const combined = currentPath === '/' ? `/${path}` : `${currentPath}/${path}`;
+    if (path === '.') return cwd;
+    const combined = cwd === '/' ? `/${path}` : `${cwd}/${path}`;
     return normalizePath(combined);
-  }, [currentPath]);
+  }, [normalizePath]);
 
-  const getNode = useCallback((path: string): FileNode | null => {
-    const resolvedPath = path.startsWith('/') ? path : resolvePath(path);
+  const resolvePath = useCallback((path: string): string => {
+    return resolvePathForMachine(path, currentPath);
+  }, [resolvePathForMachine, currentPath]);
+
+  const getNodeFromFileSystem = useCallback((fs: FileNode, resolvedPath: string): FileNode | null => {
     const parts = resolvedPath.split('/').filter(Boolean);
-
     return parts.reduce<FileNode | null>((current, part) => {
       if (!current || current.type !== 'directory' || !current.children) return null;
       return current.children[part] ?? null;
-    }, fileSystem);
-  }, [fileSystem, resolvePath]);
+    }, fs);
+  }, []);
 
-  const canRead = useCallback((path: string, userType: UserType): PermissionResult => {
-    const node = getNode(path);
+  const getNodeFromMachine = useCallback((machineId: MachineId, path: string, cwd: string): FileNode | null => {
+    const fs = fileSystems[machineId];
+    if (!fs) return null;
+    const resolvedPath = resolvePathForMachine(path, cwd);
+    return getNodeFromFileSystem(fs, resolvedPath);
+  }, [fileSystems, resolvePathForMachine, getNodeFromFileSystem]);
+
+  const getNode = useCallback((path: string): FileNode | null => {
+    const resolvedPath = path.startsWith('/') ? path : resolvePath(path);
+    return getNodeFromFileSystem(fileSystem, resolvedPath);
+  }, [fileSystem, resolvePath, getNodeFromFileSystem]);
+
+  const canReadFromMachine = useCallback((machineId: MachineId, path: string, cwd: string, userType: UserType): PermissionResult => {
+    const node = getNodeFromMachine(machineId, path, cwd);
     if (!node) return { allowed: false, error: `No such file or directory: ${path}` };
     if (!node.permissions.read.includes(userType)) return { allowed: false, error: `Permission denied: ${path}` };
     return { allowed: true };
-  }, [getNode]);
+  }, [getNodeFromMachine]);
 
-  const canWrite = useCallback((path: string, userType: UserType): PermissionResult => {
-    const node = getNode(path);
+  const canWriteFromMachine = useCallback((machineId: MachineId, path: string, cwd: string, userType: UserType): PermissionResult => {
+    const node = getNodeFromMachine(machineId, path, cwd);
     if (!node) return { allowed: false, error: `No such file or directory: ${path}` };
     if (!node.permissions.write.includes(userType)) return { allowed: false, error: `Permission denied: ${path}` };
     return { allowed: true };
-  }, [getNode]);
+  }, [getNodeFromMachine]);
 
-  const listDirectory = useCallback((path: string, userType: UserType): string[] | null => {
-    const permission = canRead(path, userType);
+  const canRead = useCallback((path: string, userType: UserType): PermissionResult => {
+    return canReadFromMachine(currentMachine, path, currentPath, userType);
+  }, [canReadFromMachine, currentMachine, currentPath]);
+
+  const canWrite = useCallback((path: string, userType: UserType): PermissionResult => {
+    return canWriteFromMachine(currentMachine, path, currentPath, userType);
+  }, [canWriteFromMachine, currentMachine, currentPath]);
+
+  const listDirectoryFromMachine = useCallback((machineId: MachineId, path: string, cwd: string, userType: UserType): string[] | null => {
+    const permission = canReadFromMachine(machineId, path, cwd, userType);
     if (!permission.allowed) return null;
 
-    const node = getNode(path);
+    const node = getNodeFromMachine(machineId, path, cwd);
     if (!node || node.type !== 'directory' || !node.children) return null;
 
     return Object.keys(node.children).sort();
-  }, [canRead, getNode]);
+  }, [canReadFromMachine, getNodeFromMachine]);
 
-  const readFile = useCallback((path: string, userType: UserType): string | null => {
-    const permission = canRead(path, userType);
+  const readFileFromMachine = useCallback((machineId: MachineId, path: string, cwd: string, userType: UserType): string | null => {
+    const permission = canReadFromMachine(machineId, path, cwd, userType);
     if (!permission.allowed) return null;
 
-    const node = getNode(path);
+    const node = getNodeFromMachine(machineId, path, cwd);
     if (!node || node.type !== 'file') return null;
 
     return node.content ?? '';
-  }, [canRead, getNode]);
+  }, [canReadFromMachine, getNodeFromMachine]);
 
-  const writeFile = useCallback((path: string, content: string, userType: UserType): PermissionResult => {
-    const permission = canWrite(path, userType);
+  const listDirectory = useCallback((path: string, userType: UserType): string[] | null => {
+    return listDirectoryFromMachine(currentMachine, path, currentPath, userType);
+  }, [listDirectoryFromMachine, currentMachine, currentPath]);
+
+  const readFile = useCallback((path: string, userType: UserType): string | null => {
+    return readFileFromMachine(currentMachine, path, currentPath, userType);
+  }, [readFileFromMachine, currentMachine, currentPath]);
+
+  const writeFileToMachine = useCallback((machineId: MachineId, path: string, cwd: string, content: string, userType: UserType): PermissionResult => {
+    const permission = canWriteFromMachine(machineId, path, cwd, userType);
     if (!permission.allowed) return permission;
 
-    const node = getNode(path);
+    const node = getNodeFromMachine(machineId, path, cwd);
     if (!node || node.type !== 'file') return { allowed: false, error: `Not a file: ${path}` };
 
-    const parts = path.split('/').filter(Boolean);
-    setFileSystem((prev) =>
-      updateNodeAtPath(prev, parts, (fileNode) => ({ ...fileNode, content }))
-    );
+    const resolvedPath = resolvePathForMachine(path, cwd);
+    const parts = resolvedPath.split('/').filter(Boolean);
+    setFileSystems((prev) => ({
+      ...prev,
+      [machineId]: updateNodeAtPath(prev[machineId], parts, (fileNode) => ({ ...fileNode, content })),
+    }));
 
     return { allowed: true };
-  }, [canWrite, getNode]);
+  }, [canWriteFromMachine, getNodeFromMachine, resolvePathForMachine]);
 
-  const createFile = useCallback((path: string, content: string, userType: UserType): PermissionResult => {
-    const resolvedPath = resolvePath(path);
+  const createFileOnMachine = useCallback((machineId: MachineId, path: string, cwd: string, content: string, userType: UserType): PermissionResult => {
+    const resolvedPath = resolvePathForMachine(path, cwd);
     const parts = resolvedPath.split('/').filter(Boolean);
     const fileName = parts[parts.length - 1];
     const dirParts = parts.slice(0, -1);
     const dirPath = '/' + dirParts.join('/') || '/';
 
-    const parentPermission = canWrite(dirPath, userType);
+    const parentPermission = canWriteFromMachine(machineId, dirPath, '/', userType);
     if (!parentPermission.allowed) return parentPermission;
 
-    const parentNode = getNode(dirPath);
+    const parentNode = getNodeFromMachine(machineId, dirPath, '/');
     if (!parentNode || parentNode.type !== 'directory') return { allowed: false, error: `Not a directory: ${dirPath}` };
     if (parentNode.children?.[fileName]) return { allowed: false, error: `File exists: ${path}` };
 
@@ -185,19 +232,28 @@ export const FileSystemProvider = ({ children }: { children: ReactNode }) => {
       content,
     };
 
-    setFileSystem((prev) => addChildAtPath(prev, dirParts, fileName, newFile));
+    setFileSystems((prev) => ({
+      ...prev,
+      [machineId]: addChildAtPath(prev[machineId], dirParts, fileName, newFile),
+    }));
 
     return { allowed: true };
-  }, [resolvePath, canWrite, getNode]);
+  }, [resolvePathForMachine, canWriteFromMachine, getNodeFromMachine]);
+
+  const writeFile = useCallback((path: string, content: string, userType: UserType): PermissionResult => {
+    return writeFileToMachine(currentMachine, path, currentPath, content, userType);
+  }, [writeFileToMachine, currentMachine, currentPath]);
+
+  const createFile = useCallback((path: string, content: string, userType: UserType): PermissionResult => {
+    return createFileOnMachine(currentMachine, path, currentPath, content, userType);
+  }, [createFileOnMachine, currentMachine, currentPath]);
 
   const switchMachine = useCallback((machineId: MachineId, username: string) => {
-    const newFileSystem = machineFileSystems[machineId];
-    if (!newFileSystem) return;
+    if (!fileSystems[machineId]) return;
 
     setCurrentMachine(machineId);
-    setFileSystem(newFileSystem);
     setCurrentPath(getDefaultHomePath(machineId, username));
-  }, []);
+  }, [fileSystems]);
 
   return (
     <FileSystemContext.Provider
@@ -215,6 +271,15 @@ export const FileSystemProvider = ({ children }: { children: ReactNode }) => {
         writeFile,
         createFile,
         switchMachine,
+        // Cross-machine operations for FTP
+        resolvePathForMachine,
+        getNodeFromMachine,
+        canReadFromMachine,
+        canWriteFromMachine,
+        listDirectoryFromMachine,
+        readFileFromMachine,
+        writeFileToMachine,
+        createFileOnMachine,
       }}
     >
       {children}

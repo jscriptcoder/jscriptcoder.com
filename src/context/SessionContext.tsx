@@ -15,15 +15,33 @@ export type SessionSnapshot = {
   readonly currentPath: string;
 };
 
+export type FtpSession = {
+  readonly remoteMachine: string;
+  readonly remoteUsername: string;
+  readonly remoteUserType: UserType;
+  readonly remoteCwd: string;
+  readonly originMachine: string;
+  readonly originUsername: string;
+  readonly originUserType: UserType;
+  readonly originCwd: string;
+};
+
 type SessionContextValue = {
   readonly session: Session;
   readonly sessionStack: readonly SessionSnapshot[];
+  readonly ftpSession: FtpSession | null;
   readonly setUsername: (username: string, userType?: UserType) => void;
   readonly setMachine: (machine: string) => void;
   readonly getPrompt: () => string;
   readonly pushSession: (currentPath: string) => void;
   readonly popSession: () => SessionSnapshot | null;
   readonly canReturn: () => boolean;
+  // FTP session methods
+  readonly enterFtpMode: (ftpSession: FtpSession) => void;
+  readonly exitFtpMode: () => FtpSession | null;
+  readonly updateFtpRemoteCwd: (cwd: string) => void;
+  readonly updateFtpOriginCwd: (cwd: string) => void;
+  readonly isInFtpMode: () => boolean;
 };
 
 const defaultSession: Session = {
@@ -37,6 +55,7 @@ const SessionContext = createContext<SessionContextValue | null>(null);
 export const SessionProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session>(defaultSession);
   const [sessionStack, setSessionStack] = useState<readonly SessionSnapshot[]>([]);
+  const [ftpSession, setFtpSession] = useState<FtpSession | null>(null);
 
   const setUsername = useCallback((username: string, userType: UserType = 'user') => {
     setSession((prev) => ({ ...prev, username, userType }));
@@ -47,8 +66,9 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const getPrompt = useCallback(() => {
+    if (ftpSession) return 'ftp>';
     return `${session.username}@${session.machine}>`;
-  }, [session.username, session.machine]);
+  }, [session.username, session.machine, ftpSession]);
 
   const pushSession = useCallback((currentPath: string) => {
     const snapshot: SessionSnapshot = {
@@ -75,17 +95,43 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
 
   const canReturn = useCallback(() => sessionStack.length > 0, [sessionStack.length]);
 
+  const enterFtpMode = useCallback((newFtpSession: FtpSession) => {
+    setFtpSession(newFtpSession);
+  }, []);
+
+  const exitFtpMode = useCallback((): FtpSession | null => {
+    const current = ftpSession;
+    setFtpSession(null);
+    return current;
+  }, [ftpSession]);
+
+  const updateFtpRemoteCwd = useCallback((cwd: string) => {
+    setFtpSession((prev) => prev ? { ...prev, remoteCwd: cwd } : null);
+  }, []);
+
+  const updateFtpOriginCwd = useCallback((cwd: string) => {
+    setFtpSession((prev) => prev ? { ...prev, originCwd: cwd } : null);
+  }, []);
+
+  const isInFtpMode = useCallback(() => ftpSession !== null, [ftpSession]);
+
   return (
     <SessionContext.Provider
       value={{
         session,
         sessionStack,
+        ftpSession,
         setUsername,
         setMachine,
         getPrompt,
         pushSession,
         popSession,
         canReturn,
+        enterFtpMode,
+        exitFtpMode,
+        updateFtpRemoteCwd,
+        updateFtpOriginCwd,
+        isInFtpMode,
       }}
     >
       {children}

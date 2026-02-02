@@ -104,6 +104,7 @@ src/
 │   ├── useVariables.ts           # const/let variable management
 │   ├── useFileSystemCommands.ts  # pwd, ls, cd, cat, whoami command creation
 │   ├── useNetworkCommands.ts     # ifconfig and network command creation
+│   ├── useFtpCommands.ts         # FTP mode commands (pwd, ls, get, put, etc.)
 │   └── useCommands.ts            # Command registry and execution context
 ├── network/
 │   ├── NetworkContext.tsx     # Network state and topology
@@ -128,6 +129,17 @@ src/
 │   ├── nslookup.ts         # nslookup(domain) - DNS domain resolution
 │   ├── ssh.ts              # ssh(user, host) - secure shell connection
 │   ├── exit.ts             # exit() - close SSH connection and return
+│   ├── ftp.ts              # ftp(host) - FTP connection command
+│   ├── ftp/                # FTP mode commands
+│   │   ├── pwd.ts          # pwd() - remote working directory
+│   │   ├── lpwd.ts         # lpwd() - local working directory
+│   │   ├── cd.ts           # cd(path) - change remote directory
+│   │   ├── lcd.ts          # lcd(path) - change local directory
+│   │   ├── ls.ts           # ls([path]) - list remote directory
+│   │   ├── lls.ts          # lls([path]) - list local directory
+│   │   ├── get.ts          # get(file, [dest]) - download file
+│   │   ├── put.ts          # put(file, [dest]) - upload file
+│   │   └── quit.ts         # quit()/bye() - close FTP connection
 │   ├── file-system-commands.test.ts  # Tests for ls, cd, cat
 │   ├── utility-commands.test.ts      # Tests for echo, help, man
 │   ├── session-commands.test.ts      # Tests for su
@@ -211,6 +223,21 @@ To add a command:
 | `nslookup(domain)` | Query DNS to resolve domain name to IP address (async) |
 | `ssh(user, host)` | Connect to remote machine via SSH (async, prompts for password) |
 | `exit()` | Close SSH connection and return to previous machine |
+| `ftp(host)` | Connect to remote machine via FTP (async, prompts for username/password) |
+
+**FTP Mode Commands** (available only when connected via FTP):
+
+| Command | Description |
+|---------|-------------|
+| `pwd()` | Print remote working directory |
+| `lpwd()` | Print local working directory |
+| `cd(path)` | Change remote directory |
+| `lcd(path)` | Change local directory |
+| `ls([path])` | List remote directory contents |
+| `lls([path])` | List local directory contents |
+| `get(remoteFile, [localPath])` | Download file from remote to local |
+| `put(localFile, [remotePath])` | Upload file from local to remote |
+| `quit()` / `bye()` | Close FTP connection |
 
 ### Virtual File System
 

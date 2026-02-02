@@ -1,6 +1,8 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { useSession } from '../../context/SessionContext';
 
+type PromptMode = 'username' | 'password';
+
 interface TerminalInputProps {
   value: string;
   onChange: (value: string) => void;
@@ -8,7 +10,7 @@ interface TerminalInputProps {
   onHistoryUp: () => void;
   onHistoryDown: () => void;
   onTab: () => void;
-  passwordMode?: boolean;
+  promptMode?: PromptMode;
   disabled?: boolean;
 }
 
@@ -19,9 +21,11 @@ export const TerminalInput = ({
   onHistoryUp,
   onHistoryDown,
   onTab,
-  passwordMode = false,
+  promptMode,
   disabled = false,
 }: TerminalInputProps) => {
+  const isPromptMode = promptMode !== undefined;
+  const shouldMaskInput = promptMode === 'password';
   const inputRef = useRef<HTMLInputElement>(null);
   const [cursorPosition, setCursorPosition] = useState(0);
   const [isFocused, setIsFocused] = useState(false);
@@ -65,15 +69,15 @@ export const TerminalInput = ({
         break;
       case 'ArrowUp':
         e.preventDefault();
-        if (!passwordMode) onHistoryUp();
+        if (!isPromptMode) onHistoryUp();
         break;
       case 'ArrowDown':
         e.preventDefault();
-        if (!passwordMode) onHistoryDown();
+        if (!isPromptMode) onHistoryDown();
         break;
       case 'Tab':
         e.preventDefault();
-        if (!passwordMode) onTab();
+        if (!isPromptMode) onTab();
         break;
       default:
         // Update cursor position after the key event is processed
@@ -90,8 +94,8 @@ export const TerminalInput = ({
   };
 
   // Mask value with asterisks in password mode
-  const displayValue = passwordMode ? '*'.repeat(value.length) : value;
-  const prompt = passwordMode ? '' : getPrompt();
+  const displayValue = shouldMaskInput ? '*'.repeat(value.length) : value;
+  const prompt = isPromptMode ? '' : getPrompt();
 
   // Split display value at cursor position
   const beforeCursor = displayValue.slice(0, cursorPosition);
