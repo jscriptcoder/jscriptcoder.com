@@ -26,6 +26,10 @@ export type ClearOutput = {
   readonly __type: 'clear';
 };
 
+export type ExitOutput = {
+  readonly __type: 'exit';
+};
+
 export type AsyncOutput = {
   readonly __type: 'async';
   readonly start: (
@@ -41,6 +45,7 @@ export type SpecialOutput =
   | PasswordPromptData
   | SshPromptData
   | ClearOutput
+  | ExitOutput
   | AsyncOutput;
 
 export type OutputLine = {
@@ -90,6 +95,9 @@ export const isSshPrompt = (value: unknown): value is SshPromptData =>
 
 export const isClearOutput = (value: unknown): value is ClearOutput =>
   isSpecialOutput(value) && value.__type === 'clear';
+
+export const isExitOutput = (value: unknown): value is ExitOutput =>
+  isSpecialOutput(value) && value.__type === 'exit';
 
 export const isAsyncOutput = (value: unknown): value is AsyncOutput =>
   isSpecialOutput(value) && value.__type === 'async';

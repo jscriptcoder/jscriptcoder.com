@@ -127,6 +127,7 @@ src/
 │   ├── nmap.ts             # nmap(target) - network scanning and port discovery
 │   ├── nslookup.ts         # nslookup(domain) - DNS domain resolution
 │   ├── ssh.ts              # ssh(user, host) - secure shell connection
+│   ├── exit.ts             # exit() - close SSH connection and return
 │   ├── file-system-commands.test.ts  # Tests for ls, cd, cat
 │   ├── utility-commands.test.ts      # Tests for echo, help, man
 │   ├── session-commands.test.ts      # Tests for su
@@ -209,6 +210,7 @@ To add a command:
 | `nmap(target)` | Network exploration and port scanning (async, streams output) |
 | `nslookup(domain)` | Query DNS to resolve domain name to IP address (async) |
 | `ssh(user, host)` | Connect to remote machine via SSH (async, prompts for password) |
+| `exit()` | Close SSH connection and return to previous machine |
 
 ### Virtual File System
 
@@ -438,14 +440,21 @@ type Session = {
 **Available methods:**
 - `getPrompt()` - Returns formatted prompt (e.g., `jshacker@localhost>`)
 - `setUsername(name, type)` - Change current user
-- `setMachine(name)` - Change current machine (for future remote connections)
+- `setMachine(name)` - Change current machine
+- `pushSession(currentPath)` - Save current session to stack (used before SSH)
+- `popSession()` - Restore previous session from stack (used by exit command)
+- `canReturn()` - Check if session stack has entries
+
+**Session Stack:**
+When SSH-ing to a remote machine, the current session is saved to a stack. The `exit()` command pops from this stack to restore the previous session state (user, machine, filesystem, working directory).
 
 **Usage in commands:**
 ```typescript
-const { setUsername, setMachine } = useSession();
-setUsername('guest', 'guest');
-setMachine('10.145.45.2');
-// Prompt becomes: guest@10.145.45.2>
+const { setUsername, setMachine, pushSession, popSession } = useSession();
+pushSession('/home/jshacker');  // Save before SSH
+setUsername('admin', 'user');
+setMachine('192.168.1.1');
+// Later: popSession() restores previous state
 ```
 
 ## Styling

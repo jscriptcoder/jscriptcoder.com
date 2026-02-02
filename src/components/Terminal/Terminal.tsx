@@ -10,7 +10,7 @@ import { useFileSystem } from '../../filesystem/FileSystemContext';
 import { useNetwork } from '../../network';
 import { md5 } from '../../utils/md5';
 import type { OutputLine, AuthorData, SshPromptData } from './types';
-import { isAuthorData, isPasswordPrompt, isClearOutput, isAsyncOutput, isSshPrompt } from './types';
+import { isAuthorData, isPasswordPrompt, isClearOutput, isExitOutput, isAsyncOutput, isSshPrompt } from './types';
 import type { UserType } from '../../context/SessionContext';
 
 const BANNER = `
@@ -42,9 +42,9 @@ export const Terminal = () => {
 
   const { addCommand, navigateUp, navigateDown, resetNavigation } = useCommandHistory();
   const { getVariables, getVariableNames, handleVariableOperation } = useVariables();
-  const { getPrompt, setUsername, setMachine } = useSession();
+  const { getPrompt, setUsername, setMachine, pushSession, popSession, canReturn } = useSession();
   const { executionContext, commandNames } = useCommands();
-  const { readFile, setCurrentPath } = useFileSystem();
+  const { readFile, setCurrentPath, switchMachine, currentPath } = useFileSystem();
   const { getMachine } = useNetwork();
 
   const { getCompletions } = useAutoComplete(commandNames, getVariableNames());
@@ -116,6 +116,19 @@ export const Terminal = () => {
           clearLines();
           return;
         }
+        if (isExitOutput(result)) {
+          if (!canReturn()) {
+            addLine('error', 'exit: not connected to a remote machine');
+            return;
+          }
+          const snapshot = popSession();
+          if (snapshot) {
+            switchMachine(snapshot.machine as Parameters<typeof switchMachine>[0], snapshot.username);
+            setCurrentPath(snapshot.currentPath);
+            addLine('result', 'Connection closed.');
+          }
+          return;
+        }
         if (isAuthorData(result)) {
           addLine('author', result);
           return;
@@ -158,7 +171,7 @@ export const Terminal = () => {
       const errorMessage = error instanceof Error ? error.message : String(error);
       addLine('error', `Error: ${errorMessage}`);
     }
-  }, [addCommand, addLine, clearLines, handleVariableOperation, getVariables, getPrompt, executionContext]);
+  }, [addCommand, addLine, clearLines, handleVariableOperation, getVariables, getPrompt, executionContext, canReturn, popSession, switchMachine, setCurrentPath]);
 
   const validatePassword = useCallback((password: string): boolean => {
     if (!targetUser) return false;
@@ -202,16 +215,17 @@ export const Terminal = () => {
 
     if (validatePassword(input)) {
       if (sshTargetIP) {
-        // SSH mode: switch to remote machine
+        // SSH mode: save current session and switch to remote machine
+        pushSession(currentPath);
+
         const machine = getMachine(sshTargetIP);
         const remoteUser = machine?.users.find(u => u.username === targetUser);
         const userType: UserType = remoteUser?.userType ?? 'user';
 
         setUsername(targetUser!, userType);
         setMachine(sshTargetIP);
-        // Set home path based on remote user
-        const homePath = targetUser === 'root' ? '/root' : `/home/${targetUser}`;
-        setCurrentPath(homePath);
+        // Switch filesystem to remote machine
+        switchMachine(sshTargetIP as Parameters<typeof switchMachine>[0], targetUser!);
         addLine('result', `Connected to ${sshTargetIP}`);
         addLine('result', `Welcome to ${machine?.hostname ?? sshTargetIP}!`);
       } else {
@@ -243,7 +257,7 @@ export const Terminal = () => {
     setTargetUser(null);
     setSshTargetIP(null);
     setInput('');
-  }, [input, targetUser, sshTargetIP, validatePassword, setUsername, setMachine, setCurrentPath, getMachine, addLine]);
+  }, [input, targetUser, sshTargetIP, validatePassword, setUsername, setMachine, setCurrentPath, switchMachine, pushSession, currentPath, getMachine, addLine]);
 
   const handleSubmit = useCallback(() => {
     if (passwordMode) {

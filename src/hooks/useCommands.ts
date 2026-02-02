@@ -3,6 +3,7 @@ import type { Command } from '../components/Terminal/types';
 import { echoCommand } from '../commands/echo';
 import { authorCommand } from '../commands/author';
 import { clearCommand } from '../commands/clear';
+import { exitCommand } from '../commands/exit';
 import { createSuCommand } from '../commands/su';
 import { createHelpCommand } from '../commands/help';
 import { createManCommand } from '../commands/man';
@@ -39,6 +40,7 @@ export const useCommands = (): UseCommandsResult => {
     commands.set('echo', echoCommand);
     commands.set('author', authorCommand);
     commands.set('clear', clearCommand);
+    commands.set('exit', exitCommand);
 
     // User commands (depends on current machine)
     const suCommand = createSuCommand({ getUsers });
