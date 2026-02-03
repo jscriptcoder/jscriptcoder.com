@@ -21,7 +21,7 @@ Step 12 of 14: Victory tracking
 - [x] Step 9: Add hints and breadcrumbs
 - [x] Step 10: Remote machine file systems
 - [x] Step 11: Additional exploitation commands (exit, ftp)
-- [x] Step 14: Unit test coverage (204 tests, colocated)
+- [x] Step 14: Unit test coverage (261 tests, colocated)
 - [ ] Step 12: Victory tracking ← next
 - [ ] Step 13: Challenge variety
 
@@ -40,7 +40,7 @@ Implemented:
   - `get(file, [dest])` downloads from remote to local
   - `put(file, [dest])` uploads from local to remote
 - **TerminalInput refactor**: Combined `passwordMode` and `hidePrompt` into single `promptMode` prop
-- **Test count**: Now 204 tests across 15 colocated files
+- **Test count**: Now 261 tests across 17 colocated files
 
 ## Blockers
 
@@ -75,7 +75,7 @@ Victory tracking:
 - jshacker@localhost: hackme
 
 ### Test Coverage
-- 204 tests across 15 colocated test files
+- 261 tests across 17 colocated test files
 - All commands with logic are tested
 - Async commands tested with fake timers
-- React hooks tested with React Testing Library
+- React hooks tested with React Testing Library (useCommandHistory, useVariables, useAutoComplete)
