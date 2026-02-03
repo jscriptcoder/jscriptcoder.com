@@ -371,34 +371,43 @@ describe('ls command', () => {
 
 ---
 
-## No 1:1 Mapping Between Tests and Implementation
+## Colocated Tests
 
-Don't create test files that mirror implementation files.
-
-❌ **WRONG:**
-```
-src/
-  commands/ls.ts
-  commands/cat.ts
-  filesystem/permissions.ts
-tests/
-  ls.test.ts           ← 1:1 mapping
-  cat.test.ts          ← 1:1 mapping
-  permissions.test.ts  ← 1:1 mapping
-```
+Place test files next to their implementation files.
 
 ✅ **CORRECT:**
 ```
 src/
-  commands/ls.ts
-  commands/cat.ts
-  filesystem/permissions.ts
-tests/
-  file-system-commands.test.ts  ← Tests behavior, not implementation files
-  network-commands.test.ts      ← Groups related behaviors
+  commands/
+    ls.ts
+    ls.test.ts         ← Test next to implementation
+    cat.ts
+    cat.test.ts        ← Test next to implementation
+    ssh.ts
+    ssh.test.ts
+  filesystem/
+    FileSystemContext.tsx
+    FileSystemContext.test.tsx
 ```
 
-**Why:** Implementation details can be refactored without changing tests. Tests verify behavior remains correct regardless of how code is organized internally.
+❌ **WRONG:**
+```
+src/
+  commands/
+    ls.ts
+    cat.ts
+    ssh.ts
+tests/
+  commands.test.ts     ← Far from implementation, grows unwieldy
+```
+
+**Why colocated tests:**
+- **Discoverable**: `ssh.ts` → `ssh.test.ts` right next to it
+- **Manageable**: Small, focused test files instead of large monoliths
+- **Encourages testing**: Tests are visible when working on a file
+- **Clear coverage**: Obvious which files have tests
+
+**Important:** This is about *file organization*, not test content. Tests should still focus on behavior through public APIs, not implementation details. A colocated `ssh.test.ts` tests what `ssh()` does, not how it's implemented internally.
 
 ---
 
@@ -406,6 +415,7 @@ tests/
 
 When writing tests, verify:
 
+- [ ] Test file colocated with implementation (`foo.ts` → `foo.test.ts`)
 - [ ] Testing behavior through public API (not implementation details)
 - [ ] No mocks of the function being tested
 - [ ] No tests of private methods or internal state
@@ -415,4 +425,3 @@ When writing tests, verify:
 - [ ] No `let`/`beforeEach` - use factories for fresh state
 - [ ] Edge cases covered (not just happy path)
 - [ ] Tests would pass even if implementation is refactored
-- [ ] No 1:1 mapping between test files and implementation files

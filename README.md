@@ -164,11 +164,11 @@ npm run test:coverage # Run tests with coverage
 
 ### Test Coverage
 
-121 unit tests covering terminal commands:
-- **File system commands**: ls, cd, cat (32 tests)
-- **Utility commands**: echo, help, man (30 tests)
-- **Session commands**: su (9 tests)
-- **Network commands**: ifconfig, ping, nslookup, nmap, ssh, ftp (50 tests)
+161 unit tests covering terminal commands (colocated with implementation):
+- **File system**: ls (13), cd (10), cat (9)
+- **Utility**: echo (13), help (6), man (11)
+- **Session**: su (9)
+- **Network**: ifconfig (9), ping (14), nslookup (9), nmap (18), ssh (19), ftp (21)
 
 ## Project Structure
 

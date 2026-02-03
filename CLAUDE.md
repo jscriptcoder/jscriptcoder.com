@@ -140,10 +140,19 @@ src/
 │   │   ├── get.ts          # get(file, [dest]) - download file
 │   │   ├── put.ts          # put(file, [dest]) - upload file
 │   │   └── quit.ts         # quit()/bye() - close FTP connection
-│   ├── file-system-commands.test.ts  # Tests for ls, cd, cat
-│   ├── utility-commands.test.ts      # Tests for echo, help, man
-│   ├── session-commands.test.ts      # Tests for su
-│   └── network-commands.test.ts      # Tests for ifconfig, ping, nslookup, nmap
+│   ├── ls.test.ts           # Tests colocated with ls.ts
+│   ├── cd.test.ts           # Tests colocated with cd.ts
+│   ├── cat.test.ts          # Tests colocated with cat.ts
+│   ├── echo.test.ts         # Tests colocated with echo.ts
+│   ├── help.test.ts         # Tests colocated with help.ts
+│   ├── man.test.ts          # Tests colocated with man.ts
+│   ├── su.test.ts           # Tests colocated with su.ts
+│   ├── ifconfig.test.ts     # Tests colocated with ifconfig.ts
+│   ├── ping.test.ts         # Tests colocated with ping.ts
+│   ├── nslookup.test.ts     # Tests colocated with nslookup.ts
+│   ├── nmap.test.ts         # Tests colocated with nmap.ts
+│   ├── ssh.test.ts          # Tests colocated with ssh.ts
+│   └── ftp.test.ts          # Tests colocated with ftp.ts
 ├── utils/
 │   ├── md5.ts              # MD5 hashing for password validation
 │   └── network.ts          # Network utilities (IP validation, range parsing)
