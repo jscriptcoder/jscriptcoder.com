@@ -9,8 +9,9 @@ description: TypeScript strict mode patterns. Use when writing any TypeScript co
 
 1. **No `any`** - ever. Use `unknown` if type is truly unknown
 2. **No type assertions** (`as Type`) without justification
-3. **Prefer `type` over `interface`** for data structures
-4. **Reserve `interface`** for behavior contracts only
+3. **No non-null assertions** (`!`) - use type guards or proper null handling
+4. **Prefer `type` over `interface`** for data structures
+5. **Reserve `interface`** for behavior contracts only
 
 ---
 
@@ -523,6 +524,100 @@ interface UserService {
 
 ---
 
+## Avoid Non-Null Assertion Operator
+
+The non-null assertion operator (`!`) tells TypeScript to trust that a value is not `null` or `undefined`. This bypasses type safety and can lead to runtime errors.
+
+### Why It's Problematic
+
+```typescript
+// ❌ WRONG - Non-null assertion
+const user = getUser(id);
+const name = user!.name; // Runtime error if user is undefined
+
+// ❌ WRONG - Chained assertions
+const length = data!.items!.length; // Multiple points of failure
+```
+
+**Problems:**
+- Bypasses `strictNullChecks` - defeats the purpose of strict mode
+- Runtime errors when assumption is wrong
+- Similar to `as Type` - you're lying to the compiler
+- Hides potential bugs instead of handling them
+
+### Better Alternatives
+
+**1. Type guards with early return:**
+```typescript
+// ✅ CORRECT - Type guard
+const user = getUser(id);
+if (!user) {
+  throw new Error(`User ${id} not found`);
+}
+// TypeScript knows user is defined here
+const name = user.name;
+```
+
+**2. Optional chaining with nullish coalescing:**
+```typescript
+// ✅ CORRECT - Safe access with default
+const name = user?.name ?? 'Anonymous';
+const length = data?.items?.length ?? 0;
+```
+
+**3. Explicit error handling:**
+```typescript
+// ✅ CORRECT - Handle the null case
+const machine = getMachine(ip);
+if (!machine) {
+  return { success: false, error: `Host ${ip} not found` };
+}
+// TypeScript knows machine is defined
+const ports = machine.ports;
+```
+
+**4. Proper typing that can't be null:**
+```typescript
+// ✅ CORRECT - Design types to avoid nullability
+type User = {
+  readonly name: string; // Required, not optional
+  readonly email: string;
+};
+
+// Instead of checking for null, ensure creation is valid
+const createUser = (name: string, email: string): User => ({ name, email });
+```
+
+### Acceptable Exception: Test Files
+
+In test files, `!` may be acceptable when:
+- You control the test data and know it's defined
+- Tests will fail anyway if the value is undefined
+- The alternative makes tests significantly harder to read
+
+```typescript
+// Acceptable in tests - act() callback pattern
+let result: SomeType | null;
+act(() => {
+  result = someOperation();
+});
+expect(result!.value).toBe(expected); // Test fails if null
+```
+
+**However**, prefer restructuring tests to avoid needing `!` when possible.
+
+### Key Principle
+
+If you find yourself reaching for `!`, ask:
+1. Can I restructure the code to avoid nullability?
+2. Can I use a type guard to narrow the type?
+3. Can I use optional chaining with a sensible default?
+4. Should I throw an explicit error for this case?
+
+The answer to at least one of these is almost always "yes".
+
+---
+
 ## Functional Programming Principles
 
 These principles support immutability and type safety:
@@ -642,7 +737,8 @@ validatePassword(inputHash, storedHash); // OK
 When writing TypeScript code, verify:
 
 - [ ] No `any` types - using `unknown` where type is truly unknown
-- [ ] No type assertions without justification
+- [ ] No type assertions (`as Type`) without justification
+- [ ] No non-null assertions (`!`) - use type guards or optional chaining
 - [ ] Using `type` for data structures with `readonly`
 - [ ] Using `interface` for behavior contracts (ports)
 - [ ] Schemas defined in core, not duplicated in adapters
