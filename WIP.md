@@ -2,7 +2,7 @@
 
 ## Current Step
 
-Step 11 of 14: Additional exploitation commands
+Step 12 of 14: Victory tracking
 
 ## Status
 
@@ -20,26 +20,27 @@ Step 11 of 14: Additional exploitation commands
 - [x] Step 8: Place flags in file system
 - [x] Step 9: Add hints and breadcrumbs
 - [x] Step 10: Remote machine file systems
-- [x] Step 14: Unit test coverage (103 tests)
-- [ ] Step 11: Additional exploitation commands ← next
-- [ ] Step 12: Victory tracking
+- [x] Step 11: Additional exploitation commands (exit, ftp)
+- [x] Step 14: Unit test coverage (121 tests)
+- [ ] Step 12: Victory tracking ← next
 - [ ] Step 13: Challenge variety
 
-## Recent Session (2026-02-01)
+## Recent Session (2026-02-03)
 
 Implemented:
-- **Unit tests for commands** (103 tests total):
-  - file-system-commands.test.ts: ls, cd, cat (32 tests)
-  - utility-commands.test.ts: echo, help, man (30 tests)
-  - session-commands.test.ts: su (9 tests)
-  - network-commands.test.ts: ifconfig, ping, nslookup, nmap (50 tests)
-- **Refactored su command**: Changed to `createSuCommand(context)` with dynamic `getUsers()` for per-machine users
-- **Per-machine filesystem support**:
-  - Created `fileSystemFactory.ts` with `createFileSystem()` factory
-  - Created `machineFileSystems.ts` with configs for all 5 machines
-  - Each machine has unique users, files, flags, and log hints
-  - Updated `FileSystemContext` with `switchMachine(machineId, username)`
-  - Removed `initialFileSystem.ts` (replaced by machineFileSystems)
+- **exit() command**: Return from SSH sessions with session stack
+  - Added `SessionSnapshot` type and `sessionStack` to SessionContext
+  - `pushSession()` saves state before SSH, `popSession()` restores on exit
+  - Fixed SSH to properly use `switchMachine()` for filesystem switching
+- **ftp() command**: Full FTP protocol simulation with dual-filesystem support
+  - FTP mode with dedicated `ftp>` prompt and command set
+  - 11 FTP commands: pwd, lpwd, cd, lcd, ls, lls, get, put, quit, bye
+  - Cross-machine filesystem operations without switching active filesystem
+  - Two-phase authentication (username then password)
+  - `get(file, [dest])` downloads from remote to local
+  - `put(file, [dest])` uploads from local to remote
+- **TerminalInput refactor**: Combined `passwordMode` and `hidePrompt` into single `promptMode` prop
+- **Test count**: Now 121 tests (was 103)
 
 ## Blockers
 
@@ -47,9 +48,10 @@ None currently.
 
 ## Next Action
 
-Wire up SSH to actually switch filesystems:
-- Call `switchMachine()` in ssh command after successful authentication
-- Test SSH workflow end-to-end with filesystem switch
+Victory tracking:
+- Track which flags have been found
+- Display progress (e.g., "3/5 flags found")
+- Victory screen when all flags collected
 
 ## Infrastructure Ready
 
