@@ -1,6 +1,16 @@
 import type { FileNode } from './types';
 import { createFileSystem, type MachineFileSystemConfig } from './fileSystemFactory';
 
+// Helper to safely get a child node from a FileNode
+// The factory always creates these, but TypeScript doesn't know that
+const getChildNode = (parent: FileNode, name: string): FileNode => {
+  const child = parent.children?.[name];
+  if (!child) {
+    throw new Error(`Expected child node '${name}' not found`);
+  }
+  return child;
+};
+
 // ============================================================================
 // LOCALHOST (192.168.1.100)
 // ============================================================================
@@ -25,14 +35,15 @@ const localhostConfig: MachineFileSystemConfig = {
 
 // Add jshacker's home content after config
 const localhostFs = createFileSystem(localhostConfig);
+const localhostHome = getChildNode(localhostFs, 'home');
 const localhostWithHome: FileNode = {
   ...localhostFs,
   children: {
     ...localhostFs.children,
     home: {
-      ...localhostFs.children!.home,
+      ...localhostHome,
       children: {
-        ...(localhostFs.children!.home as FileNode).children,
+        ...localhostHome.children,
         jshacker: {
           name: 'jshacker',
           type: 'directory',
@@ -429,14 +440,15 @@ Mar 12 06:66:66 darknet ???: Connection from the void accepted
 };
 
 const darknetFs = createFileSystem(darknetConfig);
+const darknetHome = getChildNode(darknetFs, 'home');
 const darknetWithHome: FileNode = {
   ...darknetFs,
   children: {
     ...darknetFs.children,
     home: {
-      ...darknetFs.children!.home,
+      ...darknetHome,
       children: {
-        ...(darknetFs.children!.home as FileNode).children,
+        ...darknetHome.children,
         ghost: {
           name: 'ghost',
           type: 'directory',
