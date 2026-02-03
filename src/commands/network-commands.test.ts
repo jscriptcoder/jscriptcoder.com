@@ -1,10 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { NetworkInterface, RemoteMachine, DnsRecord } from '../network/types';
-import type { AsyncOutput } from '../components/Terminal/types';
+import type { AsyncOutput, SshPromptData, FtpPromptData } from '../components/Terminal/types';
 import { createIfconfigCommand } from './ifconfig';
 import { createPingCommand } from './ping';
 import { createNslookupCommand } from './nslookup';
 import { createNmapCommand } from './nmap';
+import { createSshCommand } from './ssh';
+import { createFtpCommand } from './ftp';
 
 // --- Factory Functions ---
 
@@ -1003,6 +1005,858 @@ describe('nmap command', () => {
         vi.advanceTimersByTime(2000);
       }
 
+      expect(completed).toBe(false);
+    });
+  });
+});
+
+// --- SSH Factory Functions ---
+
+type SshContextConfig = {
+  readonly machines?: readonly RemoteMachine[];
+  readonly localIP?: string;
+};
+
+const createMockSshContext = (config: SshContextConfig = {}) => {
+  const { machines = [], localIP = '192.168.1.100' } = config;
+
+  return {
+    getMachine: (ip: string) => machines.find((m) => m.ip === ip),
+    getLocalIP: () => localIP,
+  };
+};
+
+const isSshPrompt = (value: unknown): value is SshPromptData =>
+  typeof value === 'object' &&
+  value !== null &&
+  '__type' in value &&
+  (value as SshPromptData).__type === 'ssh_prompt';
+
+// --- SSH Tests ---
+
+describe('ssh command', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  describe('error handling', () => {
+    it('should throw error when no username given', () => {
+      const context = createMockSshContext();
+      const ssh = createSshCommand(context);
+
+      expect(() => ssh.fn()).toThrow('ssh: missing username');
+    });
+
+    it('should throw error when no host given', () => {
+      const context = createMockSshContext();
+      const ssh = createSshCommand(context);
+
+      expect(() => ssh.fn('admin')).toThrow('ssh: missing host');
+    });
+
+    it('should throw error when connecting to localhost IP', () => {
+      const context = createMockSshContext({ localIP: '192.168.1.100' });
+      const ssh = createSshCommand(context);
+
+      expect(() => ssh.fn('user', '192.168.1.100')).toThrow(
+        'ssh: cannot connect to localhost via SSH'
+      );
+    });
+
+    it('should throw error when connecting to 127.0.0.1', () => {
+      const context = createMockSshContext();
+      const ssh = createSshCommand(context);
+
+      expect(() => ssh.fn('user', '127.0.0.1')).toThrow(
+        'ssh: cannot connect to localhost via SSH'
+      );
+    });
+
+    it('should throw error when connecting to localhost hostname', () => {
+      const context = createMockSshContext();
+      const ssh = createSshCommand(context);
+
+      expect(() => ssh.fn('user', 'localhost')).toThrow(
+        'ssh: cannot connect to localhost via SSH'
+      );
+    });
+
+    it('should throw error when machine does not exist', () => {
+      const context = createMockSshContext({ machines: [] });
+      const ssh = createSshCommand(context);
+
+      expect(() => ssh.fn('admin', '10.0.0.1')).toThrow(
+        'ssh: connect to host 10.0.0.1 port 22: Connection refused'
+      );
+    });
+
+    it('should throw error when SSH port is not open', () => {
+      const context = createMockSshContext({
+        machines: [
+          getMockRemoteMachine({
+            ip: '192.168.1.50',
+            ports: [{ port: 80, service: 'http', open: true }],
+          }),
+        ],
+      });
+      const ssh = createSshCommand(context);
+
+      expect(() => ssh.fn('admin', '192.168.1.50')).toThrow(
+        'ssh: connect to host 192.168.1.50 port 22: Connection refused'
+      );
+    });
+
+    it('should throw error when SSH port exists but is closed', () => {
+      const context = createMockSshContext({
+        machines: [
+          getMockRemoteMachine({
+            ip: '192.168.1.50',
+            ports: [{ port: 22, service: 'ssh', open: false }],
+          }),
+        ],
+      });
+      const ssh = createSshCommand(context);
+
+      expect(() => ssh.fn('admin', '192.168.1.50')).toThrow(
+        'ssh: connect to host 192.168.1.50 port 22: Connection refused'
+      );
+    });
+
+    it('should throw error when user does not exist on remote machine', () => {
+      const context = createMockSshContext({
+        machines: [
+          getMockRemoteMachine({
+            ip: '192.168.1.50',
+            ports: [{ port: 22, service: 'ssh', open: true }],
+            users: [{ username: 'root', passwordHash: 'abc', userType: 'root' }],
+          }),
+        ],
+      });
+      const ssh = createSshCommand(context);
+
+      expect(() => ssh.fn('nobody', '192.168.1.50')).toThrow(
+        'ssh: nobody@192.168.1.50: Permission denied (publickey,password)'
+      );
+    });
+  });
+
+  describe('async output structure', () => {
+    it('should return AsyncOutput object', () => {
+      const context = createMockSshContext({
+        machines: [
+          getMockRemoteMachine({
+            ip: '192.168.1.50',
+            ports: [{ port: 22, service: 'ssh', open: true }],
+            users: [{ username: 'admin', passwordHash: 'abc', userType: 'user' }],
+          }),
+        ],
+      });
+      const ssh = createSshCommand(context);
+
+      const result = ssh.fn('admin', '192.168.1.50');
+
+      expect(isAsyncOutput(result)).toBe(true);
+    });
+
+    it('should have start function', () => {
+      const context = createMockSshContext({
+        machines: [
+          getMockRemoteMachine({
+            ip: '192.168.1.50',
+            ports: [{ port: 22, service: 'ssh', open: true }],
+            users: [{ username: 'admin', passwordHash: 'abc', userType: 'user' }],
+          }),
+        ],
+      });
+      const ssh = createSshCommand(context);
+
+      const result = ssh.fn('admin', '192.168.1.50');
+
+      if (isAsyncOutput(result)) {
+        expect(typeof result.start).toBe('function');
+      }
+    });
+
+    it('should have cancel function', () => {
+      const context = createMockSshContext({
+        machines: [
+          getMockRemoteMachine({
+            ip: '192.168.1.50',
+            ports: [{ port: 22, service: 'ssh', open: true }],
+            users: [{ username: 'admin', passwordHash: 'abc', userType: 'user' }],
+          }),
+        ],
+      });
+      const ssh = createSshCommand(context);
+
+      const result = ssh.fn('admin', '192.168.1.50');
+
+      if (isAsyncOutput(result)) {
+        expect(typeof result.cancel).toBe('function');
+      }
+    });
+  });
+
+  describe('connection execution', () => {
+    it('should output connecting message immediately', () => {
+      const context = createMockSshContext({
+        machines: [
+          getMockRemoteMachine({
+            ip: '192.168.1.50',
+            ports: [{ port: 22, service: 'ssh', open: true }],
+            users: [{ username: 'admin', passwordHash: 'abc', userType: 'user' }],
+          }),
+        ],
+      });
+      const ssh = createSshCommand(context);
+      const result = ssh.fn('admin', '192.168.1.50');
+
+      const lines: string[] = [];
+      if (isAsyncOutput(result)) {
+        result.start(
+          (line) => lines.push(line),
+          () => {}
+        );
+      }
+
+      expect(lines[0]).toBe('Connecting to 192.168.1.50...');
+    });
+
+    it('should output SSH version after first delay', () => {
+      const context = createMockSshContext({
+        machines: [
+          getMockRemoteMachine({
+            ip: '192.168.1.50',
+            ports: [{ port: 22, service: 'ssh', open: true }],
+            users: [{ username: 'admin', passwordHash: 'abc', userType: 'user' }],
+          }),
+        ],
+      });
+      const ssh = createSshCommand(context);
+      const result = ssh.fn('admin', '192.168.1.50');
+
+      const lines: string[] = [];
+      if (isAsyncOutput(result)) {
+        result.start(
+          (line) => lines.push(line),
+          () => {}
+        );
+      }
+
+      // Fast-forward first delay (SSH_CONNECT_DELAY_MS = 800)
+      vi.advanceTimersByTime(800);
+
+      expect(lines.some((l) => l.includes('SSH-2.0-OpenSSH'))).toBe(true);
+    });
+
+    it('should output authenticating message after handshake delay', () => {
+      const context = createMockSshContext({
+        machines: [
+          getMockRemoteMachine({
+            ip: '192.168.1.50',
+            ports: [{ port: 22, service: 'ssh', open: true }],
+            users: [{ username: 'admin', passwordHash: 'abc', userType: 'user' }],
+          }),
+        ],
+      });
+      const ssh = createSshCommand(context);
+      const result = ssh.fn('admin', '192.168.1.50');
+
+      const lines: string[] = [];
+      if (isAsyncOutput(result)) {
+        result.start(
+          (line) => lines.push(line),
+          () => {}
+        );
+      }
+
+      // Fast-forward both delays (800 + 600 = 1400ms)
+      vi.advanceTimersByTime(1400);
+
+      expect(lines.some((l) => l.includes('Authenticating as admin'))).toBe(true);
+    });
+
+    it('should complete with SSH prompt data for password mode', () => {
+      const context = createMockSshContext({
+        machines: [
+          getMockRemoteMachine({
+            ip: '192.168.1.50',
+            ports: [{ port: 22, service: 'ssh', open: true }],
+            users: [{ username: 'admin', passwordHash: 'abc', userType: 'user' }],
+          }),
+        ],
+      });
+      const ssh = createSshCommand(context);
+      const result = ssh.fn('admin', '192.168.1.50');
+
+      let followUp: unknown = null;
+      if (isAsyncOutput(result)) {
+        result.start(
+          () => {},
+          (data) => {
+            followUp = data;
+          }
+        );
+      }
+
+      // Fast-forward to completion
+      vi.advanceTimersByTime(1400);
+
+      expect(isSshPrompt(followUp)).toBe(true);
+      if (isSshPrompt(followUp)) {
+        expect(followUp.targetUser).toBe('admin');
+        expect(followUp.targetIP).toBe('192.168.1.50');
+      }
+    });
+
+    it('should include correct user in SSH prompt', () => {
+      const context = createMockSshContext({
+        machines: [
+          getMockRemoteMachine({
+            ip: '192.168.1.50',
+            ports: [{ port: 22, service: 'ssh', open: true }],
+            users: [
+              { username: 'root', passwordHash: 'abc', userType: 'root' },
+              { username: 'guest', passwordHash: 'def', userType: 'guest' },
+            ],
+          }),
+        ],
+      });
+      const ssh = createSshCommand(context);
+      const result = ssh.fn('root', '192.168.1.50');
+
+      let followUp: unknown = null;
+      if (isAsyncOutput(result)) {
+        result.start(
+          () => {},
+          (data) => {
+            followUp = data;
+          }
+        );
+      }
+
+      vi.advanceTimersByTime(1400);
+
+      if (isSshPrompt(followUp)) {
+        expect(followUp.targetUser).toBe('root');
+      }
+    });
+  });
+
+  describe('cancellation', () => {
+    it('should cancel before SSH version output', () => {
+      const context = createMockSshContext({
+        machines: [
+          getMockRemoteMachine({
+            ip: '192.168.1.50',
+            ports: [{ port: 22, service: 'ssh', open: true }],
+            users: [{ username: 'admin', passwordHash: 'abc', userType: 'user' }],
+          }),
+        ],
+      });
+      const ssh = createSshCommand(context);
+      const result = ssh.fn('admin', '192.168.1.50');
+
+      const lines: string[] = [];
+      if (isAsyncOutput(result)) {
+        result.start(
+          (line) => lines.push(line),
+          () => {}
+        );
+
+        // Cancel before first delay completes
+        vi.advanceTimersByTime(400);
+        result.cancel?.();
+        vi.advanceTimersByTime(2000);
+      }
+
+      // Should only have connecting message
+      expect(lines.length).toBe(1);
+      expect(lines[0]).toBe('Connecting to 192.168.1.50...');
+    });
+
+    it('should cancel before authentication prompt', () => {
+      const context = createMockSshContext({
+        machines: [
+          getMockRemoteMachine({
+            ip: '192.168.1.50',
+            ports: [{ port: 22, service: 'ssh', open: true }],
+            users: [{ username: 'admin', passwordHash: 'abc', userType: 'user' }],
+          }),
+        ],
+      });
+      const ssh = createSshCommand(context);
+      const result = ssh.fn('admin', '192.168.1.50');
+
+      const lines: string[] = [];
+      let completed = false;
+      if (isAsyncOutput(result)) {
+        result.start(
+          (line) => lines.push(line),
+          () => {
+            completed = true;
+          }
+        );
+
+        // Advance past first delay, then cancel
+        vi.advanceTimersByTime(900);
+        result.cancel?.();
+        vi.advanceTimersByTime(2000);
+      }
+
+      // Should have connecting and SSH version, but not authentication
+      expect(lines.some((l) => l.includes('Authenticating'))).toBe(false);
+      expect(completed).toBe(false);
+    });
+  });
+});
+
+// --- FTP Factory Functions ---
+
+type FtpContextConfig = {
+  readonly machines?: readonly RemoteMachine[];
+  readonly localIP?: string;
+  readonly dnsRecords?: readonly DnsRecord[];
+};
+
+const createMockFtpContext = (config: FtpContextConfig = {}) => {
+  const { machines = [], localIP = '192.168.1.100', dnsRecords = [] } = config;
+
+  return {
+    getMachine: (ip: string) => machines.find((m) => m.ip === ip),
+    getLocalIP: () => localIP,
+    resolveDomain: (domain: string) =>
+      dnsRecords.find((r) => r.domain.toLowerCase() === domain.toLowerCase()),
+  };
+};
+
+const isFtpPrompt = (value: unknown): value is FtpPromptData =>
+  typeof value === 'object' &&
+  value !== null &&
+  '__type' in value &&
+  (value as FtpPromptData).__type === 'ftp_prompt';
+
+// --- FTP Tests ---
+
+describe('ftp command', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  describe('error handling', () => {
+    it('should throw error when no host given', () => {
+      const context = createMockFtpContext();
+      const ftp = createFtpCommand(context);
+
+      expect(() => ftp.fn()).toThrow('ftp: missing host');
+    });
+
+    it('should throw error for unknown hostname', () => {
+      const context = createMockFtpContext({ dnsRecords: [] });
+      const ftp = createFtpCommand(context);
+
+      expect(() => ftp.fn('unknown.host')).toThrow(
+        'ftp: unknown.host: Name or service not known'
+      );
+    });
+
+    it('should throw error when connecting to localhost IP', () => {
+      const context = createMockFtpContext({ localIP: '192.168.1.100' });
+      const ftp = createFtpCommand(context);
+
+      expect(() => ftp.fn('192.168.1.100')).toThrow(
+        'ftp: cannot connect to localhost via FTP'
+      );
+    });
+
+    it('should throw error when connecting to 127.0.0.1', () => {
+      const context = createMockFtpContext();
+      const ftp = createFtpCommand(context);
+
+      expect(() => ftp.fn('127.0.0.1')).toThrow(
+        'ftp: cannot connect to localhost via FTP'
+      );
+    });
+
+    it('should throw error when connecting to localhost hostname', () => {
+      // When 'localhost' is passed, it's treated as a hostname that needs DNS resolution
+      // Since there's no DNS record for 'localhost', it fails with name resolution error
+      const context = createMockFtpContext();
+      const ftp = createFtpCommand(context);
+
+      expect(() => ftp.fn('localhost')).toThrow(
+        'ftp: localhost: Name or service not known'
+      );
+    });
+
+    it('should throw error when machine does not exist', () => {
+      const context = createMockFtpContext({ machines: [] });
+      const ftp = createFtpCommand(context);
+
+      expect(() => ftp.fn('10.0.0.1')).toThrow(
+        'ftp: connect to 10.0.0.1 port 21: Connection refused'
+      );
+    });
+
+    it('should throw error when FTP port is not open', () => {
+      const context = createMockFtpContext({
+        machines: [
+          getMockRemoteMachine({
+            ip: '192.168.1.50',
+            ports: [{ port: 22, service: 'ssh', open: true }],
+          }),
+        ],
+      });
+      const ftp = createFtpCommand(context);
+
+      expect(() => ftp.fn('192.168.1.50')).toThrow(
+        'ftp: connect to 192.168.1.50 port 21: Connection refused'
+      );
+    });
+
+    it('should throw error when FTP port exists but is closed', () => {
+      const context = createMockFtpContext({
+        machines: [
+          getMockRemoteMachine({
+            ip: '192.168.1.50',
+            ports: [{ port: 21, service: 'ftp', open: false }],
+          }),
+        ],
+      });
+      const ftp = createFtpCommand(context);
+
+      expect(() => ftp.fn('192.168.1.50')).toThrow(
+        'ftp: connect to 192.168.1.50 port 21: Connection refused'
+      );
+    });
+  });
+
+  describe('hostname resolution', () => {
+    it('should resolve hostname to IP address', () => {
+      const context = createMockFtpContext({
+        machines: [
+          getMockRemoteMachine({
+            ip: '192.168.1.50',
+            hostname: 'fileserver',
+            ports: [{ port: 21, service: 'ftp', open: true }],
+          }),
+        ],
+        dnsRecords: [getMockDnsRecord({ domain: 'fileserver.local', ip: '192.168.1.50' })],
+      });
+      const ftp = createFtpCommand(context);
+
+      const result = ftp.fn('fileserver.local');
+
+      expect(isAsyncOutput(result)).toBe(true);
+    });
+
+    it('should use resolved IP for connection message', () => {
+      const context = createMockFtpContext({
+        machines: [
+          getMockRemoteMachine({
+            ip: '192.168.1.50',
+            hostname: 'fileserver',
+            ports: [{ port: 21, service: 'ftp', open: true }],
+          }),
+        ],
+        dnsRecords: [getMockDnsRecord({ domain: 'fileserver.local', ip: '192.168.1.50' })],
+      });
+      const ftp = createFtpCommand(context);
+      const result = ftp.fn('fileserver.local');
+
+      const lines: string[] = [];
+      if (isAsyncOutput(result)) {
+        result.start(
+          (line) => lines.push(line),
+          () => {}
+        );
+      }
+
+      expect(lines[0]).toBe('Connecting to 192.168.1.50...');
+    });
+
+    it('should be case-insensitive for hostname lookup', () => {
+      const context = createMockFtpContext({
+        machines: [
+          getMockRemoteMachine({
+            ip: '192.168.1.50',
+            ports: [{ port: 21, service: 'ftp', open: true }],
+          }),
+        ],
+        dnsRecords: [getMockDnsRecord({ domain: 'FileServer.Local', ip: '192.168.1.50' })],
+      });
+      const ftp = createFtpCommand(context);
+
+      const result = ftp.fn('fileserver.local');
+
+      expect(isAsyncOutput(result)).toBe(true);
+    });
+  });
+
+  describe('async output structure', () => {
+    it('should return AsyncOutput object', () => {
+      const context = createMockFtpContext({
+        machines: [
+          getMockRemoteMachine({
+            ip: '192.168.1.50',
+            ports: [{ port: 21, service: 'ftp', open: true }],
+          }),
+        ],
+      });
+      const ftp = createFtpCommand(context);
+
+      const result = ftp.fn('192.168.1.50');
+
+      expect(isAsyncOutput(result)).toBe(true);
+    });
+
+    it('should have start function', () => {
+      const context = createMockFtpContext({
+        machines: [
+          getMockRemoteMachine({
+            ip: '192.168.1.50',
+            ports: [{ port: 21, service: 'ftp', open: true }],
+          }),
+        ],
+      });
+      const ftp = createFtpCommand(context);
+
+      const result = ftp.fn('192.168.1.50');
+
+      if (isAsyncOutput(result)) {
+        expect(typeof result.start).toBe('function');
+      }
+    });
+
+    it('should have cancel function', () => {
+      const context = createMockFtpContext({
+        machines: [
+          getMockRemoteMachine({
+            ip: '192.168.1.50',
+            ports: [{ port: 21, service: 'ftp', open: true }],
+          }),
+        ],
+      });
+      const ftp = createFtpCommand(context);
+
+      const result = ftp.fn('192.168.1.50');
+
+      if (isAsyncOutput(result)) {
+        expect(typeof result.cancel).toBe('function');
+      }
+    });
+  });
+
+  describe('connection execution', () => {
+    it('should output connecting message immediately', () => {
+      const context = createMockFtpContext({
+        machines: [
+          getMockRemoteMachine({
+            ip: '192.168.1.50',
+            ports: [{ port: 21, service: 'ftp', open: true }],
+          }),
+        ],
+      });
+      const ftp = createFtpCommand(context);
+      const result = ftp.fn('192.168.1.50');
+
+      const lines: string[] = [];
+      if (isAsyncOutput(result)) {
+        result.start(
+          (line) => lines.push(line),
+          () => {}
+        );
+      }
+
+      expect(lines[0]).toBe('Connecting to 192.168.1.50...');
+    });
+
+    it('should output connected message after first delay', () => {
+      const context = createMockFtpContext({
+        machines: [
+          getMockRemoteMachine({
+            ip: '192.168.1.50',
+            ports: [{ port: 21, service: 'ftp', open: true }],
+          }),
+        ],
+      });
+      const ftp = createFtpCommand(context);
+      const result = ftp.fn('192.168.1.50');
+
+      const lines: string[] = [];
+      if (isAsyncOutput(result)) {
+        result.start(
+          (line) => lines.push(line),
+          () => {}
+        );
+      }
+
+      // Fast-forward first delay (FTP_CONNECT_DELAY_MS = 600)
+      vi.advanceTimersByTime(600);
+
+      expect(lines.some((l) => l === 'Connected to 192.168.1.50.')).toBe(true);
+    });
+
+    it('should output FTP banner with hostname after banner delay', () => {
+      const context = createMockFtpContext({
+        machines: [
+          getMockRemoteMachine({
+            ip: '192.168.1.50',
+            hostname: 'fileserver',
+            ports: [{ port: 21, service: 'ftp', open: true }],
+          }),
+        ],
+      });
+      const ftp = createFtpCommand(context);
+      const result = ftp.fn('192.168.1.50');
+
+      const lines: string[] = [];
+      if (isAsyncOutput(result)) {
+        result.start(
+          (line) => lines.push(line),
+          () => {}
+        );
+      }
+
+      // Fast-forward both delays (600 + 400 = 1000ms)
+      vi.advanceTimersByTime(1000);
+
+      expect(lines.some((l) => l.includes('220 Welcome to fileserver FTP server'))).toBe(true);
+    });
+
+    it('should complete with FTP prompt data', () => {
+      const context = createMockFtpContext({
+        machines: [
+          getMockRemoteMachine({
+            ip: '192.168.1.50',
+            ports: [{ port: 21, service: 'ftp', open: true }],
+          }),
+        ],
+      });
+      const ftp = createFtpCommand(context);
+      const result = ftp.fn('192.168.1.50');
+
+      let followUp: unknown = null;
+      if (isAsyncOutput(result)) {
+        result.start(
+          () => {},
+          (data) => {
+            followUp = data;
+          }
+        );
+      }
+
+      // Fast-forward to completion
+      vi.advanceTimersByTime(1000);
+
+      expect(isFtpPrompt(followUp)).toBe(true);
+      if (isFtpPrompt(followUp)) {
+        expect(followUp.targetIP).toBe('192.168.1.50');
+      }
+    });
+
+    it('should include resolved IP in FTP prompt data', () => {
+      const context = createMockFtpContext({
+        machines: [
+          getMockRemoteMachine({
+            ip: '192.168.1.50',
+            hostname: 'fileserver',
+            ports: [{ port: 21, service: 'ftp', open: true }],
+          }),
+        ],
+        dnsRecords: [getMockDnsRecord({ domain: 'fileserver.local', ip: '192.168.1.50' })],
+      });
+      const ftp = createFtpCommand(context);
+      const result = ftp.fn('fileserver.local');
+
+      let followUp: unknown = null;
+      if (isAsyncOutput(result)) {
+        result.start(
+          () => {},
+          (data) => {
+            followUp = data;
+          }
+        );
+      }
+
+      vi.advanceTimersByTime(1000);
+
+      if (isFtpPrompt(followUp)) {
+        expect(followUp.targetIP).toBe('192.168.1.50');
+      }
+    });
+  });
+
+  describe('cancellation', () => {
+    it('should cancel before connected message', () => {
+      const context = createMockFtpContext({
+        machines: [
+          getMockRemoteMachine({
+            ip: '192.168.1.50',
+            ports: [{ port: 21, service: 'ftp', open: true }],
+          }),
+        ],
+      });
+      const ftp = createFtpCommand(context);
+      const result = ftp.fn('192.168.1.50');
+
+      const lines: string[] = [];
+      if (isAsyncOutput(result)) {
+        result.start(
+          (line) => lines.push(line),
+          () => {}
+        );
+
+        // Cancel before first delay completes
+        vi.advanceTimersByTime(300);
+        result.cancel?.();
+        vi.advanceTimersByTime(2000);
+      }
+
+      // Should only have connecting message
+      expect(lines.length).toBe(1);
+      expect(lines[0]).toBe('Connecting to 192.168.1.50...');
+    });
+
+    it('should cancel before FTP banner', () => {
+      const context = createMockFtpContext({
+        machines: [
+          getMockRemoteMachine({
+            ip: '192.168.1.50',
+            hostname: 'fileserver',
+            ports: [{ port: 21, service: 'ftp', open: true }],
+          }),
+        ],
+      });
+      const ftp = createFtpCommand(context);
+      const result = ftp.fn('192.168.1.50');
+
+      const lines: string[] = [];
+      let completed = false;
+      if (isAsyncOutput(result)) {
+        result.start(
+          (line) => lines.push(line),
+          () => {
+            completed = true;
+          }
+        );
+
+        // Advance past first delay, then cancel
+        vi.advanceTimersByTime(700);
+        result.cancel?.();
+        vi.advanceTimersByTime(2000);
+      }
+
+      // Should have connecting and connected, but not banner
+      expect(lines.some((l) => l.includes('220 Welcome'))).toBe(false);
       expect(completed).toBe(false);
     });
   });
