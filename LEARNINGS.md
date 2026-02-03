@@ -17,6 +17,21 @@
 - **Issue**: Single `validatePassword` function needed to handle both cases
 - **Solution**: Check `sshTargetIP` state to determine which validation path to use
 
+### FTP requires dual-filesystem access
+- **Context**: FTP `get`/`put` commands need to read from one machine and write to another simultaneously
+- **Issue**: Original FileSystemContext only tracked one active filesystem via `switchMachine()`
+- **Solution**: Track all machine filesystems in state, add cross-machine methods like `readFileFromMachine()`, `writeFileToMachine()`
+
+### Session stack needed for SSH return
+- **Context**: After `ssh` into a remote machine, user needs to return with `exit()`
+- **Issue**: Session state was overwritten on SSH, no way to restore previous state
+- **Solution**: Add `sessionStack` to SessionContext with `pushSession()`/`popSession()` methods
+
+### Combined prompt modes simplify TerminalInput
+- **Context**: Password input hides prompt and masks input; FTP username input hides prompt but shows text
+- **Issue**: Had separate `passwordMode` and `hidePrompt` props with overlapping behavior
+- **Solution**: Single `promptMode?: 'username' | 'password'` prop - both hide prompt and disable history/tab, only password masks
+
 ### Type assertions hide bugs
 - **Context**: Using `result as AuthorData` to tell TypeScript the type
 - **Issue**: Assertions bypass type checking; if result isn't actually AuthorData, runtime error
@@ -42,7 +57,22 @@
 ### Async streaming with cancellation support
 - **What**: AsyncOutput interface with `start(onLine, onComplete)` and optional `cancel()`
 - **Why it works**: Simulates realistic delays, supports interruption, keeps Terminal in control
-- **Example**: ping, nmap, nslookup all use this pattern
+- **Example**: ping, nmap, nslookup, ssh, ftp all use this pattern
+
+### Dual-filesystem access for FTP
+- **What**: FileSystemContext stores all machine filesystems in state, provides cross-machine operations
+- **Why it works**: FTP can read/write between origin and remote machines without switching active filesystem
+- **Example**: `readFileFromMachine(machineId, path, cwd, userType)`, `createFileOnMachine(...)`
+
+### Session stack for connection management
+- **What**: SessionContext maintains a stack of session snapshots, pushed on SSH, popped on exit
+- **Why it works**: Supports nested connections (SSH into machine A, then SSH into B), clean return path
+- **Example**: `pushSession(currentPath)` before SSH, `popSession()` on exit restores full state
+
+### FTP mode with dedicated command set
+- **What**: `FtpSession` state tracks origin/remote machines, Terminal switches to FTP commands when active
+- **Why it works**: Clean separation between normal and FTP modes, prompt changes to `ftp>`, limited command set
+- **Example**: `useFtpCommands()` hook returns FTP-specific commands when `ftpSession` is active
 
 ### Immutable file system updates with recursive helpers
 - **What**: Pure functions `updateNodeAtPath()` and `addChildAtPath()` for immutable tree updates
@@ -132,3 +162,9 @@
 - nmap on IP range: Scans sequentially with delays, shows live hosts only
 - Empty command input: Silently ignored, no error
 - su with dynamic users: Uses `getUsers()` context to support different machines
+- FTP to localhost: Rejected with "cannot connect to localhost via FTP"
+- FTP to machine without FTP port: "Connection refused"
+- FTP get with permission denied: Checks both remote read and local write permissions
+- FTP put with permission denied: Checks both local read and remote write permissions
+- exit() when not connected: "exit: not connected to a remote machine"
+- FTP username prompt accepts empty: Defaults to "anonymous"

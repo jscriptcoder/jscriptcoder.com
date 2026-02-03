@@ -79,6 +79,24 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 | `nmap(target)` | Scan for open ports or discover hosts in a range |
 | `nslookup(domain)` | Query DNS to resolve domain to IP address |
 | `ssh(user, host)` | Connect to remote machine via SSH |
+| `exit()` | Close SSH connection and return to previous machine |
+| `ftp(host)` | Connect to remote machine via FTP |
+
+### FTP Mode Commands
+
+When connected via FTP, a dedicated command set is available:
+
+| Command | Description |
+|---------|-------------|
+| `pwd()` | Print remote working directory |
+| `lpwd()` | Print local working directory |
+| `cd(path)` | Change remote directory |
+| `lcd(path)` | Change local directory |
+| `ls([path])` | List remote directory contents |
+| `lls([path])` | List local directory contents |
+| `get(file, [dest])` | Download file from remote to local |
+| `put(file, [dest])` | Upload file from local to remote |
+| `quit()` / `bye()` | Close FTP connection |
 
 ### Examples
 
@@ -106,6 +124,18 @@ su("root")               // Attempt to switch to root
 ifconfig()               // Show network interfaces
 whoami()                 // Display current user
 ping("localhost")        // Test connectivity
+
+// SSH to remote machine
+ssh("admin", "192.168.1.1")  // Connect to gateway
+exit()                       // Return to previous machine
+
+// FTP file transfer
+ftp("192.168.1.50")          // Connect to fileserver
+// In FTP mode:
+ls()                         // List remote files
+get("secret.txt")            // Download to local
+put("/tmp/data.txt")         // Upload to remote
+quit()                       // Exit FTP
 ```
 
 ## Network Simulation
@@ -134,11 +164,11 @@ npm run test:coverage # Run tests with coverage
 
 ### Test Coverage
 
-103 unit tests covering terminal commands:
+121 unit tests covering terminal commands:
 - **File system commands**: ls, cd, cat (32 tests)
 - **Utility commands**: echo, help, man (30 tests)
 - **Session commands**: su (9 tests)
-- **Network commands**: ifconfig, ping, nslookup, nmap (50 tests)
+- **Network commands**: ifconfig, ping, nslookup, nmap, ssh, ftp (50 tests)
 
 ## Project Structure
 
