@@ -5,435 +5,445 @@ description: React Testing Library patterns for testing React components, hooks,
 
 # React Testing Library
 
-This skill focuses on React-specific testing patterns.
+This skill focuses on React-specific testing patterns for the JSHACK.ME terminal application.
 
 ---
 
-## Testing React Components
+## Testing Custom Hooks
 
-**React components are just functions that return JSX.** Test them like functions: inputs (props) → output (rendered DOM).
-
-### Basic Component Testing
-
-```tsx
-// ✅ CORRECT - Test component behavior
-it('should display user name when provided', () => {
-  render(<UserProfile name="Alice" email="alice@example.com" />);
-
-  expect(screen.getByText(/alice/i)).toBeInTheDocument();
-  expect(screen.getByText(/alice@example.com/i)).toBeInTheDocument();
-});
-```
-
-```tsx
-// ❌ WRONG - Testing implementation
-it('should set name state', () => {
-  const wrapper = mount(<UserProfile name="Alice" />);
-  expect(wrapper.state('name')).toBe('Alice'); // Internal state!
-});
-```
-
-### Testing Props
-
-```tsx
-// ✅ CORRECT - Test how props affect rendered output
-it('should call onSubmit when form submitted', async () => {
-  const handleSubmit = vi.fn();
-  const user = userEvent.setup();
-
-  render(<LoginForm onSubmit={handleSubmit} />);
-
-  await user.type(screen.getByLabelText(/email/i), 'test@example.com');
-  await user.click(screen.getByRole('button', { name: /submit/i }));
-
-  expect(handleSubmit).toHaveBeenCalledWith({
-    email: 'test@example.com',
-  });
-});
-```
-
-### Testing Conditional Rendering
-
-```tsx
-// ✅ CORRECT - Test what user sees in different states
-it('should show error message when login fails', async () => {
-  server.use(
-    http.post('/api/login', () => {
-      return HttpResponse.json({ error: 'Invalid credentials' }, { status: 401 });
-    })
-  );
-
-  const user = userEvent.setup();
-  render(<LoginForm />);
-
-  await user.type(screen.getByLabelText(/email/i), 'wrong@example.com');
-  await user.click(screen.getByRole('button', { name: /submit/i }));
-
-  await screen.findByText(/invalid credentials/i);
-});
-```
-
----
-
-## Testing React Hooks
-
-### Custom Hooks with renderHook
+### Basic Hook Testing with renderHook
 
 **Built into React Testing Library** (since v13):
 
-```tsx
-import { renderHook } from '@testing-library/react';
+```typescript
+import { renderHook, act } from '@testing-library/react';
+import { useCommandHistory } from './useCommandHistory';
 
-it('should toggle value', () => {
-  const { result } = renderHook(() => useToggle(false));
-
-  expect(result.current.value).toBe(false);
+it('should add command to history', () => {
+  const { result } = renderHook(() => useCommandHistory());
 
   act(() => {
-    result.current.toggle();
+    result.current.addCommand('ls()');
   });
 
-  expect(result.current.value).toBe(true);
+  let command: string;
+  act(() => {
+    command = result.current.navigateUp();
+  });
+  expect(command!).toBe('ls()');
 });
 ```
 
 **Pattern:**
 - `result.current` - Current return value of hook
-- `act()` - Wrap state updates
-- `rerender()` - Re-run hook with new props
+- `act()` - Wrap state updates that trigger re-renders
+- Each state-changing call needs its own `act()` block
 
-### Hooks with Props
+### Testing Hook State Changes
 
-```tsx
-it('should accept initial value', () => {
-  const { result, rerender } = renderHook(
-    ({ initialValue }) => useCounter(initialValue),
-    { initialProps: { initialValue: 10 } }
+```typescript
+import { useVariables } from './useVariables';
+
+it('should declare a const variable', () => {
+  const { result } = renderHook(() => useVariables());
+
+  let varResult;
+  act(() => {
+    varResult = result.current.handleVariableOperation('const x = 42', {});
+  });
+
+  expect(varResult).toEqual({ success: true, value: 42 });
+  expect(result.current.getVariables()).toEqual({ x: 42 });
+});
+```
+
+### Hooks with Parameters
+
+```typescript
+import { useAutoComplete } from './useAutoComplete';
+
+it('should match commands with () suffix', () => {
+  const { result } = renderHook(() =>
+    useAutoComplete(['help', 'echo'], ['myVar'])
   );
 
-  expect(result.current.count).toBe(10);
+  const completions = result.current.getCompletions('hel');
 
-  // Test with different initial value
-  rerender({ initialValue: 20 });
-  expect(result.current.count).toBe(20);
+  expect(completions.matches).toHaveLength(1);
+  expect(completions.matches[0]).toEqual({ name: 'help', display: 'help()' });
 });
 ```
 
 ---
 
-## Testing Context
+## Testing with Context Providers
 
-### wrapper Option
+### wrapper Option for Hooks
 
 **For hooks that need context providers:**
 
-```tsx
-const { result } = renderHook(() => useAuth(), {
-  wrapper: ({ children }) => (
-    <AuthProvider>
-      {children}
-    </AuthProvider>
-  ),
+```typescript
+import { useSession } from '../context/SessionContext';
+import { SessionProvider } from '../context/SessionContext';
+
+it('should return current username', () => {
+  const { result } = renderHook(() => useSession(), {
+    wrapper: ({ children }) => (
+      <SessionProvider>
+        {children}
+      </SessionProvider>
+    ),
+  });
+
+  expect(result.current.username).toBe('jshacker');
 });
-
-expect(result.current.user).toBeNull();
-
-act(() => {
-  result.current.login({ email: 'test@example.com' });
-});
-
-expect(result.current.user).toEqual({ email: 'test@example.com' });
 ```
 
 ### Multiple Providers
 
-```tsx
-const AllProviders = ({ children }) => (
-  <AuthProvider>
-    <ThemeProvider>
-      <RouterProvider>
+```typescript
+import { SessionProvider } from '../context/SessionContext';
+import { FileSystemProvider } from '../filesystem/FileSystemContext';
+import { NetworkProvider } from '../network/NetworkContext';
+
+const AllProviders = ({ children }: { children: React.ReactNode }) => (
+  <SessionProvider>
+    <FileSystemProvider>
+      <NetworkProvider>
         {children}
-      </RouterProvider>
-    </ThemeProvider>
-  </AuthProvider>
+      </NetworkProvider>
+    </FileSystemProvider>
+  </SessionProvider>
 );
 
-const { result } = renderHook(() => useMyHook(), {
-  wrapper: AllProviders,
+it('should access all contexts', () => {
+  const { result } = renderHook(() => useCommands(), {
+    wrapper: AllProviders,
+  });
+
+  expect(result.current.commands.size).toBeGreaterThan(0);
 });
 ```
 
-### Testing Components with Context
+### Render Helper for Components
 
-```tsx
-// ✅ CORRECT - Wrap component in provider
-const renderWithAuth = (ui, { user = null, ...options } = {}) => {
+```typescript
+const renderWithProviders = (ui: React.ReactElement) => {
   return render(
-    <AuthProvider initialUser={user}>
-      {ui}
-    </AuthProvider>,
-    options
+    <SessionProvider>
+      <FileSystemProvider>
+        {ui}
+      </FileSystemProvider>
+    </SessionProvider>
   );
 };
 
-it('should show user menu when authenticated', () => {
-  renderWithAuth(<Dashboard />, {
-    user: { name: 'Alice', role: 'admin' },
-  });
+it('should display terminal prompt', () => {
+  renderWithProviders(<TerminalInput value="" onChange={() => {}} />);
 
-  expect(screen.getByRole('button', { name: /user menu/i })).toBeInTheDocument();
+  expect(screen.getByText(/jshacker@localhost>/)).toBeInTheDocument();
 });
 ```
 
 ---
 
-## Testing Forms
+## Testing Terminal Components
 
-### Controlled Inputs
+### Testing Input Components
 
-```tsx
-it('should update input value as user types', async () => {
+```typescript
+import userEvent from '@testing-library/user-event';
+
+it('should call onChange when typing', async () => {
+  const handleChange = vi.fn();
   const user = userEvent.setup();
 
-  render(<SearchInput />);
+  render(<TerminalInput value="" onChange={handleChange} />);
 
-  const input = screen.getByLabelText(/search/i);
+  const input = screen.getByRole('textbox');
+  await user.type(input, 'ls()');
 
-  await user.type(input, 'react');
-
-  expect(input).toHaveValue('react');
+  expect(handleChange).toHaveBeenCalled();
 });
 ```
 
-### Form Submissions
+### Testing Output Display
 
-```tsx
-it('should submit form with user input', async () => {
-  const handleSubmit = vi.fn();
-  const user = userEvent.setup();
+```typescript
+it('should display command output', () => {
+  const output = [
+    { type: 'input' as const, content: 'ls()' },
+    { type: 'output' as const, content: 'README.md  src/' },
+  ];
 
-  render(<RegistrationForm onSubmit={handleSubmit} />);
+  render(<TerminalOutput lines={output} />);
 
-  await user.type(screen.getByLabelText(/name/i), 'Alice');
-  await user.type(screen.getByLabelText(/email/i), 'alice@example.com');
-  await user.type(screen.getByLabelText(/password/i), 'password123');
-  await user.click(screen.getByRole('button', { name: /sign up/i }));
-
-  expect(handleSubmit).toHaveBeenCalledWith({
-    name: 'Alice',
-    email: 'alice@example.com',
-    password: 'password123',
-  });
+  expect(screen.getByText('ls()')).toBeInTheDocument();
+  expect(screen.getByText('README.md  src/')).toBeInTheDocument();
 });
 ```
 
-### Form Validation
+### Testing Error States
 
-```tsx
-it('should show validation errors for invalid input', async () => {
-  const user = userEvent.setup();
+```typescript
+it('should display error messages in red', () => {
+  const output = [
+    { type: 'error' as const, content: 'Permission denied' },
+  ];
 
-  render(<RegistrationForm />);
+  render(<TerminalOutput lines={output} />);
 
-  // Submit empty form
-  await user.click(screen.getByRole('button', { name: /sign up/i }));
-
-  // Validation errors appear
-  expect(screen.getByText(/name is required/i)).toBeInTheDocument();
-  expect(screen.getByText(/email is required/i)).toBeInTheDocument();
-  expect(screen.getByText(/password is required/i)).toBeInTheDocument();
+  const errorElement = screen.getByText('Permission denied');
+  expect(errorElement).toHaveClass('text-red-500');
 });
 ```
 
 ---
 
-## React-Specific Anti-Patterns
+## act() Usage in Hook Tests
 
-### 1. Unnecessary act() wrapping
+### When act() is Required
 
-❌ **WRONG - Manual act() everywhere**
-```tsx
+For `renderHook`, wrap **every** call that changes state:
+
+```typescript
+// ✅ CORRECT - Each navigation in separate act()
+it('should navigate through history', () => {
+  const { result } = renderHook(() => useCommandHistory());
+
+  act(() => {
+    result.current.addCommand('first');
+    result.current.addCommand('second');
+  });
+
+  let command: string;
+
+  act(() => {
+    command = result.current.navigateUp();
+  });
+  expect(command!).toBe('second');
+
+  act(() => {
+    command = result.current.navigateUp();
+  });
+  expect(command!).toBe('first');
+});
+```
+
+```typescript
+// ❌ WRONG - Multiple navigations in same act() won't work correctly
 act(() => {
-  render(<MyComponent />);
-});
-
-await act(async () => {
-  await user.click(button);
+  result.current.navigateUp();
+  result.current.navigateUp();
+  command = result.current.navigateUp(); // Returns wrong value
 });
 ```
 
-✅ **CORRECT - RTL handles it**
-```tsx
-render(<MyComponent />);
-await user.click(button);
-```
+### When act() is NOT Required
 
-**Modern RTL auto-wraps:**
-- `render()`
-- `userEvent` methods
-- `fireEvent`
-- `waitFor`, `findBy`
+For component tests, RTL handles it automatically:
 
-**When you DO need manual `act()`:**
-- Custom hook state updates (`renderHook`)
-- Direct state mutations (rare, usually bad practice)
-
----
-
-### 2. Manual cleanup() calls
-
-❌ **WRONG - Manual cleanup**
-```tsx
-afterEach(() => {
-  cleanup(); // Automatic since RTL 9!
-});
-```
-
-✅ **CORRECT - No cleanup needed**
-```tsx
-// Cleanup happens automatically after each test
+```typescript
+// ✅ CORRECT - RTL auto-wraps these
+render(<Terminal />);
+await user.type(input, 'help()');
+await user.keyboard('{Enter}');
 ```
 
 ---
 
-### 3. beforeEach render pattern
+## Testing Async Behavior
 
-❌ **WRONG - Shared render in beforeEach**
-```tsx
-let button;
-beforeEach(() => {
-  render(<MyComponent />);
-  button = screen.getByRole('button'); // Shared state across tests
-});
+### Testing with Fake Timers
 
-it('test 1', () => {
-  // Uses shared button from beforeEach
+For commands like `ping` and `nmap` that use `setTimeout`:
+
+```typescript
+import { vi } from 'vitest';
+
+it('should emit lines with delays', () => {
+  vi.useFakeTimers();
+
+  const { result } = renderHook(() => useAsyncCommand());
+  const onLine = vi.fn();
+  const onComplete = vi.fn();
+
+  result.current.start(onLine, onComplete);
+
+  expect(onLine).toHaveBeenCalledWith('Starting...');
+
+  vi.advanceTimersByTime(1000);
+
+  expect(onLine).toHaveBeenCalledWith('Complete.');
+  expect(onComplete).toHaveBeenCalled();
+
+  vi.useRealTimers();
 });
 ```
 
-✅ **CORRECT - Factory function per test**
-```tsx
-const renderComponent = () => {
-  render(<MyComponent />);
-  return {
-    button: screen.getByRole('button'),
-  };
+### Testing Loading States
+
+```typescript
+it('should show loading during async operation', async () => {
+  render(<Terminal />);
+
+  await user.type(screen.getByRole('textbox'), 'ping("192.168.1.1")');
+  await user.keyboard('{Enter}');
+
+  // Check for streaming output
+  await screen.findByText(/PING 192.168.1.1/);
+});
+```
+
+---
+
+## Factory Functions for Test Data
+
+### Hook Test Factories
+
+Instead of `beforeEach`, use factories:
+
+```typescript
+// ✅ CORRECT - Factory function
+const setupHistory = (commands: string[] = []) => {
+  const { result } = renderHook(() => useCommandHistory());
+
+  act(() => {
+    commands.forEach(cmd => result.current.addCommand(cmd));
+  });
+
+  return result;
 };
 
-it('test 1', () => {
-  const { button } = renderComponent(); // Fresh state
+it('should navigate through commands', () => {
+  const result = setupHistory(['pwd()', 'ls()', 'cd("/home")']);
+
+  let command: string;
+  act(() => {
+    command = result.current.navigateUp();
+  });
+
+  expect(command!).toBe('cd("/home")');
 });
 ```
 
-For factory patterns, see `testing` skill.
-
----
-
-### 4. Testing component internals
-
-❌ **WRONG - Accessing component internals**
-```tsx
-const wrapper = shallow(<MyComponent />);
-expect(wrapper.state('isOpen')).toBe(true); // Internal state
-expect(wrapper.instance().handleClick).toBeDefined(); // Internal method
-```
-
-✅ **CORRECT - Test rendered output**
-```tsx
-render(<MyComponent />);
-expect(screen.getByRole('dialog')).toBeInTheDocument(); // What user sees
-```
-
----
-
-### 5. Shallow rendering
-
-❌ **WRONG - Shallow rendering**
-```tsx
-const wrapper = shallow(<MyComponent />);
-// Child components not rendered - incomplete test
-```
-
-✅ **CORRECT - Full rendering**
-```tsx
-render(<MyComponent />);
-// Full component tree rendered - realistic test
-```
-
-**Why:** Shallow rendering hides integration bugs between parent/child components.
-
----
-
-## Testing Loading States
-
-```tsx
-it('should show loading then data', async () => {
-  render(<UserList />);
-
-  // Initially loading
-  expect(screen.getByText(/loading/i)).toBeInTheDocument();
-
-  // Wait for data
-  await screen.findByText(/alice/i);
-
-  // Loading gone
-  expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+```typescript
+// ❌ WRONG - Shared state in beforeEach
+let result;
+beforeEach(() => {
+  const hook = renderHook(() => useCommandHistory());
+  result = hook.result;
 });
 ```
 
 ---
 
-## Testing Error Boundaries
+## Anti-Patterns to Avoid
 
-```tsx
-it('should catch errors with error boundary', () => {
-  // Suppress console.error for this test
-  const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+### 1. Testing Implementation Details
 
-  render(
-    <ErrorBoundary fallback={<div>Something went wrong</div>}>
-      <ThrowsError />
-    </ErrorBoundary>
-  );
-
-  expect(screen.getByText(/something went wrong/i)).toBeInTheDocument();
-
-  spy.mockRestore();
+```typescript
+// ❌ WRONG - Testing internal state
+it('should set historyIndex', () => {
+  const { result } = renderHook(() => useCommandHistory());
+  act(() => result.current.navigateUp());
+  expect(result.current.historyIndex).toBe(0); // Internal!
 });
+
+// ✅ CORRECT - Test behavior
+it('should return last command when navigating up', () => {
+  const { result } = renderHook(() => useCommandHistory());
+  act(() => result.current.addCommand('ls()'));
+
+  let command: string;
+  act(() => {
+    command = result.current.navigateUp();
+  });
+
+  expect(command!).toBe('ls()');
+});
+```
+
+### 2. Snapshot Testing for Dynamic Content
+
+```typescript
+// ❌ WRONG - Brittle snapshots
+it('should match snapshot', () => {
+  const { container } = render(<TerminalOutput lines={output} />);
+  expect(container).toMatchSnapshot();
+});
+
+// ✅ CORRECT - Test specific behavior
+it('should display all output lines', () => {
+  render(<TerminalOutput lines={output} />);
+  expect(screen.getByText('command output')).toBeInTheDocument();
+});
+```
+
+### 3. Manual cleanup() Calls
+
+```typescript
+// ❌ WRONG - Cleanup is automatic
+afterEach(() => {
+  cleanup();
+});
+
+// ✅ CORRECT - Just write tests
+it('test 1', () => { /* ... */ });
+it('test 2', () => { /* ... */ });
 ```
 
 ---
 
-## Testing Portals
+## Project-Specific Patterns
 
-```tsx
-it('should render modal in portal', () => {
-  render(<Modal isOpen={true}>Modal content</Modal>);
+### Testing Command Factories
 
-  // Portal renders outside root, but Testing Library finds it
-  expect(screen.getByText(/modal content/i)).toBeInTheDocument();
+Commands in this project use factory functions with injected dependencies:
+
+```typescript
+import { createLsCommand } from '../commands/ls';
+
+it('should list directory contents', () => {
+  const mockContext = {
+    getCurrentPath: () => '/home/jshacker',
+    getNode: () => ({
+      type: 'directory',
+      children: { 'README.md': { type: 'file' } },
+    }),
+    canRead: () => ({ allowed: true }),
+  };
+
+  const ls = createLsCommand(mockContext);
+  const result = ls.fn();
+
+  expect(result).toContain('README.md');
 });
 ```
 
-**Testing Library queries the entire document,** so portals work automatically.
+### Testing with Type Guards
 
----
+For discriminated unions with `__type`:
 
-## Testing Suspense
+```typescript
+import type { VariableResult } from './useVariables';
 
-```tsx
-it('should show fallback then content', async () => {
-  render(
-    <Suspense fallback={<div>Loading...</div>}>
-      <LazyComponent />
-    </Suspense>
-  );
+it('should return error for const reassignment', () => {
+  const { result } = renderHook(() => useVariables());
 
-  // Initially fallback
-  expect(screen.getByText(/loading/i)).toBeInTheDocument();
+  act(() => {
+    result.current.handleVariableOperation('const x = 1', {});
+  });
 
-  // Wait for component
-  await screen.findByText(/lazy content/i);
+  let varResult: VariableResult | null;
+  act(() => {
+    varResult = result.current.handleVariableOperation('x = 2', {});
+  });
+
+  expect(varResult).toEqual({
+    success: false,
+    error: "Assignment to constant variable 'x'",
+  });
 });
 ```
 
@@ -441,15 +451,13 @@ it('should show fallback then content', async () => {
 
 ## Summary Checklist
 
-React-specific checks:
+When testing React code in this project:
 
-- [ ] Using `render()` from @testing-library/react (not enzyme's shallow/mount)
-- [ ] Using `renderHook()` for custom hooks
+- [ ] Using `renderHook()` from @testing-library/react for hooks
+- [ ] Wrapping state changes in `act()` for hook tests
 - [ ] Using `wrapper` option for context providers
-- [ ] No manual `act()` calls (RTL handles it)
-- [ ] No manual `cleanup()` calls (automatic)
-- [ ] Testing component output, not internal state
-- [ ] Using factory functions, not `beforeEach` render
-- [ ] Following TDD workflow (see `tdd` skill)
-- [ ] Using general DOM testing patterns (see `front-end-testing` skill)
-- [ ] Using test factories for data (see `testing` skill)
+- [ ] Using factory functions instead of `beforeEach`
+- [ ] Testing behavior, not implementation
+- [ ] Using fake timers for async commands (ping, nmap, ssh)
+- [ ] Mocking dependencies via factory function parameters
+- [ ] Following the testing skill for general patterns
