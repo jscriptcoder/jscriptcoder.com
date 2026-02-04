@@ -6,6 +6,7 @@ import { createNmapCommand } from '../commands/nmap';
 import { createNslookupCommand } from '../commands/nslookup';
 import { createSshCommand } from '../commands/ssh';
 import { createFtpCommand } from '../commands/ftp';
+import { createNcCommand } from '../commands/nc';
 import type { Command } from '../components/Terminal/types';
 
 export const useNetworkCommands = (): Map<string, Command> => {
@@ -48,6 +49,13 @@ export const useNetworkCommands = (): Map<string, Command> => {
 
     // ftp command
     commands.set('ftp', createFtpCommand({
+      getMachine,
+      getLocalIP,
+      resolveDomain,
+    }));
+
+    // nc (netcat) command
+    commands.set('nc', createNcCommand({
       getMachine,
       getLocalIP,
       resolveDomain,

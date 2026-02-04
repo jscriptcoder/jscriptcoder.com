@@ -233,6 +233,7 @@ To add a command:
 | `ssh(user, host)` | Connect to remote machine via SSH (async, prompts for password) |
 | `exit()` | Close SSH connection and return to previous machine |
 | `ftp(host)` | Connect to remote machine via FTP (async, prompts for username/password) |
+| `nc(host, port)` | Netcat - connect to arbitrary port, interactive mode for backdoors |
 
 **FTP Mode Commands** (available only when connected via FTP):
 

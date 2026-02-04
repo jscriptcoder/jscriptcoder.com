@@ -27,6 +27,12 @@ export type FtpSession = {
   readonly originCwd: string;
 };
 
+export type NcSession = {
+  readonly targetIP: string;
+  readonly targetPort: number;
+  readonly service: string;
+};
+
 // --- Persistence ---
 
 const STORAGE_KEY = 'jshack-session';
@@ -35,6 +41,7 @@ type PersistedState = {
   readonly session: Session;
   readonly sessionStack: readonly SessionSnapshot[];
   readonly ftpSession: FtpSession | null;
+  readonly ncSession: NcSession | null;
 };
 
 const isValidUserType = (value: unknown): value is UserType =>
@@ -63,6 +70,13 @@ const isValidFtpSession = (value: unknown): value is FtpSession =>
   isValidUserType((value as FtpSession).remoteUserType) &&
   isValidUserType((value as FtpSession).originUserType);
 
+const isValidNcSession = (value: unknown): value is NcSession =>
+  typeof value === 'object' &&
+  value !== null &&
+  typeof (value as NcSession).targetIP === 'string' &&
+  typeof (value as NcSession).targetPort === 'number' &&
+  typeof (value as NcSession).service === 'string';
+
 const isValidPersistedState = (value: unknown): value is PersistedState =>
   typeof value === 'object' &&
   value !== null &&
@@ -70,7 +84,10 @@ const isValidPersistedState = (value: unknown): value is PersistedState =>
   Array.isArray((value as PersistedState).sessionStack) &&
   (value as PersistedState).sessionStack.every(isValidSessionSnapshot) &&
   ((value as PersistedState).ftpSession === null ||
-    isValidFtpSession((value as PersistedState).ftpSession));
+    isValidFtpSession((value as PersistedState).ftpSession)) &&
+  ((value as PersistedState).ncSession === null ||
+    (value as PersistedState).ncSession === undefined ||
+    isValidNcSession((value as PersistedState).ncSession));
 
 const loadPersistedState = (): PersistedState | null => {
   try {
@@ -98,6 +115,7 @@ type SessionContextValue = {
   readonly session: Session;
   readonly sessionStack: readonly SessionSnapshot[];
   readonly ftpSession: FtpSession | null;
+  readonly ncSession: NcSession | null;
   readonly setUsername: (username: string, userType?: UserType) => void;
   readonly setMachine: (machine: string) => void;
   readonly setCurrentPath: (path: string) => void;
@@ -111,6 +129,10 @@ type SessionContextValue = {
   readonly updateFtpRemoteCwd: (cwd: string) => void;
   readonly updateFtpOriginCwd: (cwd: string) => void;
   readonly isInFtpMode: () => boolean;
+  // NC session methods
+  readonly enterNcMode: (ncSession: NcSession) => void;
+  readonly exitNcMode: () => NcSession | null;
+  readonly isInNcMode: () => boolean;
 };
 
 const defaultSession: Session = {
@@ -124,11 +146,12 @@ const SessionContext = createContext<SessionContextValue | null>(null);
 
 const getInitialState = (): PersistedState => {
   const persisted = loadPersistedState();
-  if (persisted) return persisted;
+  if (persisted) return { ...persisted, ncSession: persisted.ncSession ?? null };
   return {
     session: defaultSession,
     sessionStack: [],
     ftpSession: null,
+    ncSession: null,
   };
 };
 
@@ -137,11 +160,12 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session>(initialState.session);
   const [sessionStack, setSessionStack] = useState<readonly SessionSnapshot[]>(initialState.sessionStack);
   const [ftpSession, setFtpSession] = useState<FtpSession | null>(initialState.ftpSession);
+  const [ncSession, setNcSession] = useState<NcSession | null>(initialState.ncSession);
 
   // Persist state changes to localStorage
   useEffect(() => {
-    savePersistedState({ session, sessionStack, ftpSession });
-  }, [session, sessionStack, ftpSession]);
+    savePersistedState({ session, sessionStack, ftpSession, ncSession });
+  }, [session, sessionStack, ftpSession, ncSession]);
 
   const setUsername = useCallback((username: string, userType: UserType = 'user') => {
     setSession((prev) => ({ ...prev, username, userType }));
@@ -157,8 +181,9 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
 
   const getPrompt = useCallback(() => {
     if (ftpSession) return 'ftp>';
+    if (ncSession) return `${ncSession.service}>`;
     return `${session.username}@${session.machine}>`;
-  }, [session.username, session.machine, ftpSession]);
+  }, [session.username, session.machine, ftpSession, ncSession]);
 
   const pushSession = useCallback(() => {
     const snapshot: SessionSnapshot = {
@@ -206,12 +231,25 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
 
   const isInFtpMode = useCallback(() => ftpSession !== null, [ftpSession]);
 
+  const enterNcMode = useCallback((newNcSession: NcSession) => {
+    setNcSession(newNcSession);
+  }, []);
+
+  const exitNcMode = useCallback((): NcSession | null => {
+    const current = ncSession;
+    setNcSession(null);
+    return current;
+  }, [ncSession]);
+
+  const isInNcMode = useCallback(() => ncSession !== null, [ncSession]);
+
   return (
     <SessionContext.Provider
       value={{
         session,
         sessionStack,
         ftpSession,
+        ncSession,
         setUsername,
         setMachine,
         setCurrentPath,
@@ -224,6 +262,9 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
         updateFtpRemoteCwd,
         updateFtpOriginCwd,
         isInFtpMode,
+        enterNcMode,
+        exitNcMode,
+        isInNcMode,
       }}
     >
       {children}

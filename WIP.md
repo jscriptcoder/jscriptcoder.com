@@ -28,6 +28,11 @@ Step 12 of 14: Victory tracking
 ## Recent Session (2026-02-04)
 
 Implemented:
+- **nc (netcat) command**: Connect to arbitrary ports on remote machines
+  - Shows service banners for common ports (ssh, http, ftp, mysql)
+  - Interactive mode for backdoor services (port 31337 on darknet)
+  - Backdoor commands: help, whoami, ls, cat, exit
+  - Contains hidden flag: FLAG{backdoor_explorer}
 - **State consolidation**: Moved `currentPath` from FileSystemContext to SessionContext
   - SessionContext is now single source of truth for: machine, username, userType, currentPath
   - FileSystemContext reads location from SessionContext (no more duplication)
@@ -35,7 +40,7 @@ Implemented:
   - `pushSession()` no longer takes parameter (reads from session)
   - `popSession()` fully restores all state including currentPath
 - **Session persistence**: localStorage saves/restores session state
-  - Persists: session (machine, user, path), sessionStack (SSH history), ftpSession
+  - Persists: session (machine, user, path), sessionStack (SSH history), ftpSession, ncSession
   - Validates persisted data with type guards before restoring
   - Fallback to defaults if localStorage is empty/invalid/corrupted
   - Auto-saves on every state change

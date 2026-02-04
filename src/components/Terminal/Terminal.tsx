@@ -6,13 +6,14 @@ import { useAutoComplete } from '../../hooks/useAutoComplete';
 import { useVariables } from '../../hooks/useVariables';
 import { useCommands } from '../../hooks/useCommands';
 import { useFtpCommands } from '../../hooks/useFtpCommands';
+import { useNcCommands } from '../../hooks/useNcCommands';
 import { useSession } from '../../session/SessionContext';
-import type { FtpSession } from '../../session/SessionContext';
+import type { FtpSession, NcSession } from '../../session/SessionContext';
 import { useFileSystem } from '../../filesystem/FileSystemContext';
 import { useNetwork } from '../../network';
 import { md5 } from '../../utils/md5';
 import type { OutputLine, AuthorData } from './types';
-import { isAuthorData, isPasswordPrompt, isClearOutput, isExitOutput, isAsyncOutput, isSshPrompt, isFtpPrompt, isFtpQuit } from './types';
+import { isAuthorData, isPasswordPrompt, isClearOutput, isExitOutput, isAsyncOutput, isSshPrompt, isFtpPrompt, isFtpQuit, isNcPrompt, isNcQuit } from './types';
 import type { AsyncFollowUp } from './types';
 import type { UserType } from '../../session/SessionContext';
 
@@ -47,16 +48,19 @@ export const Terminal = () => {
 
   const { addCommand, navigateUp, navigateDown, resetNavigation } = useCommandHistory();
   const { getVariables, getVariableNames, handleVariableOperation } = useVariables();
-  const { getPrompt, setUsername, setMachine, setCurrentPath, pushSession, popSession, canReturn, session, enterFtpMode, exitFtpMode, isInFtpMode } = useSession();
+  const { getPrompt, setUsername, setMachine, setCurrentPath, pushSession, popSession, canReturn, session, enterFtpMode, exitFtpMode, isInFtpMode, enterNcMode, exitNcMode, isInNcMode } = useSession();
   const { executionContext, commandNames } = useCommands();
   const ftpCommands = useFtpCommands();
+  const ncCommands = useNcCommands();
   const { readFile, getDefaultHomePath } = useFileSystem();
   const { getMachine } = useNetwork();
 
-  // Use FTP commands for autocomplete when in FTP mode
+  // Use special commands for autocomplete when in FTP or NC mode
   const activeCommandNames = isInFtpMode() && ftpCommands
     ? Array.from(ftpCommands.keys())
-    : commandNames;
+    : isInNcMode()
+      ? Array.from(ncCommands.keys())
+      : commandNames;
   const { getCompletions } = useAutoComplete(activeCommandNames, getVariableNames());
 
   // Auto-scroll to bottom when new output is added
@@ -105,10 +109,12 @@ export const Terminal = () => {
       }
 
       // Not a variable operation, execute as normal command
-      // Use FTP commands when in FTP mode, otherwise use normal commands
+      // Use special commands when in FTP/NC mode, otherwise use normal commands
       const activeContext = isInFtpMode() && ftpCommands
         ? Object.fromEntries(Array.from(ftpCommands.entries()).map(([k, v]) => [k, v.fn]))
-        : executionContext;
+        : isInNcMode()
+          ? Object.fromEntries(Array.from(ncCommands.entries()).map(([k, v]) => [k, v.fn]))
+          : executionContext;
 
       // Combine commands and variables into execution context
       const variables = getVariables();
@@ -150,6 +156,13 @@ export const Terminal = () => {
           }
           return;
         }
+        if (isNcQuit(result)) {
+          const ncSession = exitNcMode();
+          if (ncSession) {
+            addLine('result', 'Connection closed.');
+          }
+          return;
+        }
         if (isAuthorData(result)) {
           addLine('author', result);
           return;
@@ -188,6 +201,16 @@ export const Terminal = () => {
                 setFtpUsernameMode(true);
                 addLine('result', `Name (${followUp.targetIP}:anonymous):`);
               }
+
+              // Handle NC prompt follow-up (backdoor mode)
+              if (isNcPrompt(followUp)) {
+                const newNcSession: NcSession = {
+                  targetIP: followUp.targetIP,
+                  targetPort: followUp.targetPort,
+                  service: followUp.service,
+                };
+                enterNcMode(newNcSession);
+              }
             }
           );
           return;
@@ -199,7 +222,7 @@ export const Terminal = () => {
       const errorMessage = error instanceof Error ? error.message : String(error);
       addLine('error', `Error: ${errorMessage}`);
     }
-  }, [addCommand, addLine, clearLines, handleVariableOperation, getVariables, getPrompt, executionContext, canReturn, popSession, isInFtpMode, ftpCommands, exitFtpMode]);
+  }, [addCommand, addLine, clearLines, handleVariableOperation, getVariables, getPrompt, executionContext, canReturn, popSession, isInFtpMode, ftpCommands, exitFtpMode, isInNcMode, ncCommands, exitNcMode, enterNcMode]);
 
   const validatePassword = useCallback((password: string): boolean => {
     if (!targetUser) return false;

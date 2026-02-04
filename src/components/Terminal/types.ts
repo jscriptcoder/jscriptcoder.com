@@ -39,7 +39,18 @@ export type FtpQuitOutput = {
   readonly __type: 'ftp_quit';
 };
 
-export type AsyncFollowUp = SshPromptData | FtpPromptData;
+export type NcPromptData = {
+  readonly __type: 'nc_prompt';
+  readonly targetIP: string;
+  readonly targetPort: number;
+  readonly service: string;
+};
+
+export type NcQuitOutput = {
+  readonly __type: 'nc_quit';
+};
+
+export type AsyncFollowUp = SshPromptData | FtpPromptData | NcPromptData;
 
 export type AsyncOutput = {
   readonly __type: 'async';
@@ -59,6 +70,8 @@ export type SpecialOutput =
   | ExitOutput
   | FtpPromptData
   | FtpQuitOutput
+  | NcPromptData
+  | NcQuitOutput
   | AsyncOutput;
 
 export type OutputLine = {
@@ -120,3 +133,9 @@ export const isFtpQuit = (value: unknown): value is FtpQuitOutput =>
 
 export const isAsyncOutput = (value: unknown): value is AsyncOutput =>
   isSpecialOutput(value) && value.__type === 'async';
+
+export const isNcPrompt = (value: unknown): value is NcPromptData =>
+  isSpecialOutput(value) && value.__type === 'nc_prompt';
+
+export const isNcQuit = (value: unknown): value is NcQuitOutput =>
+  isSpecialOutput(value) && value.__type === 'nc_quit';
