@@ -25,22 +25,29 @@ Step 12 of 14: Victory tracking
 - [ ] Step 12: Victory tracking ← next
 - [ ] Step 13: Challenge variety
 
-## Recent Session (2026-02-03)
+## Recent Session (2026-02-04)
+
+Implemented:
+- **State consolidation**: Moved `currentPath` from FileSystemContext to SessionContext
+  - SessionContext is now single source of truth for: machine, username, userType, currentPath
+  - FileSystemContext reads location from SessionContext (no more duplication)
+  - Removed `switchMachine()` - session state changes handle machine switching
+  - `pushSession()` no longer takes parameter (reads from session)
+  - `popSession()` fully restores all state including currentPath
+- **Session persistence**: localStorage saves/restores session state
+  - Persists: session (machine, user, path), sessionStack (SSH history), ftpSession
+  - Validates persisted data with type guards before restoring
+  - Fallback to defaults if localStorage is empty/invalid/corrupted
+  - Auto-saves on every state change
+- **Component tests**: TerminalOutput (19 tests), TerminalInput (26 tests)
+- **Test count**: Now 306 tests across 19 colocated files
+
+## Previous Session (2026-02-03)
 
 Implemented:
 - **exit() command**: Return from SSH sessions with session stack
-  - Added `SessionSnapshot` type and `sessionStack` to SessionContext
-  - `pushSession()` saves state before SSH, `popSession()` restores on exit
-  - Fixed SSH to properly use `switchMachine()` for filesystem switching
 - **ftp() command**: Full FTP protocol simulation with dual-filesystem support
-  - FTP mode with dedicated `ftp>` prompt and command set
-  - 11 FTP commands: pwd, lpwd, cd, lcd, ls, lls, get, put, quit, bye
-  - Cross-machine filesystem operations without switching active filesystem
-  - Two-phase authentication (username then password)
-  - `get(file, [dest])` downloads from remote to local
-  - `put(file, [dest])` uploads from local to remote
 - **TerminalInput refactor**: Combined `passwordMode` and `hidePrompt` into single `promptMode` prop
-- **Test count**: Now 261 tests across 17 colocated files
 
 ## Blockers
 

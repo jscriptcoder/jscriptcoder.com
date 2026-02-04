@@ -92,9 +92,9 @@ src/
 │   ├── TerminalOutput.tsx  # Output display (text, errors, cards)
 │   └── types.ts            # TypeScript types (Command, CommandManual, AsyncOutput, type guards)
 ├── context/
-│   └── SessionContext.tsx  # Global session state (user, machine, prompt)
+│   └── SessionContext.tsx  # Global session state (user, machine, path) with localStorage persistence
 ├── filesystem/
-│   ├── FileSystemContext.tsx  # Virtual filesystem context and operations
+│   ├── FileSystemContext.tsx  # Virtual filesystem operations (reads location from SessionContext)
 │   ├── fileSystemFactory.ts   # Factory function for generating filesystems
 │   ├── machineFileSystems.ts  # Per-machine filesystem configurations
 │   └── types.ts               # FileNode, FilePermissions types
@@ -463,13 +463,14 @@ fn: (...args: unknown[]): AsyncOutput => {
 
 ### Session Context
 
-Global state for terminal session managed via React Context (`src/context/SessionContext.tsx`):
+Global state for terminal session managed via React Context (`src/context/SessionContext.tsx`). SessionContext is the **single source of truth** for all session state:
 
 ```typescript
 type Session = {
   readonly username: string;
   readonly userType: UserType;
   readonly machine: string;
+  readonly currentPath: string;
 };
 ```
 
@@ -477,19 +478,33 @@ type Session = {
 - `getPrompt()` - Returns formatted prompt (e.g., `jshacker@localhost>`)
 - `setUsername(name, type)` - Change current user
 - `setMachine(name)` - Change current machine
-- `pushSession(currentPath)` - Save current session to stack (used before SSH)
+- `setCurrentPath(path)` - Change current working directory
+- `pushSession()` - Save current session to stack (used before SSH)
 - `popSession()` - Restore previous session from stack (used by exit command)
 - `canReturn()` - Check if session stack has entries
 
 **Session Stack:**
-When SSH-ing to a remote machine, the current session is saved to a stack. The `exit()` command pops from this stack to restore the previous session state (user, machine, filesystem, working directory).
+When SSH-ing to a remote machine, the current session is saved to a stack. The `exit()` command pops from this stack to restore the previous session state (user, machine, working directory).
+
+**Session Persistence:**
+Session state is automatically persisted to localStorage (`jshack-session` key):
+- Persisted on every state change
+- Restored on app initialization
+- Validates data with type guards before restoring
+- Falls back to defaults if invalid/corrupted
+
+Persisted data includes:
+- `session`: machine, username, userType, currentPath
+- `sessionStack`: SSH history for `exit()` to work across page reloads
+- `ftpSession`: FTP mode state (if active)
 
 **Usage in commands:**
 ```typescript
-const { setUsername, setMachine, pushSession, popSession } = useSession();
-pushSession('/home/jshacker');  // Save before SSH
+const { setUsername, setMachine, setCurrentPath, pushSession, popSession } = useSession();
+pushSession();  // Save before SSH (reads current state automatically)
 setUsername('admin', 'user');
 setMachine('192.168.1.1');
+setCurrentPath('/home/admin');
 // Later: popSession() restores previous state
 ```
 

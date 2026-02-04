@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 
 export type UserType = 'root' | 'user' | 'guest';
 
@@ -25,6 +25,73 @@ export type FtpSession = {
   readonly originUsername: string;
   readonly originUserType: UserType;
   readonly originCwd: string;
+};
+
+// --- Persistence ---
+
+const STORAGE_KEY = 'jshack-session';
+
+type PersistedState = {
+  readonly session: Session;
+  readonly sessionStack: readonly SessionSnapshot[];
+  readonly ftpSession: FtpSession | null;
+};
+
+const isValidUserType = (value: unknown): value is UserType =>
+  value === 'root' || value === 'user' || value === 'guest';
+
+const isValidSession = (value: unknown): value is Session =>
+  typeof value === 'object' &&
+  value !== null &&
+  typeof (value as Session).username === 'string' &&
+  typeof (value as Session).machine === 'string' &&
+  typeof (value as Session).currentPath === 'string' &&
+  isValidUserType((value as Session).userType);
+
+const isValidSessionSnapshot = (value: unknown): value is SessionSnapshot =>
+  isValidSession(value);
+
+const isValidFtpSession = (value: unknown): value is FtpSession =>
+  typeof value === 'object' &&
+  value !== null &&
+  typeof (value as FtpSession).remoteMachine === 'string' &&
+  typeof (value as FtpSession).remoteUsername === 'string' &&
+  typeof (value as FtpSession).remoteCwd === 'string' &&
+  typeof (value as FtpSession).originMachine === 'string' &&
+  typeof (value as FtpSession).originUsername === 'string' &&
+  typeof (value as FtpSession).originCwd === 'string' &&
+  isValidUserType((value as FtpSession).remoteUserType) &&
+  isValidUserType((value as FtpSession).originUserType);
+
+const isValidPersistedState = (value: unknown): value is PersistedState =>
+  typeof value === 'object' &&
+  value !== null &&
+  isValidSession((value as PersistedState).session) &&
+  Array.isArray((value as PersistedState).sessionStack) &&
+  (value as PersistedState).sessionStack.every(isValidSessionSnapshot) &&
+  ((value as PersistedState).ftpSession === null ||
+    isValidFtpSession((value as PersistedState).ftpSession));
+
+const loadPersistedState = (): PersistedState | null => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (!stored) return null;
+
+    const parsed: unknown = JSON.parse(stored);
+    if (!isValidPersistedState(parsed)) return null;
+
+    return parsed;
+  } catch {
+    return null;
+  }
+};
+
+const savePersistedState = (state: PersistedState): void => {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // Ignore storage errors (quota exceeded, etc.)
+  }
 };
 
 type SessionContextValue = {
@@ -55,10 +122,26 @@ const defaultSession: Session = {
 
 const SessionContext = createContext<SessionContextValue | null>(null);
 
+const getInitialState = (): PersistedState => {
+  const persisted = loadPersistedState();
+  if (persisted) return persisted;
+  return {
+    session: defaultSession,
+    sessionStack: [],
+    ftpSession: null,
+  };
+};
+
 export const SessionProvider = ({ children }: { children: ReactNode }) => {
-  const [session, setSession] = useState<Session>(defaultSession);
-  const [sessionStack, setSessionStack] = useState<readonly SessionSnapshot[]>([]);
-  const [ftpSession, setFtpSession] = useState<FtpSession | null>(null);
+  const [initialState] = useState(getInitialState);
+  const [session, setSession] = useState<Session>(initialState.session);
+  const [sessionStack, setSessionStack] = useState<readonly SessionSnapshot[]>(initialState.sessionStack);
+  const [ftpSession, setFtpSession] = useState<FtpSession | null>(initialState.ftpSession);
+
+  // Persist state changes to localStorage
+  useEffect(() => {
+    savePersistedState({ session, sessionStack, ftpSession });
+  }, [session, sessionStack, ftpSession]);
 
   const setUsername = useCallback((username: string, userType: UserType = 'user') => {
     setSession((prev) => ({ ...prev, username, userType }));

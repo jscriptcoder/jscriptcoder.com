@@ -27,6 +27,7 @@ Start with `help()` to see available commands. Good luck, hacker.
 - **Variable Support** - Create variables with `const` and `let` declarations
 - **Virtual Environment** - Explore a simulated system with secrets to uncover
 - **Network Simulation** - Discover and hack into remote machines
+- **Session Persistence** - Your location is saved; return where you left off after refresh
 - **Retro CRT Theme** - Classic amber-on-black terminal aesthetic
 
 ## Tech Stack
