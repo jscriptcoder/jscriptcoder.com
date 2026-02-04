@@ -40,7 +40,8 @@ Implemented:
   - Fallback to defaults if localStorage is empty/invalid/corrupted
   - Auto-saves on every state change
 - **Component tests**: TerminalOutput (19 tests), TerminalInput (26 tests)
-- **Test count**: Now 306 tests across 19 colocated files
+- **FTP command tests**: cd (15), lcd (15), ls (12), lls (12), get (13), put (13)
+- **Test count**: Now 386 tests across 25 colocated files
 
 ## Previous Session (2026-02-03)
 
@@ -82,8 +83,9 @@ Victory tracking:
 - jshacker@localhost: hackme
 
 ### Test Coverage
-- 306 tests across 19 colocated test files
+- 386 tests across 25 colocated test files
 - All commands with logic are tested
+- FTP subcommands with logic tested (cd, lcd, ls, lls, get, put)
 - Async commands tested with fake timers
 - React hooks tested with React Testing Library (useCommandHistory, useVariables, useAutoComplete)
 - React components tested with React Testing Library (TerminalOutput, TerminalInput)
