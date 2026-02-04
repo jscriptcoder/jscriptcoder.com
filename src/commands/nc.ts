@@ -18,12 +18,12 @@ const SERVICE_BANNERS: Readonly<Record<string, string | null>> = {
   https: '(binary SSL/TLS data)',
   ftp: '220 FTP server ready.',
   mysql: '(binary MySQL protocol data)',
-  backdoor: null, // Special handling - enters interactive mode
+  elite: null, // Special handling - enters interactive mode
 };
 
 // Check if service is interactive (enters nc mode)
 const isInteractiveService = (service: string): boolean =>
-  service === 'backdoor';
+  service === 'elite';
 
 export const createNcCommand = (context: NcContext): Command => ({
   name: 'nc',
@@ -111,8 +111,7 @@ export const createNcCommand = (context: NcContext): Command => ({
             // Check if this is an interactive service
             if (isInteractiveService(service)) {
               onLine('');
-              onLine('=== BACKDOOR v0.1 ===');
-              onLine("Type 'help' for commands");
+              onLine('# 31337 #');
               onLine('');
 
               // Return nc prompt data to enter interactive mode

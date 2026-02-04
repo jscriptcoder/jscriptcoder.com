@@ -59,7 +59,7 @@ export const createInitialNetwork = (): NetworkConfig => ({
       ports: [
         { port: 22, service: 'ssh', open: true },
         { port: 8080, service: 'http-alt', open: true },
-        { port: 31337, service: 'backdoor', open: true },
+        { port: 31337, service: 'elite', open: true },
       ],
       users: [
         { username: 'root', passwordHash: '5f4dcc3b5aa765d61d8327deb882cf99', userType: 'root' }, // password

@@ -202,7 +202,7 @@ export const Terminal = () => {
                 addLine('result', `Name (${followUp.targetIP}:anonymous):`);
               }
 
-              // Handle NC prompt follow-up (backdoor mode)
+              // Handle NC prompt follow-up (interactive service)
               if (isNcPrompt(followUp)) {
                 const newNcSession: NcSession = {
                   targetIP: followUp.targetIP,

@@ -1,24 +1,18 @@
 import type { Command } from '../../components/Terminal/types';
 
-// The backdoor's virtual filesystem contents
-const BACKDOOR_FILE_CONTENTS: Readonly<Record<string, string>> = {
+// Virtual filesystem contents
+const FILE_CONTENTS: Readonly<Record<string, string>> = {
   'readme.txt': [
-    '=== BACKDOOR v0.1 ===',
+    '# maintenance port',
     '',
-    'This backdoor was installed by ghost.',
-    'Use it wisely.',
-    '',
-    'Hint: Check the hidden files...',
+    'do not share access',
+    '- ghost',
   ].join('\n'),
   'credentials.txt': [
-    'Collected credentials:',
-    '',
     'ghost:fun123',
     'admin:admin',
-    '',
-    '(these might work on other machines)',
   ].join('\n'),
-  '.secret': 'FLAG{backdoor_explorer}',
+  '.secret': 'FLAG{31337_access}',
 };
 
 export const ncCatCommand: Command = {
@@ -26,12 +20,12 @@ export const ncCatCommand: Command = {
   description: 'Read file contents',
   manual: {
     synopsis: 'cat(filename)',
-    description: 'Display the contents of a file in the backdoor directory.',
+    description: 'Display file contents.',
     arguments: [
       { name: 'filename', description: 'File to read', required: true },
     ],
     examples: [
-      { command: 'cat("readme.txt")', description: 'Read the readme file' },
+      { command: 'cat("readme.txt")', description: 'Read a file' },
     ],
   },
   fn: (...args: unknown[]): string => {
@@ -41,7 +35,7 @@ export const ncCatCommand: Command = {
       throw new Error('cat: missing filename');
     }
 
-    const content = BACKDOOR_FILE_CONTENTS[filename];
+    const content = FILE_CONTENTS[filename];
     if (content === undefined) {
       throw new Error(`cat: ${filename}: No such file`);
     }

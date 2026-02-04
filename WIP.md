@@ -30,9 +30,9 @@ Step 12 of 14: Victory tracking
 Implemented:
 - **nc (netcat) command**: Connect to arbitrary ports on remote machines
   - Shows service banners for common ports (ssh, http, ftp, mysql)
-  - Interactive mode for backdoor services (port 31337 on darknet)
-  - Backdoor commands: help, whoami, ls, cat, exit
-  - Contains hidden flag: FLAG{backdoor_explorer}
+  - Interactive mode for special services (port 31337 on darknet)
+  - Commands: help, whoami, ls, cat, exit
+  - Contains hidden flag: FLAG{31337_access}
 - **State consolidation**: Moved `currentPath` from FileSystemContext to SessionContext
   - SessionContext is now single source of truth for: machine, username, userType, currentPath
   - FileSystemContext reads location from SessionContext (no more duplication)
