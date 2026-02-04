@@ -75,7 +75,8 @@ Victory tracking:
 - jshacker@localhost: hackme
 
 ### Test Coverage
-- 261 tests across 17 colocated test files
+- 306 tests across 19 colocated test files
 - All commands with logic are tested
 - Async commands tested with fake timers
 - React hooks tested with React Testing Library (useCommandHistory, useVariables, useAutoComplete)
+- React components tested with React Testing Library (TerminalOutput, TerminalInput)

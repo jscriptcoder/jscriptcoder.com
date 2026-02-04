@@ -164,13 +164,14 @@ npm run test:coverage # Run tests with coverage
 
 ### Test Coverage
 
-261 unit tests covering terminal commands and hooks (colocated with implementation):
+306 unit tests covering terminal commands, hooks, and components (colocated with implementation):
 - **File system**: ls (13), cd (10), cat (9)
 - **Utility**: echo (13), help (6), man (11)
 - **Session**: su (9)
 - **Network**: ifconfig (9), ping (14), nslookup (9), nmap (18), ssh (19), ftp (21)
 - **Utils**: network (31)
 - **Hooks**: useCommandHistory (12), useVariables (32), useAutoComplete (25)
+- **Components**: TerminalOutput (19), TerminalInput (26)
 
 ## Project Structure
 
