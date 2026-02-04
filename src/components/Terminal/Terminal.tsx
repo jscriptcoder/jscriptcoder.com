@@ -6,15 +6,15 @@ import { useAutoComplete } from '../../hooks/useAutoComplete';
 import { useVariables } from '../../hooks/useVariables';
 import { useCommands } from '../../hooks/useCommands';
 import { useFtpCommands } from '../../hooks/useFtpCommands';
-import { useSession } from '../../context/SessionContext';
-import type { FtpSession } from '../../context/SessionContext';
+import { useSession } from '../../session/SessionContext';
+import type { FtpSession } from '../../session/SessionContext';
 import { useFileSystem } from '../../filesystem/FileSystemContext';
 import { useNetwork } from '../../network';
 import { md5 } from '../../utils/md5';
 import type { OutputLine, AuthorData } from './types';
 import { isAuthorData, isPasswordPrompt, isClearOutput, isExitOutput, isAsyncOutput, isSshPrompt, isFtpPrompt, isFtpQuit } from './types';
 import type { AsyncFollowUp } from './types';
-import type { UserType } from '../../context/SessionContext';
+import type { UserType } from '../../session/SessionContext';
 
 const BANNER = `
      ██╗███████╗██╗  ██╗ █████╗  ██████╗██╗  ██╗   ███╗   ███╗███████╗

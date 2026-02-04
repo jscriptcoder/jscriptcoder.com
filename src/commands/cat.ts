@@ -1,5 +1,5 @@
 import type { Command } from '../components/Terminal/types';
-import type { UserType } from '../context/SessionContext';
+import type { UserType } from '../session/SessionContext';
 import type { FileNode } from '../filesystem/types';
 
 interface CatContext {

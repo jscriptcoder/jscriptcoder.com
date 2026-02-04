@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createFtpPutCommand } from './put';
 import type { FileNode, PermissionResult } from '../../filesystem/types';
-import type { UserType } from '../../context/SessionContext';
+import type { UserType } from '../../session/SessionContext';
 import type { MachineId } from '../../filesystem/machineFileSystems';
 
 // --- Factory Functions ---

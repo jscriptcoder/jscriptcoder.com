@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { FileNode } from '../filesystem/types';
-import type { UserType } from '../context/SessionContext';
+import type { UserType } from '../session/SessionContext';
 import { createCdCommand } from './cd';
 
 // --- Factory Functions ---

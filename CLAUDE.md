@@ -91,7 +91,7 @@ src/
 │   ├── TerminalInput.tsx   # Input line with prompt
 │   ├── TerminalOutput.tsx  # Output display (text, errors, cards)
 │   └── types.ts            # TypeScript types (Command, CommandManual, AsyncOutput, type guards)
-├── context/
+├── session/
 │   └── SessionContext.tsx  # Global session state (user, machine, path) with localStorage persistence
 ├── filesystem/
 │   ├── FileSystemContext.tsx  # Virtual filesystem operations (reads location from SessionContext)
@@ -463,7 +463,7 @@ fn: (...args: unknown[]): AsyncOutput => {
 
 ### Session Context
 
-Global state for terminal session managed via React Context (`src/context/SessionContext.tsx`). SessionContext is the **single source of truth** for all session state:
+Global state for terminal session managed via React Context (`src/session/SessionContext.tsx`). SessionContext is the **single source of truth** for all session state:
 
 ```typescript
 type Session = {

@@ -9,7 +9,7 @@ import { createHelpCommand } from '../commands/help';
 import { createManCommand } from '../commands/man';
 import { useFileSystemCommands } from './useFileSystemCommands';
 import { useNetworkCommands } from './useNetworkCommands';
-import { useSession } from '../context/SessionContext';
+import { useSession } from '../session/SessionContext';
 import { useNetwork } from '../network';
 
 const LOCAL_USERS = ['root', 'jshacker', 'guest'] as const;

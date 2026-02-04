@@ -6,7 +6,7 @@ import {
   type ReactNode,
 } from 'react';
 import type { FileNode, PermissionResult } from './types';
-import { useSession, type UserType } from '../context/SessionContext';
+import { useSession, type UserType } from '../session/SessionContext';
 import { machineFileSystems, getDefaultHomePath, type MachineId } from './machineFileSystems';
 
 type FileSystemContextValue = {

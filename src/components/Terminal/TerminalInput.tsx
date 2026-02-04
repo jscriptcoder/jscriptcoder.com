@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
-import { useSession } from '../../context/SessionContext';
+import { useSession } from '../../session/SessionContext';
 
 type PromptMode = 'username' | 'password';
 

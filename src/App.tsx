@@ -1,5 +1,5 @@
 import { Terminal } from './components/Terminal';
-import { SessionProvider } from './context/SessionContext';
+import { SessionProvider } from './session/SessionContext';
 import { FileSystemProvider } from './filesystem';
 import { NetworkProvider } from './network';
 

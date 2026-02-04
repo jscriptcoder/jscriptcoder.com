@@ -83,8 +83,8 @@ it('should match commands with () suffix', () => {
 **For hooks that need context providers:**
 
 ```typescript
-import { useSession } from '../context/SessionContext';
-import { SessionProvider } from '../context/SessionContext';
+import { useSession } from '../session/SessionContext';
+import { SessionProvider } from '../session/SessionContext';
 
 it('should return current username', () => {
   const { result } = renderHook(() => useSession(), {
@@ -102,7 +102,7 @@ it('should return current username', () => {
 ### Multiple Providers
 
 ```typescript
-import { SessionProvider } from '../context/SessionContext';
+import { SessionProvider } from '../session/SessionContext';
 import { FileSystemProvider } from '../filesystem/FileSystemContext';
 import { NetworkProvider } from '../network/NetworkContext';
 

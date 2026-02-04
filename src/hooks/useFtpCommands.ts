@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useFileSystem } from '../filesystem';
-import { useSession } from '../context/SessionContext';
+import { useSession } from '../session/SessionContext';
 import {
   createFtpPwdCommand,
   createFtpLpwdCommand,
