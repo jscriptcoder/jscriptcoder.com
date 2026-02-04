@@ -169,3 +169,192 @@ When connected via non-SSH methods (ftp, telnet, nc), players get a restricted e
 1. `nmap("203.0.113.42")` - Find unusual port 31337 open
 2. `nc("203.0.113.42", 31337)` - Connect to backdoor
 3. Limited shell access, find breadcrumbs to real credentials
+
+## Future Ideas: Procedurally Generated Missions
+
+### Concept
+Instead of a static network, the game generates missions with unique networks that players must infiltrate to find flags. Each mission presents a different challenge type with procedurally generated infrastructure.
+
+### Mission Types
+
+**Type 1: Hidden Flag Hunt**
+- Given: Public IP address
+- Goal: Find the hidden flag somewhere in the network
+- Network: 2-5 machines with various services
+
+**Type 2: Lateral Movement**
+- Given: Public IP + credentials for one machine
+- Goal: Pivot through the network to reach a secured machine
+- Network: 3-6 machines with interconnected access
+
+**Type 3: Data Exfiltration**
+- Given: Public IP + target file description
+- Goal: Locate and extract specific sensitive data
+- Network: Multiple machines, target file in deep location
+
+**Type 4: Privilege Escalation Chain**
+- Given: Guest access to a machine
+- Goal: Escalate to root across multiple machines
+- Network: Machines with misconfigured permissions, password reuse
+
+**Type 5: Time-Limited Breach**
+- Given: Public IP, limited "detection window"
+- Goal: Find flag before getting "detected"
+- Challenge: Efficiency and knowing what to look for
+
+### Architecture: Seeded Generation
+
+**The scalability problem**: Storing full network state (machines, filesystems, users) for every generated mission doesn't scale.
+
+**Solution**: Deterministic seeded generation
+
+```typescript
+type Mission = {
+  readonly id: string;
+  readonly seed: number;           // Deterministic generation
+  readonly type: MissionType;
+  readonly difficulty: 1 | 2 | 3;
+  readonly hints?: readonly string[];
+};
+
+// Same seed = same network, every time
+const network = generateNetwork(mission.seed, mission.type, mission.difficulty);
+```
+
+**Benefits**:
+- Networks regenerated on-demand from seed (no storage needed)
+- Share missions by sharing seed (like Minecraft world seeds)
+- Infinitely scalable - seeds are just numbers
+- Reproducible - players can retry same mission
+- Leaderboards work because everyone plays the same generated network
+
+### What Gets Stored (Backend)
+
+**Mission catalog** (small, static-ish):
+```typescript
+type StoredMission = {
+  readonly id: string;
+  readonly seed: number;
+  readonly type: MissionType;
+  readonly difficulty: number;
+  readonly createdAt: Date;
+  readonly createdBy?: string;     // For user-submitted missions
+  readonly playCount: number;
+  readonly avgCompletionTime?: number;
+};
+```
+
+**Player progress** (per-user):
+```typescript
+type PlayerProgress = {
+  readonly playerId: string;
+  readonly completedMissions: readonly string[];  // Mission IDs
+  readonly currentMission?: string;
+  readonly flagsFound: readonly string[];
+  readonly totalPlayTime: number;
+};
+```
+
+**Leaderboards** (aggregated):
+- Fastest completion times per mission
+- Most missions completed
+- Speedrun categories
+
+### Generation Algorithm (Pseudocode)
+
+```typescript
+const generateNetwork = (seed: number, type: MissionType, difficulty: number): Network => {
+  const rng = createSeededRng(seed);
+
+  // Determine network size based on difficulty
+  const machineCount = difficulty + rng.int(1, 3);
+
+  // Generate machines
+  const machines = Array.from({ length: machineCount }, (_, i) =>
+    generateMachine(rng, i, type)
+  );
+
+  // Place flag based on mission type
+  const flagLocation = determineFlagLocation(rng, machines, type);
+  machines[flagLocation.machineIndex] = addFlag(machines[flagLocation.machineIndex], flagLocation);
+
+  // Generate breadcrumbs and hints
+  const hints = generateHints(rng, machines, flagLocation, difficulty);
+
+  // Create network topology
+  const topology = generateTopology(rng, machines, type);
+
+  return { machines, topology, entryPoint: machines[0].ip };
+};
+
+const generateMachine = (rng: SeededRng, index: number, type: MissionType): Machine => {
+  const templates = getMachineTemplates(type);
+  const template = rng.pick(templates);
+
+  return {
+    ip: generateIp(rng, index),
+    hostname: generateHostname(rng, template),
+    ports: generatePorts(rng, template),
+    users: generateUsers(rng, template),
+    filesystem: generateFilesystem(rng, template),
+  };
+};
+```
+
+### Backend Options (Lightweight)
+
+**Option A: Supabase**
+- Postgres database with auth built-in
+- Free tier sufficient for early stage
+- Real-time subscriptions for leaderboards
+
+**Option B: Firebase**
+- NoSQL document store
+- Auth + database in one
+- Good for rapid prototyping
+
+**Option C: Self-hosted minimal**
+- Simple Express/Fastify API
+- SQLite or JSON files for storage
+- Deploy to Vercel/Railway/Fly.io
+
+**Option D: Hybrid (Start Here)**
+- Missions stored as JSON file in repo (curated missions)
+- Player progress in localStorage (no backend yet)
+- Add backend later when needed for multiplayer features
+
+### User-Generated Content
+
+Allow players to create and share missions:
+1. Player generates random seed or crafts specific challenge
+2. Plays through to verify it's solvable
+3. Submits mission with metadata (title, description, difficulty rating)
+4. Other players can play and rate
+
+**Moderation considerations**:
+- Rate limiting on submissions
+- Community voting for quality
+- Flag inappropriate content
+
+### Implementation Phases
+
+**Phase 1: Local Generation (No Backend)**
+- Seeded random network generation
+- Mission templates (hardcoded mission types)
+- Play generated missions locally
+- Progress saved in localStorage
+
+**Phase 2: Mission Sharing**
+- Export mission as shareable code (seed + type + difficulty)
+- Import missions from codes
+- Still no backend - just sharing seeds
+
+**Phase 3: Backend Integration**
+- Mission catalog API
+- Player accounts and progress
+- Leaderboards
+
+**Phase 4: Community Features**
+- User-submitted missions
+- Ratings and comments
+- Weekly/monthly challenges
