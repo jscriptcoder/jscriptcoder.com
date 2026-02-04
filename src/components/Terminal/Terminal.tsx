@@ -47,10 +47,10 @@ export const Terminal = () => {
 
   const { addCommand, navigateUp, navigateDown, resetNavigation } = useCommandHistory();
   const { getVariables, getVariableNames, handleVariableOperation } = useVariables();
-  const { getPrompt, setUsername, setMachine, pushSession, popSession, canReturn, session, enterFtpMode, exitFtpMode, isInFtpMode } = useSession();
+  const { getPrompt, setUsername, setMachine, setCurrentPath, pushSession, popSession, canReturn, session, enterFtpMode, exitFtpMode, isInFtpMode } = useSession();
   const { executionContext, commandNames } = useCommands();
   const ftpCommands = useFtpCommands();
-  const { readFile, setCurrentPath, switchMachine, currentPath, currentMachine } = useFileSystem();
+  const { readFile, getDefaultHomePath } = useFileSystem();
   const { getMachine } = useNetwork();
 
   // Use FTP commands for autocomplete when in FTP mode
@@ -138,8 +138,7 @@ export const Terminal = () => {
           }
           const snapshot = popSession();
           if (snapshot) {
-            switchMachine(snapshot.machine as Parameters<typeof switchMachine>[0], snapshot.username);
-            setCurrentPath(snapshot.currentPath);
+            // popSession already restores machine, username, userType, and currentPath
             addLine('result', 'Connection closed.');
           }
           return;
@@ -200,7 +199,7 @@ export const Terminal = () => {
       const errorMessage = error instanceof Error ? error.message : String(error);
       addLine('error', `Error: ${errorMessage}`);
     }
-  }, [addCommand, addLine, clearLines, handleVariableOperation, getVariables, getPrompt, executionContext, canReturn, popSession, switchMachine, setCurrentPath, isInFtpMode, ftpCommands, exitFtpMode]);
+  }, [addCommand, addLine, clearLines, handleVariableOperation, getVariables, getPrompt, executionContext, canReturn, popSession, isInFtpMode, ftpCommands, exitFtpMode]);
 
   const validatePassword = useCallback((password: string): boolean => {
     if (!targetUser) return false;
@@ -302,26 +301,26 @@ export const Terminal = () => {
           remoteUsername: targetUser!,
           remoteUserType: userType,
           remoteCwd: remoteHomePath,
-          originMachine: currentMachine,
+          originMachine: session.machine,
           originUsername: session.username,
           originUserType: session.userType,
-          originCwd: currentPath,
+          originCwd: session.currentPath,
         };
 
         enterFtpMode(newFtpSession);
         addLine('result', '230 Login successful.');
       } else if (sshTargetIP) {
         // SSH mode: save current session and switch to remote machine
-        pushSession(currentPath);
+        pushSession();
 
         const machine = getMachine(sshTargetIP);
         const remoteUser = machine?.users.find(u => u.username === targetUser);
         const userType: UserType = remoteUser?.userType ?? 'user';
+        const homePath = getDefaultHomePath(sshTargetIP, targetUser!);
 
         setUsername(targetUser!, userType);
         setMachine(sshTargetIP);
-        // Switch filesystem to remote machine
-        switchMachine(sshTargetIP as Parameters<typeof switchMachine>[0], targetUser!);
+        setCurrentPath(homePath);
         addLine('result', `Connected to ${sshTargetIP}`);
         addLine('result', `Welcome to ${machine?.hostname ?? sshTargetIP}!`);
       } else {
@@ -356,7 +355,7 @@ export const Terminal = () => {
     setSshTargetIP(null);
     setFtpTargetIP(null);
     setInput('');
-  }, [input, targetUser, sshTargetIP, ftpTargetIP, validatePassword, setUsername, setMachine, setCurrentPath, switchMachine, pushSession, currentPath, currentMachine, session, getMachine, enterFtpMode, addLine]);
+  }, [input, targetUser, sshTargetIP, ftpTargetIP, validatePassword, setUsername, setMachine, setCurrentPath, pushSession, session, getMachine, enterFtpMode, addLine, getDefaultHomePath]);
 
   const handleSubmit = useCallback(() => {
     if (ftpUsernameMode) {

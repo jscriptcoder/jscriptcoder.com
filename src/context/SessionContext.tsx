@@ -6,6 +6,7 @@ export type Session = {
   readonly username: string;
   readonly userType: UserType;
   readonly machine: string;
+  readonly currentPath: string;
 };
 
 export type SessionSnapshot = {
@@ -32,8 +33,9 @@ type SessionContextValue = {
   readonly ftpSession: FtpSession | null;
   readonly setUsername: (username: string, userType?: UserType) => void;
   readonly setMachine: (machine: string) => void;
+  readonly setCurrentPath: (path: string) => void;
   readonly getPrompt: () => string;
-  readonly pushSession: (currentPath: string) => void;
+  readonly pushSession: () => void;
   readonly popSession: () => SessionSnapshot | null;
   readonly canReturn: () => boolean;
   // FTP session methods
@@ -48,6 +50,7 @@ const defaultSession: Session = {
   username: 'jshacker',
   userType: 'user',
   machine: 'localhost',
+  currentPath: '/home/jshacker',
 };
 
 const SessionContext = createContext<SessionContextValue | null>(null);
@@ -65,20 +68,24 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     setSession((prev) => ({ ...prev, machine }));
   }, []);
 
+  const setCurrentPath = useCallback((currentPath: string) => {
+    setSession((prev) => ({ ...prev, currentPath }));
+  }, []);
+
   const getPrompt = useCallback(() => {
     if (ftpSession) return 'ftp>';
     return `${session.username}@${session.machine}>`;
   }, [session.username, session.machine, ftpSession]);
 
-  const pushSession = useCallback((currentPath: string) => {
+  const pushSession = useCallback(() => {
     const snapshot: SessionSnapshot = {
       username: session.username,
       userType: session.userType,
       machine: session.machine,
-      currentPath,
+      currentPath: session.currentPath,
     };
     setSessionStack((prev) => [...prev, snapshot]);
-  }, [session.username, session.userType, session.machine]);
+  }, [session.username, session.userType, session.machine, session.currentPath]);
 
   const popSession = useCallback((): SessionSnapshot | null => {
     if (sessionStack.length === 0) return null;
@@ -89,6 +96,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
       username: snapshot.username,
       userType: snapshot.userType,
       machine: snapshot.machine,
+      currentPath: snapshot.currentPath,
     });
     return snapshot;
   }, [sessionStack]);
@@ -123,6 +131,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
         ftpSession,
         setUsername,
         setMachine,
+        setCurrentPath,
         getPrompt,
         pushSession,
         popSession,

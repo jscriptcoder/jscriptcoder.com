@@ -9,13 +9,13 @@ import { createWhoamiCommand } from '../commands/whoami';
 import type { Command } from '../components/Terminal/types';
 
 export const useFileSystemCommands = (): Map<string, Command> => {
-  const { currentPath, setCurrentPath, resolvePath, getNode } = useFileSystem();
-  const { session } = useSession();
+  const { resolvePath, getNode } = useFileSystem();
+  const { session, setCurrentPath } = useSession();
 
   return useMemo(() => {
     const commands = new Map<string, Command>();
 
-    const getCurrentPath = () => currentPath;
+    const getCurrentPath = () => session.currentPath;
     const getUserType = () => session.userType;
     const getUsername = () => session.username;
     const getHomePath = () => {
@@ -55,5 +55,5 @@ export const useFileSystemCommands = (): Map<string, Command> => {
     }));
 
     return commands;
-  }, [currentPath, setCurrentPath, resolvePath, getNode, session]);
+  }, [setCurrentPath, resolvePath, getNode, session]);
 };

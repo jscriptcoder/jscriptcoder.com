@@ -496,7 +496,7 @@ export const machineFileSystems: Readonly<Record<MachineId, FileNode>> = {
   '203.0.113.42': darknetWithHome,
 };
 
-export const getDefaultHomePath = (_machineId: MachineId, username: string): string => {
+export const getDefaultHomePath = (_machineId: string, username: string): string => {
   if (username === 'root') return '/root';
   return `/home/${username}`;
 };

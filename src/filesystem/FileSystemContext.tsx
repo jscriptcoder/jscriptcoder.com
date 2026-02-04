@@ -6,14 +6,11 @@ import {
   type ReactNode,
 } from 'react';
 import type { FileNode, PermissionResult } from './types';
-import type { UserType } from '../context/SessionContext';
+import { useSession, type UserType } from '../context/SessionContext';
 import { machineFileSystems, getDefaultHomePath, type MachineId } from './machineFileSystems';
 
 type FileSystemContextValue = {
   readonly fileSystem: FileNode;
-  readonly currentPath: string;
-  readonly currentMachine: MachineId;
-  readonly setCurrentPath: (path: string) => void;
   readonly resolvePath: (path: string) => string;
   readonly getNode: (path: string) => FileNode | null;
   readonly canRead: (path: string, userType: UserType) => PermissionResult;
@@ -22,7 +19,7 @@ type FileSystemContextValue = {
   readonly readFile: (path: string, userType: UserType) => string | null;
   readonly writeFile: (path: string, content: string, userType: UserType) => PermissionResult;
   readonly createFile: (path: string, content: string, userType: UserType) => PermissionResult;
-  readonly switchMachine: (machineId: MachineId, username: string) => void;
+  readonly getDefaultHomePath: (machineId: string, username: string) => string;
   // Cross-machine operations for FTP
   readonly resolvePathForMachine: (path: string, cwd: string) => string;
   readonly getNodeFromMachine: (machineId: MachineId, path: string, cwd: string) => FileNode | null;
@@ -89,11 +86,12 @@ type FileSystemsState = Readonly<Record<MachineId, FileNode>>;
 const initializeFileSystems = (): FileSystemsState => ({ ...machineFileSystems });
 
 export const FileSystemProvider = ({ children }: { children: ReactNode }) => {
-  const [currentMachine, setCurrentMachine] = useState<MachineId>('localhost');
+  const { session } = useSession();
   const [fileSystems, setFileSystems] = useState<FileSystemsState>(initializeFileSystems);
-  const [currentPath, setCurrentPath] = useState('/home/jshacker');
 
-  const fileSystem = fileSystems[currentMachine];
+  const currentMachine = session.machine as MachineId;
+  const currentPath = session.currentPath;
+  const fileSystem = fileSystems[currentMachine] ?? fileSystems['localhost'];
 
   const normalizePath = useCallback((path: string): string => {
     const parts = path.split('/').filter(Boolean);
@@ -248,20 +246,14 @@ export const FileSystemProvider = ({ children }: { children: ReactNode }) => {
     return createFileOnMachine(currentMachine, path, currentPath, content, userType);
   }, [createFileOnMachine, currentMachine, currentPath]);
 
-  const switchMachine = useCallback((machineId: MachineId, username: string) => {
-    if (!fileSystems[machineId]) return;
-
-    setCurrentMachine(machineId);
-    setCurrentPath(getDefaultHomePath(machineId, username));
-  }, [fileSystems]);
+  const getDefaultHomePathFn = useCallback((machineId: string, username: string): string => {
+    return getDefaultHomePath(machineId, username);
+  }, []);
 
   return (
     <FileSystemContext.Provider
       value={{
         fileSystem,
-        currentPath,
-        currentMachine,
-        setCurrentPath,
         resolvePath,
         getNode,
         canRead,
@@ -270,7 +262,7 @@ export const FileSystemProvider = ({ children }: { children: ReactNode }) => {
         readFile,
         writeFile,
         createFile,
-        switchMachine,
+        getDefaultHomePath: getDefaultHomePathFn,
         // Cross-machine operations for FTP
         resolvePathForMachine,
         getNodeFromMachine,
