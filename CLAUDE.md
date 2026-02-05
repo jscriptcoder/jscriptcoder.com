@@ -233,7 +233,7 @@ To add a command:
 | `ssh(user, host)` | Connect to remote machine via SSH (async, prompts for password) |
 | `exit()` | Close SSH connection and return to previous machine |
 | `ftp(host)` | Connect to remote machine via FTP (async, prompts for username/password) |
-| `nc(host, port)` | Netcat - connect to arbitrary port, interactive mode for backdoors |
+| `nc(host, port)` | Netcat - connect to arbitrary port (async, interactive for special services) |
 
 **FTP Mode Commands** (available only when connected via FTP):
 
@@ -248,6 +248,20 @@ To add a command:
 | `get(remoteFile, [localPath])` | Download file from remote to local |
 | `put(localFile, [remotePath])` | Upload file from local to remote |
 | `quit()` / `bye()` | Close FTP connection |
+
+**NC Mode Commands** (available when connected to interactive services via nc):
+
+| Command | Description |
+|---------|-------------|
+| `pwd()` | Print working directory |
+| `cd(path)` | Change directory |
+| `ls([path])` | List directory contents |
+| `cat(path)` | Display file contents |
+| `whoami()` | Display current user |
+| `help()` | List available commands |
+| `exit()` | Close connection |
+
+NC mode provides read-only shell access to the remote machine's filesystem. The user and permissions depend on who installed the service (e.g., `ghost` for the elite service on darknet port 31337).
 
 ### Virtual File System
 

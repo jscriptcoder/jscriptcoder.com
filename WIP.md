@@ -31,8 +31,10 @@ Implemented:
 - **nc (netcat) command**: Connect to arbitrary ports on remote machines
   - Shows service banners for common ports (ssh, http, ftp, mysql)
   - Interactive mode for special services (port 31337 on darknet)
-  - Commands: help, whoami, ls, cat, exit
-  - Contains hidden flag: FLAG{31337_access}
+  - Runs as `ghost` user with real filesystem access (read-only)
+  - Commands: pwd, cd, ls, cat, whoami, help, exit
+  - Minimal `$` prompt - players must discover context with whoami/pwd
+  - Service named "elite" (not "backdoor") to be less obvious
 - **State consolidation**: Moved `currentPath` from FileSystemContext to SessionContext
   - SessionContext is now single source of truth for: machine, username, userType, currentPath
   - FileSystemContext reads location from SessionContext (no more duplication)
