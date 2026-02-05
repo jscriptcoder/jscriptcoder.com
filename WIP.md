@@ -2,7 +2,7 @@
 
 ## Current Step
 
-Step 12 of 14: Victory tracking
+Step 13 of 14: Victory tracking
 
 ## Status
 
@@ -20,10 +20,10 @@ Step 12 of 14: Victory tracking
 - [x] Step 8: Place flags in file system
 - [x] Step 9: Add hints and breadcrumbs
 - [x] Step 10: Remote machine file systems
-- [x] Step 11: Additional exploitation commands (exit, ftp)
-- [x] Step 14: Unit test coverage (452 tests, colocated)
-- [ ] Step 12: Victory tracking ← next
-- [ ] Step 13: Challenge variety
+- [x] Step 11: Additional exploitation commands (exit, ftp, nc)
+- [x] Step 12: Session persistence (localStorage)
+- [ ] Step 13: Victory tracking ← next
+- [ ] Step 14: Challenge variety
 
 ## Recent Session (2026-02-05)
 
