@@ -29,10 +29,7 @@ export const createNcCdCommand = (context: NcCdContext): Command => ({
     const machine = getMachine();
     const cwd = getCwd();
     const userType = getUserType();
-
-    // Handle home directory shortcut
-    const targetPath = path === '~' ? '/home/ghost' : path;
-    const resolvedPath = resolvePathForMachine(machine, targetPath, cwd);
+    const resolvedPath = resolvePathForMachine(machine, path, cwd);
 
     // Check if path exists
     const node = getNodeFromMachine(machine, resolvedPath, cwd);
