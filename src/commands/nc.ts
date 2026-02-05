@@ -21,9 +21,12 @@ const SERVICE_BANNERS: Readonly<Record<string, string | null>> = {
   elite: null, // Special handling - enters interactive mode
 };
 
-// Check if service is interactive (enters nc mode)
-const isInteractiveService = (service: string): boolean =>
-  service === 'elite';
+// Interactive services have an owner defined in the port config
+import type { Port } from '../network/types';
+
+// Check if port is interactive (has an owner)
+const isInteractivePort = (port: Port): boolean =>
+  port.owner !== undefined;
 
 export const createNcCommand = (context: NcContext): Command => ({
   name: 'nc',
@@ -108,22 +111,23 @@ export const createNcCommand = (context: NcContext): Command => ({
 
             const service = targetPort.service;
 
-            // Check if this is an interactive service
-            if (isInteractiveService(service)) {
+            // Check if this is an interactive port (has owner)
+            if (isInteractivePort(targetPort) && targetPort.owner) {
+              const { username, userType, homePath } = targetPort.owner;
+
               onLine('');
-              onLine('# 31337 #');
+              onLine(`# ${port} #`);
               onLine('');
 
               // Return nc prompt data to enter interactive mode
-              // The elite service runs as ghost (the installer)
               const ncPrompt: NcPromptData = {
                 __type: 'nc_prompt',
                 targetIP,
                 targetPort: port,
                 service,
-                username: 'ghost',
-                userType: 'user',
-                homePath: '/home/ghost',
+                username,
+                userType,
+                homePath,
               };
 
               onComplete(ncPrompt);

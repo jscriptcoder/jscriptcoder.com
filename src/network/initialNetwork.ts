@@ -46,6 +46,12 @@ export const createInitialNetwork = (): NetworkConfig => ({
         { port: 22, service: 'ssh', open: true },
         { port: 80, service: 'http', open: true },
         { port: 3306, service: 'mysql', open: true },
+        {
+          port: 4444,
+          service: 'elite',
+          open: true,
+          owner: { username: 'www-data', userType: 'user', homePath: '/var/www' },
+        },
       ],
       users: [
         { username: 'root', passwordHash: '63a9f0ea7bb98050796b649e85481845', userType: 'root' }, // root
@@ -59,7 +65,12 @@ export const createInitialNetwork = (): NetworkConfig => ({
       ports: [
         { port: 22, service: 'ssh', open: true },
         { port: 8080, service: 'http-alt', open: true },
-        { port: 31337, service: 'elite', open: true },
+        {
+          port: 31337,
+          service: 'elite',
+          open: true,
+          owner: { username: 'ghost', userType: 'user', homePath: '/home/ghost' },
+        },
       ],
       users: [
         { username: 'root', passwordHash: '5f4dcc3b5aa765d61d8327deb882cf99', userType: 'root' }, // password

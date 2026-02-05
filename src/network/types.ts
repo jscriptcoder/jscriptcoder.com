@@ -7,10 +7,17 @@ export type NetworkInterface = {
   readonly mac: string;
 };
 
+export type ServiceOwner = {
+  readonly username: string;
+  readonly userType: 'root' | 'user' | 'guest';
+  readonly homePath: string;
+};
+
 export type Port = {
   readonly port: number;
   readonly service: string;
   readonly open: boolean;
+  readonly owner?: ServiceOwner; // For interactive services (backdoors)
 };
 
 export type RemoteUser = {
