@@ -8,7 +8,7 @@ type NcCdContext = {
   readonly getCwd: () => string;
   readonly getUserType: () => UserType;
   readonly setCwd: (path: string) => void;
-  readonly resolvePathForMachine: (machineId: MachineId, path: string, cwd: string) => string;
+  readonly resolvePath: (path: string, cwd: string) => string;
   readonly getNodeFromMachine: (machineId: MachineId, path: string, cwd: string) => FileNode | null;
 };
 
@@ -21,7 +21,7 @@ export const createNcCdCommand = (context: NcCdContext): Command => ({
       getCwd,
       getUserType,
       setCwd,
-      resolvePathForMachine,
+      resolvePath,
       getNodeFromMachine,
     } = context;
 
@@ -29,7 +29,7 @@ export const createNcCdCommand = (context: NcCdContext): Command => ({
     const machine = getMachine();
     const cwd = getCwd();
     const userType = getUserType();
-    const resolvedPath = resolvePathForMachine(machine, path, cwd);
+    const resolvedPath = resolvePath(path, cwd);
 
     // Check if path exists
     const node = getNodeFromMachine(machine, resolvedPath, cwd);

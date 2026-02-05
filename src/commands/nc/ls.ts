@@ -7,7 +7,7 @@ type NcLsContext = {
   readonly getMachine: () => MachineId;
   readonly getCwd: () => string;
   readonly getUserType: () => UserType;
-  readonly resolvePathForMachine: (machineId: MachineId, path: string, cwd: string) => string;
+  readonly resolvePath: (path: string, cwd: string) => string;
   readonly getNodeFromMachine: (machineId: MachineId, path: string, cwd: string) => FileNode | null;
   readonly listDirectoryFromMachine: (machineId: MachineId, path: string, cwd: string, userType: UserType) => readonly string[] | null;
 };
@@ -20,7 +20,7 @@ export const createNcLsCommand = (context: NcLsContext): Command => ({
       getMachine,
       getCwd,
       getUserType,
-      resolvePathForMachine,
+      resolvePath,
       getNodeFromMachine,
       listDirectoryFromMachine,
     } = context;
@@ -30,7 +30,7 @@ export const createNcLsCommand = (context: NcLsContext): Command => ({
     const cwd = getCwd();
     const userType = getUserType();
 
-    const targetPath = path ? resolvePathForMachine(machine, path, cwd) : cwd;
+    const targetPath = path ? resolvePath(path, cwd) : cwd;
 
     // Check if path exists
     const node = getNodeFromMachine(machine, targetPath, cwd);

@@ -43,7 +43,7 @@ export const useNcCommands = (): Map<string, Command> | null => {
       getCwd,
       getUserType,
       setCwd: updateNcCwd,
-      resolvePathForMachine,
+      resolvePath: resolvePathForMachine,
       getNodeFromMachine,
     }));
 
@@ -52,7 +52,7 @@ export const useNcCommands = (): Map<string, Command> | null => {
       getMachine,
       getCwd,
       getUserType,
-      resolvePathForMachine,
+      resolvePath: resolvePathForMachine,
       getNodeFromMachine,
       listDirectoryFromMachine,
     }));
@@ -62,7 +62,7 @@ export const useNcCommands = (): Map<string, Command> | null => {
       getMachine,
       getCwd,
       getUserType,
-      resolvePathForMachine,
+      resolvePath: resolvePathForMachine,
       getNodeFromMachine,
       readFileFromMachine,
     }));

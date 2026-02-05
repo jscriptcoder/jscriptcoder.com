@@ -7,7 +7,7 @@ type NcCatContext = {
   readonly getMachine: () => MachineId;
   readonly getCwd: () => string;
   readonly getUserType: () => UserType;
-  readonly resolvePathForMachine: (machineId: MachineId, path: string, cwd: string) => string;
+  readonly resolvePath: (path: string, cwd: string) => string;
   readonly getNodeFromMachine: (machineId: MachineId, path: string, cwd: string) => FileNode | null;
   readonly readFileFromMachine: (machineId: MachineId, path: string, cwd: string, userType: UserType) => string | null;
 };
@@ -20,7 +20,7 @@ export const createNcCatCommand = (context: NcCatContext): Command => ({
       getMachine,
       getCwd,
       getUserType,
-      resolvePathForMachine,
+      resolvePath,
       getNodeFromMachine,
       readFileFromMachine,
     } = context;
@@ -35,7 +35,7 @@ export const createNcCatCommand = (context: NcCatContext): Command => ({
     const cwd = getCwd();
     const userType = getUserType();
 
-    const resolvedPath = resolvePathForMachine(machine, path, cwd);
+    const resolvedPath = resolvePath(path, cwd);
 
     // Check if file exists
     const node = getNodeFromMachine(machine, resolvedPath, cwd);
