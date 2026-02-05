@@ -21,7 +21,7 @@ Step 12 of 14: Victory tracking
 - [x] Step 9: Add hints and breadcrumbs
 - [x] Step 10: Remote machine file systems
 - [x] Step 11: Additional exploitation commands (exit, ftp)
-- [x] Step 14: Unit test coverage (424 tests, colocated)
+- [x] Step 14: Unit test coverage (452 tests, colocated)
 - [ ] Step 12: Victory tracking ← next
 - [ ] Step 13: Challenge variety
 
@@ -35,8 +35,8 @@ Implemented:
   - Added backdoor on webserver port 4444 (www-data user)
   - Banner now shows actual port number (e.g., `# 4444 #`)
 - **Fixed nc commands**: Corrected `resolvePath` signature in cd, ls, cat
-- **NC command tests**: cat (11), cd (13), ls (14)
-- **Test count**: Now 424 tests across 28 colocated files
+- **NC command tests**: nc (28), cat (11), cd (13), ls (14)
+- **Test count**: Now 452 tests across 29 colocated files
 
 ## Previous Session (2026-02-04)
 
@@ -103,10 +103,10 @@ Victory tracking:
 - jshacker@localhost: hackme
 
 ### Test Coverage
-- 424 tests across 28 colocated test files
+- 452 tests across 29 colocated test files
 - All commands with logic are tested
 - FTP subcommands tested (cd, lcd, ls, lls, get, put)
-- NC subcommands tested (cat, cd, ls)
+- NC command and subcommands tested (nc, cat, cd, ls)
 - Async commands tested with fake timers
 - React hooks tested with React Testing Library (useCommandHistory, useVariables, useAutoComplete)
 - React components tested with React Testing Library (TerminalOutput, TerminalInput)
