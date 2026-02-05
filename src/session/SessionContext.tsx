@@ -181,7 +181,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
 
   const getPrompt = useCallback(() => {
     if (ftpSession) return 'ftp>';
-    if (ncSession) return `${ncSession.service}>`;
+    if (ncSession) return '$';
     return `${session.username}@${session.machine}>`;
   }, [session.username, session.machine, ftpSession, ncSession]);
 
