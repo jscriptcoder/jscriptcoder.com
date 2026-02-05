@@ -25,13 +25,23 @@ Step 12 of 14: Victory tracking
 - [ ] Step 12: Victory tracking ← next
 - [ ] Step 13: Challenge variety
 
-## Recent Session (2026-02-04)
+## Recent Session (2026-02-05)
+
+Implemented:
+- **Dynamic nc owner**: nc command no longer hardcodes "ghost" user
+  - Added `ServiceOwner` type with username, userType, homePath
+  - Extended `Port` type with optional `owner` field
+  - nc command reads context from `port.owner` instead of hardcoding
+  - Added backdoor on webserver port 4444 (www-data user)
+  - Banner now shows actual port number (e.g., `# 4444 #`)
+
+## Previous Session (2026-02-04)
 
 Implemented:
 - **nc (netcat) command**: Connect to arbitrary ports on remote machines
   - Shows service banners for common ports (ssh, http, ftp, mysql)
   - Interactive mode for special services (port 31337 on darknet)
-  - Runs as `ghost` user with real filesystem access (read-only)
+  - Runs as configured user with real filesystem access (read-only)
   - Commands: pwd, cd, ls, cat, whoami, help, exit
   - Minimal `$` prompt - players must discover context with whoami/pwd
   - Service named "elite" (not "backdoor") to be less obvious
@@ -49,13 +59,6 @@ Implemented:
 - **Component tests**: TerminalOutput (19 tests), TerminalInput (26 tests)
 - **FTP command tests**: cd (15), lcd (15), ls (12), lls (12), get (13), put (13)
 - **Test count**: Now 386 tests across 25 colocated files
-
-## Previous Session (2026-02-03)
-
-Implemented:
-- **exit() command**: Return from SSH sessions with session stack
-- **ftp() command**: Full FTP protocol simulation with dual-filesystem support
-- **TerminalInput refactor**: Combined `passwordMode` and `hidePrompt` into single `promptMode` prop
 
 ## Blockers
 
@@ -79,6 +82,13 @@ Victory tracking:
 | fileserver | 192.168.1.50 | root, ftpuser, guest | FLAG{ftp_hidden_treasure} |
 | webserver | 192.168.1.75 | root, www-data, guest | FLAG{sql_history_exposed}, FLAG{database_backup_gold} |
 | darknet | 203.0.113.42 | root, ghost, guest | FLAG{master_of_the_darknet} |
+
+### Backdoors (nc interactive mode)
+
+| Machine | Port | Service | User | Home Path |
+|---------|------|---------|------|-----------|
+| webserver | 4444 | elite | www-data | /var/www |
+| darknet | 31337 | elite | ghost | /home/ghost |
 
 ### Known Passwords (MD5 hashed)
 - ftpuser@fileserver: password

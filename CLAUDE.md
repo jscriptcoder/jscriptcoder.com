@@ -329,11 +329,11 @@ The terminal simulates a network environment for CTF puzzles (`src/network/`):
 192.168.1.0/24 Network (Local)
 ├── 192.168.1.1   (gateway)    - Router, HTTP/HTTPS open
 ├── 192.168.1.50  (fileserver) - FTP and SSH open
-├── 192.168.1.75  (webserver)  - SSH, HTTP, MySQL open
+├── 192.168.1.75  (webserver)  - SSH, HTTP, MySQL, backdoor:4444 (www-data)
 └── 192.168.1.100 (localhost)  - Current machine
 
 External Network
-└── 203.0.113.42  (darknet)    - SSH, HTTP-ALT open (darknet.ctf)
+└── 203.0.113.42  (darknet)    - SSH, HTTP-ALT, backdoor:31337 (ghost)
 ```
 
 **DNS Records:**
