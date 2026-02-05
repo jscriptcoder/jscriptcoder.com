@@ -100,6 +100,66 @@ Victory tracking (Step 13):
 5. `FLAG{database_backup_gold}` - webserver
 6. `FLAG{master_of_the_darknet}` - darknet
 
+---
+
+## Challenge Variety (Step 14)
+
+### Alternative Flag Discovery Methods
+
+Beyond `cat`, flags can be discovered through various commands:
+
+#### curl Command
+HTTP requests to web servers for clues and flags:
+
+**GET requests:**
+```javascript
+curl("http://192.168.1.75/robots.txt")     // Reveals hidden paths
+curl("http://192.168.1.75/.git/config")    // Exposed git config
+curl("http://192.168.1.75/admin/backup")   // Returns a flag
+```
+
+**POST requests:**
+```javascript
+curl("http://192.168.1.75/api/login", { method: "POST", body: { user: "admin", pass: "admin" } })
+// Returns: { "token": "FLAG{...}" }
+```
+
+**Scenarios:**
+- Query web server, find hints in HTML comments
+- Discover API endpoints from config files, then query them
+- POST credentials found in log files to get access tokens
+
+#### Other Potential Commands
+
+| Command | Use Case |
+|---------|----------|
+| `grep("FLAG", "/var")` | Search files for patterns |
+| `strings("binary.dat")` | Extract text from "binary" files |
+| `base64("-d", "RkxBR3suLi59")` | Decode obfuscated content |
+| `env()` | Environment variables with secrets |
+| `mysql("SELECT * FROM users")` | SQL queries on webserver |
+
+#### Multi-Step Discovery Chains
+
+Example puzzle requiring multiple steps:
+1. `cat /var/log/auth.log` → reveals a username
+2. `curl http://webserver/~username/` → finds a config file path
+3. `cat` the config → contains base64-encoded flag
+4. `base64 -d` → reveals the flag
+
+#### Flag Detection Points
+
+Flags should be detected from output of:
+- `cat` - reading files
+- `curl` - HTTP responses (body, headers)
+- `grep` - search results
+- `strings` - extracted text
+- `base64` - decoded content
+- `mysql` - query results
+- Any command that outputs text containing `FLAG{...}` pattern
+
+---
+
 ## Infrastructure Ready
 
 ### Machines with Per-Machine Filesystems
