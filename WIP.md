@@ -69,10 +69,36 @@ None currently.
 
 ## Next Action
 
-Victory tracking:
-- Track which flags have been found
-- Display progress (e.g., "3/5 flags found")
-- Victory screen when all flags collected
+Victory tracking (Step 13):
+
+### Flag Detection
+- Detect flags automatically when user runs `cat` on a file containing `FLAG{...}` pattern
+- Intercept output in Terminal component and scan for flag patterns
+- Mark flag as found without requiring special command
+
+### Storage
+- Store found flags in localStorage (similar to session persistence)
+- Track: list of found flags, timestamp when each was discovered
+- Type: `FlagState = { foundFlags: string[], firstFoundAt: Record<string, number> }`
+
+### Presentation
+- **On discovery**: Show notification banner when a new flag is captured
+  ```
+  ╔═══════════════════════════════════════╗
+  ║  FLAG CAPTURED: welcome_to_the_underground  ║
+  ║  Progress: 3/6 flags found            ║
+  ╚═══════════════════════════════════════╝
+  ```
+- **flags() command**: Check progress anytime, shows found flags and progress (3/6)
+- **Victory screen**: ASCII art celebration when all 6 flags found, with stats (time, flags)
+
+### Flags to Track (6 total)
+1. `FLAG{welcome_to_the_underground}` - localhost
+2. `FLAG{router_misconfiguration}` - gateway
+3. `FLAG{ftp_hidden_treasure}` - fileserver
+4. `FLAG{sql_history_exposed}` - webserver
+5. `FLAG{database_backup_gold}` - webserver
+6. `FLAG{master_of_the_darknet}` - darknet
 
 ## Infrastructure Ready
 
