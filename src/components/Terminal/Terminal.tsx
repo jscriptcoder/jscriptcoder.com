@@ -58,7 +58,7 @@ export const Terminal = () => {
   // Use special commands for autocomplete when in FTP or NC mode
   const activeCommandNames = isInFtpMode() && ftpCommands
     ? Array.from(ftpCommands.keys())
-    : isInNcMode()
+    : isInNcMode() && ncCommands
       ? Array.from(ncCommands.keys())
       : commandNames;
   const { getCompletions } = useAutoComplete(activeCommandNames, getVariableNames());
@@ -112,7 +112,7 @@ export const Terminal = () => {
       // Use special commands when in FTP/NC mode, otherwise use normal commands
       const activeContext = isInFtpMode() && ftpCommands
         ? Object.fromEntries(Array.from(ftpCommands.entries()).map(([k, v]) => [k, v.fn]))
-        : isInNcMode()
+        : isInNcMode() && ncCommands
           ? Object.fromEntries(Array.from(ncCommands.entries()).map(([k, v]) => [k, v.fn]))
           : executionContext;
 
@@ -208,6 +208,9 @@ export const Terminal = () => {
                   targetIP: followUp.targetIP,
                   targetPort: followUp.targetPort,
                   service: followUp.service,
+                  username: followUp.username,
+                  userType: followUp.userType,
+                  currentPath: followUp.homePath,
                 };
                 enterNcMode(newNcSession);
               }

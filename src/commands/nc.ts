@@ -115,11 +115,15 @@ export const createNcCommand = (context: NcContext): Command => ({
               onLine('');
 
               // Return nc prompt data to enter interactive mode
+              // The elite service runs as ghost (the installer)
               const ncPrompt: NcPromptData = {
                 __type: 'nc_prompt',
                 targetIP,
                 targetPort: port,
                 service,
+                username: 'ghost',
+                userType: 'user',
+                homePath: '/home/ghost',
               };
 
               onComplete(ncPrompt);

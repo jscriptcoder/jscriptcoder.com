@@ -1,21 +1,88 @@
 import { useMemo } from 'react';
+import { useFileSystem } from '../filesystem';
+import { useSession } from '../session/SessionContext';
+import {
+  createNcPwdCommand,
+  createNcCdCommand,
+  createNcLsCommand,
+  createNcCatCommand,
+  createNcWhoamiCommand,
+  ncHelpCommand,
+  ncExitCommand,
+} from '../commands/nc/index';
 import type { Command } from '../components/Terminal/types';
-import { ncHelpCommand } from '../commands/nc/help';
-import { ncWhoamiCommand } from '../commands/nc/whoami';
-import { ncLsCommand } from '../commands/nc/ls';
-import { ncCatCommand } from '../commands/nc/cat';
-import { ncExitCommand } from '../commands/nc/exit';
+import type { MachineId } from '../filesystem/machineFileSystems';
 
-export const useNcCommands = (): Map<string, Command> => {
+export const useNcCommands = (): Map<string, Command> | null => {
+  const { ncSession, updateNcCwd } = useSession();
+
+  const {
+    resolvePathForMachine,
+    getNodeFromMachine,
+    listDirectoryFromMachine,
+    readFileFromMachine,
+  } = useFileSystem();
+
   return useMemo(() => {
+    if (!ncSession) return null;
+
     const commands = new Map<string, Command>();
 
+    // Context getters
+    const getMachine = () => ncSession.targetIP as MachineId;
+    const getCwd = () => ncSession.currentPath;
+    const getUserType = () => ncSession.userType;
+    const getUsername = () => ncSession.username;
+
+    // pwd - print working directory
+    commands.set('pwd', createNcPwdCommand({ getCwd }));
+
+    // cd - change directory
+    commands.set('cd', createNcCdCommand({
+      getMachine,
+      getCwd,
+      getUserType,
+      setCwd: updateNcCwd,
+      resolvePathForMachine,
+      getNodeFromMachine,
+    }));
+
+    // ls - list directory
+    commands.set('ls', createNcLsCommand({
+      getMachine,
+      getCwd,
+      getUserType,
+      resolvePathForMachine,
+      getNodeFromMachine,
+      listDirectoryFromMachine,
+    }));
+
+    // cat - read file
+    commands.set('cat', createNcCatCommand({
+      getMachine,
+      getCwd,
+      getUserType,
+      resolvePathForMachine,
+      getNodeFromMachine,
+      readFileFromMachine,
+    }));
+
+    // whoami - show current user
+    commands.set('whoami', createNcWhoamiCommand({ getUsername }));
+
+    // help - show available commands
     commands.set('help', ncHelpCommand);
-    commands.set('whoami', ncWhoamiCommand);
-    commands.set('ls', ncLsCommand);
-    commands.set('cat', ncCatCommand);
+
+    // exit - close connection
     commands.set('exit', ncExitCommand);
 
     return commands;
-  }, []);
+  }, [
+    ncSession,
+    updateNcCwd,
+    resolvePathForMachine,
+    getNodeFromMachine,
+    listDirectoryFromMachine,
+    readFileFromMachine,
+  ]);
 };

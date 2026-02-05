@@ -1,7 +1,11 @@
 import type { Command } from '../../components/Terminal/types';
 
-export const ncWhoamiCommand: Command = {
+type NcWhoamiContext = {
+  readonly getUsername: () => string;
+};
+
+export const createNcWhoamiCommand = (context: NcWhoamiContext): Command => ({
   name: 'whoami',
   description: 'Show current user',
-  fn: (): string => 'anonymous',
-};
+  fn: (): string => context.getUsername(),
+});

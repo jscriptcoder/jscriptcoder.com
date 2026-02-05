@@ -44,6 +44,9 @@ export type NcPromptData = {
   readonly targetIP: string;
   readonly targetPort: number;
   readonly service: string;
+  readonly username: string;
+  readonly userType: 'root' | 'user' | 'guest';
+  readonly homePath: string;
 };
 
 export type NcQuitOutput = {

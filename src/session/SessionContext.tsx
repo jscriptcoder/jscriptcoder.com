@@ -31,6 +31,9 @@ export type NcSession = {
   readonly targetIP: string;
   readonly targetPort: number;
   readonly service: string;
+  readonly username: string;
+  readonly userType: UserType;
+  readonly currentPath: string;
 };
 
 // --- Persistence ---
@@ -75,7 +78,10 @@ const isValidNcSession = (value: unknown): value is NcSession =>
   value !== null &&
   typeof (value as NcSession).targetIP === 'string' &&
   typeof (value as NcSession).targetPort === 'number' &&
-  typeof (value as NcSession).service === 'string';
+  typeof (value as NcSession).service === 'string' &&
+  typeof (value as NcSession).username === 'string' &&
+  typeof (value as NcSession).currentPath === 'string' &&
+  isValidUserType((value as NcSession).userType);
 
 const isValidPersistedState = (value: unknown): value is PersistedState =>
   typeof value === 'object' &&
@@ -133,6 +139,7 @@ type SessionContextValue = {
   readonly enterNcMode: (ncSession: NcSession) => void;
   readonly exitNcMode: () => NcSession | null;
   readonly isInNcMode: () => boolean;
+  readonly updateNcCwd: (cwd: string) => void;
 };
 
 const defaultSession: Session = {
@@ -243,6 +250,10 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
 
   const isInNcMode = useCallback(() => ncSession !== null, [ncSession]);
 
+  const updateNcCwd = useCallback((cwd: string) => {
+    setNcSession((prev) => prev ? { ...prev, currentPath: cwd } : null);
+  }, []);
+
   return (
     <SessionContext.Provider
       value={{
@@ -265,6 +276,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
         enterNcMode,
         exitNcMode,
         isInNcMode,
+        updateNcCwd,
       }}
     >
       {children}
