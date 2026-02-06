@@ -6,6 +6,7 @@ import { createLsCommand } from '../commands/ls';
 import { createCdCommand } from '../commands/cd';
 import { createCatCommand } from '../commands/cat';
 import { createWhoamiCommand } from '../commands/whoami';
+import { createDecryptCommand } from '../commands/decrypt';
 import type { Command } from '../components/Terminal/types';
 
 export const useFileSystemCommands = (): Map<string, Command> => {
@@ -49,6 +50,13 @@ export const useFileSystemCommands = (): Map<string, Command> => {
 
     // cat command
     commands.set('cat', createCatCommand({
+      resolvePath,
+      getNode,
+      getUserType,
+    }));
+
+    // decrypt command
+    commands.set('decrypt', createDecryptCommand({
       resolvePath,
       getNode,
       getUserType,
