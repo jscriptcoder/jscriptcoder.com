@@ -147,6 +147,36 @@ Example puzzle requiring multiple steps:
 3. `cat` the config → contains base64-encoded flag
 4. `base64 -d` → reveals the flag
 
+#### Encrypted File Challenge (Web Crypto API)
+
+Use the Web Crypto API (AES-GCM) for encryption puzzles:
+
+**decrypt command:**
+```javascript
+decrypt(file, key)  // Decrypt a file using AES-256-GCM
+```
+
+**Example puzzle:**
+```javascript
+// 1. Player finds an encrypted file
+cat("/home/ghost/secret.enc")
+// Output: "U2FsdGVkX1..." (base64 encrypted data)
+
+// 2. Player finds a key elsewhere (in logs, config, etc.)
+cat("/var/log/keyfile")
+// Output: "aes-key: 7f3d8a..."
+
+// 3. Player decrypts the file
+decrypt("secret.enc", "7f3d8a...")
+// Output: "FLAG{crypto_master}"
+```
+
+**Implementation notes:**
+- Use `crypto.subtle.decrypt()` with AES-GCM
+- Keys found in various locations (log files, env vars, API responses)
+- Encrypted files contain base64-encoded ciphertext
+- Wrong key → "Decryption failed" error
+
 #### Flag Detection Points
 
 Flags should be detected from output of:
@@ -155,6 +185,7 @@ Flags should be detected from output of:
 - `grep` - search results
 - `strings` - extracted text
 - `base64` - decoded content
+- `decrypt` - decrypted content (Web Crypto API)
 - `mysql` - query results
 - Any command that outputs text containing `FLAG{...}` pattern
 
