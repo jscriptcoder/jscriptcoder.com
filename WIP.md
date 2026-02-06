@@ -177,15 +177,78 @@ decrypt("secret.enc", "7f3d8a...")
 - Encrypted files contain base64-encoded ciphertext
 - Wrong key → "Decryption failed" error
 
+#### Hash Verification Challenge (Web Crypto API)
+
+Use `crypto.subtle.digest()` to verify file integrity - detect backdoored binaries:
+
+**checksum command:**
+```javascript
+checksum(file)  // Calculate SHA-256 hash of a file
+```
+
+**Example puzzle:**
+```javascript
+// 1. Find a list of known good hashes
+cat("/etc/checksums")
+// Output:
+// /bin/sudo: sha256:5e884898da28047d...
+// /bin/login: sha256:a3f8c2e1b9d04567...
+
+// 2. Check if system binaries have been tampered with
+checksum("/bin/sudo")
+// Output: "sha256:9f86d081884c7d65..." (different!)
+
+// 3. The tampered binary contains a clue or backdoor
+strings("/bin/sudo")
+// Output: "BACKDOOR_PASSWORD=FLAG{binary_tampering}"
+```
+
+**Implementation notes:**
+- Use `crypto.subtle.digest('SHA-256', data)`
+- Compare hashes to detect modifications
+- Tampered files reveal clues about attacker activity
+
+#### HMAC API Authentication Challenge (Web Crypto API)
+
+Use `crypto.subtle.sign()` with HMAC for API request signing:
+
+**hmac command:**
+```javascript
+hmac(message, key)  // Generate HMAC-SHA256 signature
+```
+
+**Example puzzle:**
+```javascript
+// 1. Find API documentation mentioning HMAC auth
+cat("/var/www/api/README")
+// Output: "All requests must include X-Signature header with HMAC-SHA256"
+
+// 2. Find the secret key
+cat("/etc/api/.secret")
+// Output: "hmac-secret: a3f8c2e1b9d0..."
+
+// 3. Craft a signed request
+curl("http://192.168.1.75/api/admin", {
+  headers: { "X-Signature": hmac("GET /api/admin", "a3f8c2e1b9d0...") }
+})
+// Output: { "flag": "FLAG{api_signature_master}" }
+```
+
+**Implementation notes:**
+- Use `crypto.subtle.sign('HMAC', key, data)`
+- Unsigned or incorrectly signed requests → "401 Unauthorized"
+- Teaches real-world API security concepts
+
 #### Flag Detection Points
 
 Flags should be detected from output of:
 - `cat` - reading files
 - `curl` - HTTP responses (body, headers)
 - `grep` - search results
-- `strings` - extracted text
+- `strings` - extracted text from binaries
 - `base64` - decoded content
 - `decrypt` - decrypted content (Web Crypto API)
+- `checksum` - hash verification may reveal tampered files with clues
 - `mysql` - query results
 - Any command that outputs text containing `FLAG{...}` pattern
 
