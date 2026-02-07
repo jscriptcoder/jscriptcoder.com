@@ -68,8 +68,8 @@ const localhostWithHome: FileNode = {
 75076c2646b146bc33de447f3aba8c8803a2f9f6a8fef4de74b7fab1cfb2c4da
 `,
             },
-            'README.md': {
-              name: 'README.md',
+            'readme.txt': {
+              name: 'readme.txt',
               type: 'file',
               owner: 'user',
               permissions: { read: ['root', 'user'], write: ['root', 'user'] },
