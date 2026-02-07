@@ -14,7 +14,7 @@ const createOutputLine = (overrides: Partial<OutputLine> & Pick<OutputLine, 'typ
 const createAuthorData = (overrides?: Partial<AuthorData>): AuthorData => ({
   __type: 'author',
   name: 'Test Author',
-  description: 'A test description',
+  description: ['A test description'],
   avatar: 'https://example.com/avatar.jpg',
   links: [
     { label: 'GitHub', url: 'https://github.com/test' },
@@ -152,7 +152,7 @@ describe('TerminalOutput', () => {
     });
 
     it('should render author description', () => {
-      const authorData = createAuthorData({ description: 'Software Engineer' });
+      const authorData = createAuthorData({ description: ['Software Engineer'] });
       const lines = [createOutputLine({ type: 'author', content: authorData })];
 
       render(<TerminalOutput lines={lines} />);

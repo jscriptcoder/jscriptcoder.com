@@ -6,7 +6,7 @@ export type AuthorLink = {
 export type AuthorData = {
   readonly __type: 'author';
   readonly name: string;
-  readonly description: string;
+  readonly description: readonly string[];
   readonly avatar: string;
   readonly links: readonly AuthorLink[];
 };
