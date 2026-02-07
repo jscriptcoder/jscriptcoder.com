@@ -2,11 +2,23 @@ import type { Command } from '../components/Terminal/types';
 import type { UserType } from '../session/SessionContext';
 import type { FileNode } from '../filesystem/types';
 
-interface CatContext {
-  resolvePath: (path: string) => string;
-  getNode: (path: string) => FileNode | null;
-  getUserType: () => UserType;
-}
+type CatContext = {
+  readonly resolvePath: (path: string) => string;
+  readonly getNode: (path: string) => FileNode | null;
+  readonly getUserType: () => UserType;
+};
+
+// Detect binary content by checking for null bytes or control characters
+const isBinaryContent = (content: string): boolean => {
+  for (let i = 0; i < Math.min(content.length, 512); i++) {
+    const charCode = content.charCodeAt(i);
+    // Null byte or control chars (except newline, tab, carriage return)
+    if (charCode === 0 || (charCode < 32 && charCode !== 9 && charCode !== 10 && charCode !== 13)) {
+      return true;
+    }
+  }
+  return false;
+};
 
 export const createCatCommand = (context: CatContext): Command => ({
   name: 'cat',
@@ -47,6 +59,13 @@ export const createCatCommand = (context: CatContext): Command => ({
       throw new Error(`cat: ${path}: Permission denied`);
     }
 
-    return node.content ?? '';
+    const content = node.content ?? '';
+
+    // Warn about binary files
+    if (isBinaryContent(content)) {
+      return `cat: ${path}: Binary file (use strings() to extract text)`;
+    }
+
+    return content;
   },
 });

@@ -131,6 +131,7 @@ src/
 │   ├── decrypt.ts          # decrypt(file, key) - decrypt file using AES-256-GCM
 │   ├── output.ts           # output(cmd, [file]) - capture command output
 │   ├── resolve.ts          # resolve(promise) - unwrap Promise value
+│   ├── strings.ts          # strings(file) - extract printable strings from binary
 │   ├── exit.ts             # exit() - close SSH connection and return
 │   ├── ftp.ts              # ftp(host) - FTP connection command
 │   ├── ftp/                # FTP mode commands
@@ -158,7 +159,8 @@ src/
 │   ├── nc.test.ts           # Tests colocated with nc.ts
 │   ├── decrypt.test.ts      # Tests colocated with decrypt.ts
 │   ├── output.test.ts       # Tests colocated with output.ts
-│   └── resolve.test.ts      # Tests colocated with resolve.ts
+│   ├── resolve.test.ts      # Tests colocated with resolve.ts
+│   └── strings.test.ts      # Tests colocated with strings.ts
 ├── utils/
 │   ├── md5.ts              # MD5 hashing for password validation
 │   ├── network.ts          # Network utilities (IP validation, range parsing)
@@ -235,6 +237,7 @@ To add a command:
 | `decrypt(file, key)` | Decrypt file using AES-256-GCM (async, key is 64-char hex) |
 | `output(cmd, [file])` | Capture command output to variable or file (sync/Promise) |
 | `resolve(promise)` | Unwrap a Promise and display its resolved value (async) |
+| `strings(file, [min])` | Extract printable strings from binary files |
 | `su(user)` | Switch user (prompts for password) |
 | `whoami()` | Display current username |
 | `ifconfig([iface])` | Display network interface configuration |

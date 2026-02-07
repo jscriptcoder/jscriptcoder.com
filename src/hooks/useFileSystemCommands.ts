@@ -8,6 +8,7 @@ import { createCatCommand } from '../commands/cat';
 import { createWhoamiCommand } from '../commands/whoami';
 import { createDecryptCommand } from '../commands/decrypt';
 import { createOutputCommand } from '../commands/output';
+import { createStringsCommand } from '../commands/strings';
 import type { Command } from '../components/Terminal/types';
 
 export const useFileSystemCommands = (): Map<string, Command> => {
@@ -70,6 +71,13 @@ export const useFileSystemCommands = (): Map<string, Command> => {
       getUserType,
       createFile,
       writeFile,
+    }));
+
+    // strings command
+    commands.set('strings', createStringsCommand({
+      resolvePath,
+      getNode,
+      getUserType,
     }));
 
     return commands;

@@ -40,7 +40,11 @@ Implemented:
   - Used by echo, output, and resolve commands
   - 12 tests for stringify, removed echo tests (trivial wrapper)
 - **ping fix**: Only respond to known machines, 100% packet loss for unknown IPs
-- **Test count**: 502 tests across 32 colocated files
+- **strings command**: Extract printable strings from binary files
+  - `strings(file, [minLength])` - extracts ASCII sequences (4+ chars default)
+  - Added binary file detection to `cat` - shows warning for binary files
+  - Added `/bin/sudo` binary on webserver with hidden FLAG
+- **Test count**: 523 tests across 33 colocated files
 
 ## Session (2026-02-06)
 
@@ -318,7 +322,7 @@ Flags should be detected from output of:
 - jshacker@localhost: hackme
 
 ### Test Coverage
-- 502 tests across 32 colocated test files
+- 523 tests across 33 colocated test files
 - All commands with logic are tested
 - FTP subcommands tested (cd, lcd, ls, lls, get, put)
 - NC command and subcommands tested (nc, cat, cd, ls)

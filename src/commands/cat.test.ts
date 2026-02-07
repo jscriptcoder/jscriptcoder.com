@@ -220,4 +220,70 @@ describe('cat command', () => {
       expect(result).toBe('top secret data');
     });
   });
+
+  describe('binary file detection', () => {
+    it('should show warning for file with null bytes', () => {
+      const binaryFile = getMockFile({
+        name: 'program.bin',
+        content: '\x7fELF\x00\x00\x00binary data',
+      });
+
+      const context = createMockFileSystemContext({
+        fileSystem: { '/program.bin': binaryFile },
+      });
+
+      const cat = createCatCommand(context);
+      const result = cat.fn('/program.bin');
+
+      expect(result).toBe('cat: /program.bin: Binary file (use strings() to extract text)');
+    });
+
+    it('should show warning for file with control characters', () => {
+      const binaryFile = getMockFile({
+        name: 'data.bin',
+        content: '\x01\x02\x03control chars',
+      });
+
+      const context = createMockFileSystemContext({
+        fileSystem: { '/data.bin': binaryFile },
+      });
+
+      const cat = createCatCommand(context);
+      const result = cat.fn('/data.bin');
+
+      expect(result).toBe('cat: /data.bin: Binary file (use strings() to extract text)');
+    });
+
+    it('should allow files with normal newlines and tabs', () => {
+      const textFile = getMockFile({
+        name: 'script.sh',
+        content: '#!/bin/bash\n\techo "hello"\n',
+      });
+
+      const context = createMockFileSystemContext({
+        fileSystem: { '/script.sh': textFile },
+      });
+
+      const cat = createCatCommand(context);
+      const result = cat.fn('/script.sh');
+
+      expect(result).toBe('#!/bin/bash\n\techo "hello"\n');
+    });
+
+    it('should allow files with carriage returns', () => {
+      const windowsFile = getMockFile({
+        name: 'windows.txt',
+        content: 'line1\r\nline2\r\n',
+      });
+
+      const context = createMockFileSystemContext({
+        fileSystem: { '/windows.txt': windowsFile },
+      });
+
+      const cat = createCatCommand(context);
+      const result = cat.fn('/windows.txt');
+
+      expect(result).toBe('line1\r\nline2\r\n');
+    });
+  });
 });

@@ -296,6 +296,29 @@ INSERT INTO secrets VALUES ('FLAG{sql_history_exposed}');
     },
   },
   extraDirectories: {
+    bin: {
+      name: 'bin',
+      type: 'directory',
+      owner: 'root',
+      permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+      children: {
+        'sudo': {
+          name: 'sudo',
+          type: 'file',
+          owner: 'root',
+          permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+          // Binary file with embedded strings - use strings() to extract
+          content: '\x7fELF\x02\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00' +
+            '\x02\x00>\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' +
+            'BACKDOOR_PASS=r00tk1t\x00\x00\x00' +
+            '\x89\xe5\x83\xec\x10\x00\x00\x00\x00' +
+            '/bin/sh\x00\x00\x00' +
+            '\xcd\x80\x00\x00\x00\x00\x00\x00' +
+            'FLAG{binary_backdoor_detected}\x00\x00' +
+            '\x00\x00\x00\x00\x00\x00\x00\x00',
+        },
+      },
+    },
     var: {
       name: 'var',
       type: 'directory',
@@ -389,12 +412,13 @@ INSERT INTO users VALUES (2, 'guest', 'guest123');
   },
 };
 
-// Merge webserver var with generated var/log
+// Merge webserver var with generated var/log and add bin
 const webserverFs = createFileSystem(webserverConfig);
 const webserverWithVar: FileNode = {
   ...webserverFs,
   children: {
     ...webserverFs.children,
+    bin: webserverConfig.extraDirectories?.bin as FileNode,
     var: {
       ...(webserverConfig.extraDirectories?.var as FileNode),
       children: {
