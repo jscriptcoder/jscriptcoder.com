@@ -1,7 +1,7 @@
 // Crypto utilities for encrypting content (used for creating test data)
 
 // Convert hex string to Uint8Array
-export const hexToBytes = (hex: string): Uint8Array<ArrayBuffer> => {
+export const hexToBytes = (hex: string): Uint8Array => {
   const cleanHex = hex.replace(/\s/g, '');
   const buffer = new ArrayBuffer(cleanHex.length / 2);
   const bytes = new Uint8Array(buffer);

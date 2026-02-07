@@ -36,7 +36,7 @@ describe('hexToBytes', () => {
     const hex = 'a'.repeat(64);
     const result = hexToBytes(hex);
     expect(result.length).toBe(32);
-    expect(result.every((b) => b === 0xaa)).toBe(true);
+    expect(result.every((b: number) => b === 0xaa)).toBe(true);
   });
 });
 
