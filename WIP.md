@@ -25,7 +25,23 @@ Step 13 of 14: Victory tracking
 - [ ] Step 13: Victory tracking ← next
 - [ ] Step 14: Challenge variety
 
-## Recent Session (2026-02-06)
+## Recent Session (2026-02-07)
+
+Implemented:
+- **output command**: Capture command output to variable or file
+  - `output(cmd)` - returns string for sync, Promise for async
+  - `output(cmd, filePath)` - writes output to file
+  - 16 tests covering sync/async capture and file writing
+- **resolve command**: Unwrap Promises and display resolved value
+  - Shows "Resolving..." then displays the value
+  - Handles both resolved values and rejections
+  - 14 tests covering all scenarios
+- **stringify utility**: Extracted shared stringification logic
+  - Used by echo, output, and resolve commands
+  - 12 tests for stringify, removed echo tests (trivial wrapper)
+- **Test count**: 498 tests across 32 colocated files
+
+## Session (2026-02-06)
 
 Implemented:
 - **decrypt command**: Decrypt files using Web Crypto API (AES-256-GCM)
@@ -301,11 +317,13 @@ Flags should be detected from output of:
 - jshacker@localhost: hackme
 
 ### Test Coverage
-- 469 tests across 30 colocated test files
+- 498 tests across 32 colocated test files
 - All commands with logic are tested
 - FTP subcommands tested (cd, lcd, ls, lls, get, put)
 - NC command and subcommands tested (nc, cat, cd, ls)
 - Decrypt command tested (17 tests)
+- Output command tested (16 tests)
+- Resolve command tested (14 tests)
 - Async commands tested with fake timers
 - React hooks tested with React Testing Library (useCommandHistory, useVariables, useAutoComplete)
 - React components tested with React Testing Library (TerminalOutput, TerminalInput)

@@ -7,10 +7,11 @@ import { createCdCommand } from '../commands/cd';
 import { createCatCommand } from '../commands/cat';
 import { createWhoamiCommand } from '../commands/whoami';
 import { createDecryptCommand } from '../commands/decrypt';
+import { createOutputCommand } from '../commands/output';
 import type { Command } from '../components/Terminal/types';
 
 export const useFileSystemCommands = (): Map<string, Command> => {
-  const { resolvePath, getNode } = useFileSystem();
+  const { resolvePath, getNode, createFile, writeFile } = useFileSystem();
   const { session, setCurrentPath } = useSession();
 
   return useMemo(() => {
@@ -62,6 +63,15 @@ export const useFileSystemCommands = (): Map<string, Command> => {
       getUserType,
     }));
 
+    // output command
+    commands.set('output', createOutputCommand({
+      resolvePath,
+      getNode,
+      getUserType,
+      createFile,
+      writeFile,
+    }));
+
     return commands;
-  }, [setCurrentPath, resolvePath, getNode, session]);
+  }, [setCurrentPath, resolvePath, getNode, createFile, writeFile, session]);
 };

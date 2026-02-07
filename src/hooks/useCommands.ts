@@ -7,6 +7,7 @@ import { exitCommand } from '../commands/exit';
 import { createSuCommand } from '../commands/su';
 import { createHelpCommand } from '../commands/help';
 import { createManCommand } from '../commands/man';
+import { createResolveCommand } from '../commands/resolve';
 import { useFileSystemCommands } from './useFileSystemCommands';
 import { useNetworkCommands } from './useNetworkCommands';
 import { useSession } from '../session/SessionContext';
@@ -41,6 +42,7 @@ export const useCommands = (): UseCommandsResult => {
     commands.set('author', authorCommand);
     commands.set('clear', clearCommand);
     commands.set('exit', exitCommand);
+    commands.set('resolve', createResolveCommand());
 
     // User commands (depends on current machine)
     const suCommand = createSuCommand({ getUsers });

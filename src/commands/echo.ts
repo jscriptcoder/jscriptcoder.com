@@ -1,4 +1,5 @@
 import type { Command } from '../components/Terminal/types';
+import { stringify } from '../utils/stringify';
 
 export const echoCommand: Command = {
   name: 'echo',
@@ -16,18 +17,5 @@ export const echoCommand: Command = {
       { command: 'const msg = "Hi"; echo(msg)', description: 'Output a variable value' },
     ],
   },
-  fn: (...args: unknown[]): string => {
-    const value = args[0];
-    if (value === undefined) return 'undefined';
-    if (value === null) return 'null';
-    if (typeof value === 'string') return value;
-    if (typeof value === 'object') {
-      try {
-        return JSON.stringify(value, null, 2);
-      } catch {
-        return String(value);
-      }
-    }
-    return String(value);
-  },
+  fn: (...args: unknown[]): string => stringify(args[0]),
 };

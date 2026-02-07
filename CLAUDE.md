@@ -129,6 +129,8 @@ src/
 │   ├── nslookup.ts         # nslookup(domain) - DNS domain resolution
 │   ├── ssh.ts              # ssh(user, host) - secure shell connection
 │   ├── decrypt.ts          # decrypt(file, key) - decrypt file using AES-256-GCM
+│   ├── output.ts           # output(cmd, [file]) - capture command output
+│   ├── resolve.ts          # resolve(promise) - unwrap Promise value
 │   ├── exit.ts             # exit() - close SSH connection and return
 │   ├── ftp.ts              # ftp(host) - FTP connection command
 │   ├── ftp/                # FTP mode commands
@@ -144,7 +146,6 @@ src/
 │   ├── ls.test.ts           # Tests colocated with ls.ts
 │   ├── cd.test.ts           # Tests colocated with cd.ts
 │   ├── cat.test.ts          # Tests colocated with cat.ts
-│   ├── echo.test.ts         # Tests colocated with echo.ts
 │   ├── help.test.ts         # Tests colocated with help.ts
 │   ├── man.test.ts          # Tests colocated with man.ts
 │   ├── su.test.ts           # Tests colocated with su.ts
@@ -155,11 +156,14 @@ src/
 │   ├── ssh.test.ts          # Tests colocated with ssh.ts
 │   ├── ftp.test.ts          # Tests colocated with ftp.ts
 │   ├── nc.test.ts           # Tests colocated with nc.ts
-│   └── decrypt.test.ts      # Tests colocated with decrypt.ts
+│   ├── decrypt.test.ts      # Tests colocated with decrypt.ts
+│   ├── output.test.ts       # Tests colocated with output.ts
+│   └── resolve.test.ts      # Tests colocated with resolve.ts
 ├── utils/
 │   ├── md5.ts              # MD5 hashing for password validation
 │   ├── network.ts          # Network utilities (IP validation, range parsing)
-│   └── crypto.ts           # Crypto utilities (AES-256-GCM encrypt/decrypt, hex conversion)
+│   ├── crypto.ts           # Crypto utilities (AES-256-GCM encrypt/decrypt, hex conversion)
+│   └── stringify.ts        # Value stringification (used by echo, output, resolve)
 ├── test/
 │   └── setup.ts            # Test setup with jest-dom
 └── App.tsx                 # Root component (wraps Terminal with providers)
@@ -229,6 +233,8 @@ To add a command:
 | `cd([path])` | Change current directory |
 | `cat(path)` | Display file contents |
 | `decrypt(file, key)` | Decrypt file using AES-256-GCM (async, key is 64-char hex) |
+| `output(cmd, [file])` | Capture command output to variable or file (sync/Promise) |
+| `resolve(promise)` | Unwrap a Promise and display its resolved value (async) |
 | `su(user)` | Switch user (prompts for password) |
 | `whoami()` | Display current username |
 | `ifconfig([iface])` | Display network interface configuration |

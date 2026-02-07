@@ -62,6 +62,11 @@
 - **Issue**: Test expected "Connection refused" for localhost but got "Name or service not known" because DNS resolution runs first
 - **Solution**: Tests should match actual execution order; DNS lookup → localhost check → connection
 
+### Top-level await not supported in new Function()
+- **Context**: Terminal uses `new Function()` to evaluate JavaScript expressions
+- **Issue**: Users can't use `await` directly: `const log = await output(ping("host"))` fails
+- **Solution**: Provide `resolve()` command to unwrap Promises; users learn about Promises organically
+
 ## Patterns That Worked
 
 ### Command factory pattern with context injection
@@ -113,6 +118,12 @@
 - **What**: Save session state (machine, user, path, stacks) to localStorage, restore on page load
 - **Why it works**: Player progress survives page refresh, validates data with type guards before restoring
 - **Example**: `localStorage.setItem('session', JSON.stringify(session))` with fallback to defaults on invalid data
+
+### Smart return types for mixed sync/async
+- **What**: `output()` returns string for sync commands, Promise for async commands
+- **Why it works**: Sync commands stay ergonomic (no await needed), async returns Promise users must handle
+- **Example**: `const x = output(cat("f"))` → string; `const y = output(ping("h"))` → Promise
+- **Trade-off**: Inconsistent API, but creates educational "aha" moment when user discovers Promises
 
 ### Readonly types throughout
 - **What**: All type properties marked `readonly`, arrays as `readonly T[]`
@@ -200,6 +211,11 @@
 - **What**: Group tests by command behavior (e.g., "error handling", "listing", "formatting") not by implementation
 - **Why it works**: Tests remain valid when implementation changes, documents expected behavior
 - **Example**: `describe('error handling', () => { ... })`, `describe('ping execution', () => { ... })`
+
+### Test utilities once, skip trivial wrappers
+- **What**: Extract shared logic to utility, test the utility thoroughly, delete tests for thin wrappers
+- **Why it works**: Reduces test duplication, tests follow the logic not the call sites
+- **Example**: `stringify()` tested once in `stringify.test.ts`; `echo` command (trivial wrapper) has no tests
 
 ## Edge Cases
 
