@@ -50,6 +50,24 @@ const localhostWithHome: FileNode = {
           owner: 'user',
           permissions: { read: ['root', 'user'], write: ['root', 'user'] },
           children: {
+            'secret.enc': {
+              name: 'secret.enc',
+              type: 'file',
+              owner: 'user',
+              permissions: { read: ['root', 'user'], write: ['root', 'user'] },
+              content: '/NTX70iRuQttx+h+zK4kbsNlRM+vkGk07eM5j4KBNmbHq/juVGubEKS5wZl+p77Ep1fsQ0mefe27gXEAXtVCyR5aFCRJt21JcGiczh1svRwRisoJJqHKs0ce9Xbu6iqvtoaXv/T+n1gg',
+            },
+            'keyfile.txt': {
+              name: 'keyfile.txt',
+              type: 'file',
+              owner: 'user',
+              permissions: { read: ['root', 'user'], write: ['root', 'user'] },
+              content: `# Decryption Key
+# Use with: decrypt("secret.enc", "<key>")
+
+75076c2646b146bc33de447f3aba8c8803a2f9f6a8fef4de74b7fab1cfb2c4da
+`,
+            },
             'README.md': {
               name: 'README.md',
               type: 'file',

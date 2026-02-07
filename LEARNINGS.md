@@ -42,6 +42,26 @@
 - **Issue**: TypeScript error "readonly cannot be assigned to mutable type"
 - **Solution**: Update function parameters to accept `readonly string[]`
 
+### Hardcoded values in command implementations
+- **Context**: nc command had hardcoded `/home/ghost` path and "ghost" user
+- **Issue**: When adding a second backdoor (webserver port 4444 as www-data), the hardcoded values broke
+- **Solution**: Use dynamic context from configuration (e.g., `port.owner`) instead of hardcoding values
+
+### Function signature mismatches in injected context
+- **Context**: nc subcommands received `resolvePath` function via context injection
+- **Issue**: Commands called `resolvePath(machineId, path, cwd)` but function signature was `(path, cwd)` - machineId was already captured in closure
+- **Solution**: Match function signatures exactly; rename context properties to avoid confusion (e.g., `resolvePathForMachine` → `resolvePath`)
+
+### Unnecessary feature complexity
+- **Context**: nc cd command had `~` home directory shortcut handling
+- **Issue**: Required dynamic home path lookup, added complexity for a feature nobody requested
+- **Solution**: Remove the feature entirely - simpler is better when the feature isn't needed
+
+### DNS resolution order matters
+- **Context**: nc command checks if target is localhost
+- **Issue**: Test expected "Connection refused" for localhost but got "Name or service not known" because DNS resolution runs first
+- **Solution**: Tests should match actual execution order; DNS lookup → localhost check → connection
+
 ## Patterns That Worked
 
 ### Command factory pattern with context injection
@@ -78,6 +98,21 @@
 - **What**: Pure functions `updateNodeAtPath()` and `addChildAtPath()` for immutable tree updates
 - **Why it works**: Avoids deep cloning with JSON.parse/stringify, proper immutable updates
 - **Example**: `setFileSystem(prev => updateNodeAtPath(prev, parts, node => ({ ...node, content })))`
+
+### Dynamic service ownership via configuration
+- **What**: Port configuration includes optional `owner` field with username, userType, homePath
+- **Why it works**: Services (like nc backdoors) can run as different users without hardcoding in command logic
+- **Example**: `{ port: 4444, service: 'elite', open: true, owner: { username: 'www-data', userType: 'user', homePath: '/var/www' } }`
+
+### Web Crypto API for encryption puzzles
+- **What**: Use `crypto.subtle.encrypt/decrypt` with AES-256-GCM for CTF encryption challenges
+- **Why it works**: Browser-native, secure algorithm, async API fits AsyncOutput pattern
+- **Example**: `decrypt("secret.enc", "64-char-hex-key")` decrypts base64-encoded ciphertext
+
+### Session persistence with localStorage
+- **What**: Save session state (machine, user, path, stacks) to localStorage, restore on page load
+- **Why it works**: Player progress survives page refresh, validates data with type guards before restoring
+- **Example**: `localStorage.setItem('session', JSON.stringify(session))` with fallback to defaults on invalid data
 
 ### Readonly types throughout
 - **What**: All type properties marked `readonly`, arrays as `readonly T[]`
@@ -132,6 +167,18 @@
 - **Rationale**: Consistent style, types handle unions/intersections better, no accidental extension
 - **Trade-offs**: Slightly different syntax (= vs {), but more explicit about intent
 
+### localStorage for session persistence
+- **Options considered**: No persistence, localStorage, IndexedDB, URL state
+- **Decision**: localStorage with JSON serialization
+- **Rationale**: Simple API, sufficient for small state, survives page refresh
+- **Trade-offs**: 5MB limit (not a concern), sync API (fast enough), need type guards for validation
+
+### Configuration-driven service ownership
+- **Options considered**: Hardcoded user per command, configuration on port, separate service registry
+- **Decision**: Optional `owner` field on Port type
+- **Rationale**: Keeps configuration colocated, no separate registry to maintain, optional for ports that don't need it
+- **Trade-offs**: Port type grows, but owner info naturally belongs with port definition
+
 ## Testing Patterns
 
 ### Factory functions for mock contexts
@@ -168,3 +215,11 @@
 - FTP put with permission denied: Checks both local read and remote write permissions
 - exit() when not connected: "exit: not connected to a remote machine"
 - FTP username prompt accepts empty: Defaults to "anonymous"
+- nc to localhost hostname: DNS resolution returns IP, then localhost check rejects
+- nc to closed port: "Connection refused" after simulated delay
+- nc to non-existent host: "Name or service not known"
+- nc interactive mode: Only available on ports with "elite" service
+- decrypt with wrong key: "Decryption failed - invalid key or corrupted data"
+- decrypt with invalid key format: "invalid key format" (must be 64 hex chars)
+- decrypt on directory: "Is a directory" error
+- decrypt on empty file: "File is empty" error

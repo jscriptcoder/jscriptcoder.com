@@ -25,7 +25,25 @@ Step 13 of 14: Victory tracking
 - [ ] Step 13: Victory tracking ← next
 - [ ] Step 14: Challenge variety
 
-## Recent Session (2026-02-05)
+## Recent Session (2026-02-06)
+
+Implemented:
+- **decrypt command**: Decrypt files using Web Crypto API (AES-256-GCM)
+  - Takes file path and 64-character hex key (256 bits)
+  - Returns AsyncOutput with "Decrypting..." progress
+  - Validates key format (hex, correct length)
+  - Handles permission checks and file validation
+  - 17 tests covering all edge cases
+- **Crypto utilities** (`src/utils/crypto.ts`):
+  - `hexToBytes()`, `bytesToHex()` - hex/binary conversion
+  - `generateKey()` - random 256-bit key generation
+  - `encryptContent()`, `decryptContent()` - AES-256-GCM operations
+- **Test encrypted files**: Added to localhost `/home/jshacker/`:
+  - `secret.enc` - encrypted file with test flag
+  - `keyfile.txt` - decryption key for testing
+- **Test count**: 469 tests across 30 colocated files
+
+## Session (2026-02-05)
 
 Implemented:
 - **Dynamic nc owner**: nc command no longer hardcodes "ghost" user
@@ -38,7 +56,7 @@ Implemented:
 - **NC command tests**: nc (28), cat (11), cd (13), ls (14)
 - **Test count**: Now 452 tests across 29 colocated files
 
-## Previous Session (2026-02-04)
+## Session (2026-02-04)
 
 Implemented:
 - **nc (netcat) command**: Connect to arbitrary ports on remote machines
@@ -283,10 +301,11 @@ Flags should be detected from output of:
 - jshacker@localhost: hackme
 
 ### Test Coverage
-- 452 tests across 29 colocated test files
+- 469 tests across 30 colocated test files
 - All commands with logic are tested
 - FTP subcommands tested (cd, lcd, ls, lls, get, put)
 - NC command and subcommands tested (nc, cat, cd, ls)
+- Decrypt command tested (17 tests)
 - Async commands tested with fake timers
 - React hooks tested with React Testing Library (useCommandHistory, useVariables, useAutoComplete)
 - React components tested with React Testing Library (TerminalOutput, TerminalInput)

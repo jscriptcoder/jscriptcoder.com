@@ -102,7 +102,7 @@ src/
 │   ├── useCommandHistory.ts      # Up/down arrow command history
 │   ├── useAutoComplete.ts        # Tab completion for commands and variables
 │   ├── useVariables.ts           # const/let variable management
-│   ├── useFileSystemCommands.ts  # pwd, ls, cd, cat, whoami command creation
+│   ├── useFileSystemCommands.ts  # pwd, ls, cd, cat, whoami, decrypt command creation
 │   ├── useNetworkCommands.ts     # ifconfig and network command creation
 │   ├── useFtpCommands.ts         # FTP mode commands (pwd, ls, get, put, etc.)
 │   └── useCommands.ts            # Command registry and execution context
@@ -128,6 +128,7 @@ src/
 │   ├── nmap.ts             # nmap(target) - network scanning and port discovery
 │   ├── nslookup.ts         # nslookup(domain) - DNS domain resolution
 │   ├── ssh.ts              # ssh(user, host) - secure shell connection
+│   ├── decrypt.ts          # decrypt(file, key) - decrypt file using AES-256-GCM
 │   ├── exit.ts             # exit() - close SSH connection and return
 │   ├── ftp.ts              # ftp(host) - FTP connection command
 │   ├── ftp/                # FTP mode commands
@@ -152,10 +153,13 @@ src/
 │   ├── nslookup.test.ts     # Tests colocated with nslookup.ts
 │   ├── nmap.test.ts         # Tests colocated with nmap.ts
 │   ├── ssh.test.ts          # Tests colocated with ssh.ts
-│   └── ftp.test.ts          # Tests colocated with ftp.ts
+│   ├── ftp.test.ts          # Tests colocated with ftp.ts
+│   ├── nc.test.ts           # Tests colocated with nc.ts
+│   └── decrypt.test.ts      # Tests colocated with decrypt.ts
 ├── utils/
 │   ├── md5.ts              # MD5 hashing for password validation
-│   └── network.ts          # Network utilities (IP validation, range parsing)
+│   ├── network.ts          # Network utilities (IP validation, range parsing)
+│   └── crypto.ts           # Crypto utilities (AES-256-GCM encrypt/decrypt, hex conversion)
 ├── test/
 │   └── setup.ts            # Test setup with jest-dom
 └── App.tsx                 # Root component (wraps Terminal with providers)
@@ -224,6 +228,7 @@ To add a command:
 | `ls([path])` | List directory contents |
 | `cd([path])` | Change current directory |
 | `cat(path)` | Display file contents |
+| `decrypt(file, key)` | Decrypt file using AES-256-GCM (async, key is 64-char hex) |
 | `su(user)` | Switch user (prompts for password) |
 | `whoami()` | Display current username |
 | `ifconfig([iface])` | Display network interface configuration |
