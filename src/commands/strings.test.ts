@@ -166,7 +166,7 @@ describe('strings command', () => {
       });
       const strings = createStringsCommand(context);
 
-      const result = strings.fn('test.bin', 4);
+      const result = strings.fn('test.bin', 4) as string;
       const lines = result.split('\n');
 
       expect(lines).toContain('LONG_STRING');
