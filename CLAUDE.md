@@ -94,10 +94,10 @@ src/
 ├── session/
 │   └── SessionContext.tsx  # Global session state (user, machine, path) with localStorage persistence
 ├── filesystem/
-│   ├── FileSystemContext.tsx  # Virtual filesystem operations (reads location from SessionContext)
+│   ├── FileSystemContext.tsx  # Virtual filesystem operations with localStorage persistence
 │   ├── fileSystemFactory.ts   # Factory function for generating filesystems
 │   ├── machineFileSystems.ts  # Per-machine filesystem configurations
-│   └── types.ts               # FileNode, FilePermissions types
+│   └── types.ts               # FileNode, FilePermissions, FileSystemPatch types
 ├── hooks/
 │   ├── useCommandHistory.ts      # Up/down arrow command history
 │   ├── useAutoComplete.ts        # Tab completion for commands and variables
@@ -334,6 +334,32 @@ type FileNode = {
 };
 ```
 
+**Filesystem Persistence (Patches):**
+
+User-created and modified files are persisted to localStorage (`jshack-filesystem` key) using a patches approach. Only the diff from the base filesystem is stored — not the full tree.
+
+```typescript
+type FileSystemPatch = {
+  readonly machineId: string;
+  readonly path: string;       // absolute resolved path
+  readonly content: string;
+  readonly owner: UserType;
+};
+```
+
+**How it works:**
+- On every `writeFileToMachine` or `createFileOnMachine` call, a patch is recorded (upserted by machineId + path)
+- Patches are saved to localStorage via `useEffect` whenever they change
+- On initialization, `applyPatches()` replays patches on top of the base filesystem from `machineFileSystems`
+- Existing files get their content updated; new files are created with `read/write: ['root', owner]` permissions
+- Base filesystem updates in code still take effect — patches layer on top
+- Clearing the `jshack-filesystem` localStorage key resets to factory state
+
+**Write operations that trigger patches:**
+- `output(cmd, filePath)` — captures command output to a file
+- FTP `get(file)` — downloads file from remote to local machine
+- FTP `put(file)` — uploads file from local to remote machine
+
 ### Network System
 
 The terminal simulates a network environment for CTF puzzles (`src/network/`):
@@ -526,6 +552,9 @@ Persisted data includes:
 - `session`: machine, username, userType, currentPath
 - `sessionStack`: SSH history for `exit()` to work across page reloads
 - `ftpSession`: FTP mode state (if active)
+
+**Filesystem Persistence:**
+File changes (creates/writes) are separately persisted to localStorage (`jshack-filesystem` key) as patches. See the "Filesystem Persistence (Patches)" section under Virtual File System for details.
 
 **Usage in commands:**
 ```typescript

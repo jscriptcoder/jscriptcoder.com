@@ -3,9 +3,10 @@ import {
   useContext,
   useState,
   useCallback,
+  useEffect,
   type ReactNode,
 } from 'react';
-import type { FileNode, PermissionResult } from './types';
+import type { FileNode, FileSystemPatch, PermissionResult } from './types';
 import { useSession, type UserType } from '../session/SessionContext';
 import { machineFileSystems, getDefaultHomePath, type MachineId } from './machineFileSystems';
 
@@ -83,11 +84,110 @@ const addChildAtPath = (
 
 type FileSystemsState = Readonly<Record<MachineId, FileNode>>;
 
-const initializeFileSystems = (): FileSystemsState => ({ ...machineFileSystems });
+// --- Patch Persistence ---
+
+const FS_STORAGE_KEY = 'jshack-filesystem';
+
+const isValidPatch = (value: unknown): value is FileSystemPatch =>
+  typeof value === 'object' &&
+  value !== null &&
+  typeof (value as FileSystemPatch).machineId === 'string' &&
+  typeof (value as FileSystemPatch).path === 'string' &&
+  typeof (value as FileSystemPatch).content === 'string' &&
+  typeof (value as FileSystemPatch).owner === 'string' &&
+  ['root', 'user', 'guest'].includes((value as FileSystemPatch).owner);
+
+const loadPatches = (): readonly FileSystemPatch[] => {
+  try {
+    const stored = localStorage.getItem(FS_STORAGE_KEY);
+    if (!stored) return [];
+
+    const parsed: unknown = JSON.parse(stored);
+    if (!Array.isArray(parsed) || !parsed.every(isValidPatch)) return [];
+
+    return parsed;
+  } catch {
+    return [];
+  }
+};
+
+const savePatches = (patches: readonly FileSystemPatch[]): void => {
+  try {
+    localStorage.setItem(FS_STORAGE_KEY, JSON.stringify(patches));
+  } catch {
+    // Ignore storage errors (quota exceeded, etc.)
+  }
+};
+
+const getNodeFromFileSystemStatic = (fs: FileNode, resolvedPath: string): FileNode | null => {
+  const parts = resolvedPath.split('/').filter(Boolean);
+  return parts.reduce<FileNode | null>((current, part) => {
+    if (!current || current.type !== 'directory' || !current.children) return null;
+    return current.children[part] ?? null;
+  }, fs);
+};
+
+const applyPatches = (
+  base: FileSystemsState,
+  patches: readonly FileSystemPatch[]
+): FileSystemsState =>
+  patches.reduce<FileSystemsState>((state, patch) => {
+    const machineId = patch.machineId as MachineId;
+    const machineFs = state[machineId];
+    if (!machineFs) return state;
+
+    const parts = patch.path.split('/').filter(Boolean);
+    const existingNode = getNodeFromFileSystemStatic(machineFs, patch.path);
+
+    if (existingNode) {
+      return {
+        ...state,
+        [machineId]: updateNodeAtPath(machineFs, parts, (node) => ({ ...node, content: patch.content })),
+      };
+    }
+
+    const fileName = parts[parts.length - 1];
+    const dirParts = parts.slice(0, -1);
+    const newFile: FileNode = {
+      name: fileName,
+      type: 'file',
+      owner: patch.owner,
+      permissions: {
+        read: ['root', patch.owner],
+        write: ['root', patch.owner],
+      },
+      content: patch.content,
+    };
+
+    return {
+      ...state,
+      [machineId]: addChildAtPath(machineFs, dirParts, fileName, newFile),
+    };
+  }, base);
+
+const upsertPatch = (
+  patches: readonly FileSystemPatch[],
+  patch: FileSystemPatch
+): readonly FileSystemPatch[] => {
+  const existingIndex = patches.findIndex(
+    (p) => p.machineId === patch.machineId && p.path === patch.path
+  );
+  if (existingIndex === -1) return [...patches, patch];
+
+  return patches.map((p, i) => (i === existingIndex ? patch : p));
+};
+
+const initializeFileSystems = (): FileSystemsState =>
+  applyPatches({ ...machineFileSystems }, loadPatches());
 
 export const FileSystemProvider = ({ children }: { children: ReactNode }) => {
   const { session } = useSession();
   const [fileSystems, setFileSystems] = useState<FileSystemsState>(initializeFileSystems);
+  const [patches, setPatches] = useState<readonly FileSystemPatch[]>(loadPatches);
+
+  useEffect(() => {
+    savePatches(patches);
+  }, [patches]);
 
   const currentMachine = session.machine as MachineId;
   const currentPath = session.currentPath;
@@ -202,6 +302,8 @@ export const FileSystemProvider = ({ children }: { children: ReactNode }) => {
       [machineId]: updateNodeAtPath(prev[machineId], parts, (fileNode) => ({ ...fileNode, content })),
     }));
 
+    setPatches((prev) => upsertPatch(prev, { machineId, path: resolvedPath, content, owner: node.owner }));
+
     return { allowed: true };
   }, [canWriteFromMachine, getNodeFromMachine, resolvePathForMachine]);
 
@@ -234,6 +336,8 @@ export const FileSystemProvider = ({ children }: { children: ReactNode }) => {
       ...prev,
       [machineId]: addChildAtPath(prev[machineId], dirParts, fileName, newFile),
     }));
+
+    setPatches((prev) => upsertPatch(prev, { machineId, path: resolvedPath, content, owner: userType }));
 
     return { allowed: true };
   }, [resolvePathForMachine, canWriteFromMachine, getNodeFromMachine]);

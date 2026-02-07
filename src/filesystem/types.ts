@@ -22,3 +22,10 @@ export type PermissionResult = {
   readonly allowed: boolean;
   readonly error?: string;
 };
+
+export type FileSystemPatch = {
+  readonly machineId: string;
+  readonly path: string;
+  readonly content: string;
+  readonly owner: UserType;
+};

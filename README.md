@@ -27,7 +27,7 @@ Start with `help()` to see available commands. Good luck, hacker.
 - **Variable Support** - Create variables with `const` and `let` declarations
 - **Virtual Environment** - Explore a simulated system with secrets to uncover
 - **Network Simulation** - Discover and hack into remote machines
-- **Session Persistence** - Your location is saved; return where you left off after refresh
+- **Session Persistence** - Your location and files are saved; return where you left off after refresh
 - **Retro CRT Theme** - Classic amber-on-black terminal aesthetic
 
 ## Tech Stack
@@ -82,6 +82,11 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 | `ssh(user, host)` | Connect to remote machine via SSH |
 | `exit()` | Close SSH connection and return to previous machine |
 | `ftp(host)` | Connect to remote machine via FTP |
+| `nc(host, port)` | Connect to arbitrary port (interactive for special services) |
+| `decrypt(file, key)` | Decrypt file using AES-256-GCM |
+| `output(cmd, [file])` | Capture command output to variable or file |
+| `resolve(promise)` | Unwrap a Promise and display its value |
+| `strings(file, [min])` | Extract printable strings from binary files |
 
 ### FTP Mode Commands
 

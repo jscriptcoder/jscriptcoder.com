@@ -119,6 +119,12 @@
 - **Why it works**: Player progress survives page refresh, validates data with type guards before restoring
 - **Example**: `localStorage.setItem('session', JSON.stringify(session))` with fallback to defaults on invalid data
 
+### Filesystem persistence via patches
+- **What**: Store only user-created/modified files as patches in localStorage, replay on top of base filesystem at init
+- **Why it works**: Small storage footprint, base filesystem updates in code still take effect, clean "factory reset" by clearing one key
+- **Example**: `applyPatches(baseFileSystems, loadPatches())` at init; `upsertPatch(patches, { machineId, path, content, owner })` on write
+- **Key insight**: Persisting the diff instead of the full tree avoids stale data problems and keeps localStorage usage minimal
+
 ### Smart return types for mixed sync/async
 - **What**: `output()` returns string for sync commands, Promise for async commands
 - **Why it works**: Sync commands stay ergonomic (no await needed), async returns Promise users must handle
@@ -183,6 +189,12 @@
 - **Decision**: localStorage with JSON serialization
 - **Rationale**: Simple API, sufficient for small state, survives page refresh
 - **Trade-offs**: 5MB limit (not a concern), sync API (fast enough), need type guards for validation
+
+### Patches approach for filesystem persistence
+- **Options considered**: Persist full filesystem tree, persist only patches/diff, IndexedDB
+- **Decision**: Patches in localStorage
+- **Rationale**: Base filesystem is already in code; only user mutations need persisting. Patches are small, deduped by machineId+path, and base filesystem updates in code still apply to returning users.
+- **Trade-offs**: Need to intercept all mutation points (writeFileToMachine, createFileOnMachine), but only two exist
 
 ### Configuration-driven service ownership
 - **Options considered**: Hardcoded user per command, configuration on port, separate service registry

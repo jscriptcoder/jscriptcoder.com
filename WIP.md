@@ -28,6 +28,13 @@ Step 13 of 14: Victory tracking
 ## Recent Session (2026-02-07)
 
 Implemented:
+- **Filesystem persistence**: User-created/modified files now survive page refresh
+  - Patches approach: only the diff from base filesystem is stored in localStorage (`jshack-filesystem`)
+  - `FileSystemPatch` type: machineId, path, content, owner
+  - Patches upserted (deduped by machineId + path) on every `writeFileToMachine`/`createFileOnMachine`
+  - `applyPatches()` replays patches on top of base filesystem at init
+  - Covers `output(cmd, file)`, FTP `get`/`put`, and any future write operations
+  - Clear `jshack-filesystem` from localStorage to reset to factory state
 - **output command**: Capture command output to variable or file
   - `output(cmd)` - returns string for sync, Promise for async
   - `output(cmd, filePath)` - writes output to file
