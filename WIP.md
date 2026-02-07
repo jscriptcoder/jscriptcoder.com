@@ -51,7 +51,7 @@ Implemented:
   - `strings(file, [minLength])` - extracts ASCII sequences (4+ chars default)
   - Added binary file detection to `cat` - shows warning for binary files
   - Added `/bin/sudo` binary on webserver with hidden FLAG
-- **Test count**: 523 tests across 33 colocated files
+- **Test count**: 545 tests across 34 colocated files
 
 ## Session (2026-02-06)
 
@@ -329,7 +329,7 @@ Flags should be detected from output of:
 - jshacker@localhost: hackme
 
 ### Test Coverage
-- 523 tests across 33 colocated test files
+- 545 tests across 34 colocated test files
 - All commands with logic are tested
 - FTP subcommands tested (cd, lcd, ls, lls, get, put)
 - NC command and subcommands tested (nc, cat, cd, ls)
