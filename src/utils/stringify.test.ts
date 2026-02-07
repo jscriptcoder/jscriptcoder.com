@@ -31,6 +31,21 @@ describe('stringify', () => {
     });
   });
 
+  describe('promises', () => {
+    it('should return descriptive string for Promise', () => {
+      const promise = Promise.resolve('value');
+
+      expect(stringify(promise)).toBe('[Promise] - use resolve() to unwrap');
+    });
+
+    it('should detect rejected Promise', () => {
+      const promise = Promise.reject('error');
+      promise.catch(() => {}); // Prevent unhandled rejection
+
+      expect(stringify(promise)).toBe('[Promise] - use resolve() to unwrap');
+    });
+  });
+
   describe('objects and arrays', () => {
     it('should pretty-print object as JSON', () => {
       const result = stringify({ name: 'test', value: 123 });
