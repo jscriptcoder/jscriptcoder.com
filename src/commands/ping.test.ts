@@ -249,5 +249,52 @@ describe('ping command', () => {
       const pingResponses = lines.filter((l) => l.includes('icmp_seq'));
       expect(pingResponses.length).toBe(1);
     });
+
+    it('should show 100% packet loss for unreachable IP', () => {
+      const context = createMockPingContext({
+        machines: [getMockRemoteMachine({ ip: '192.168.1.50' })],
+      });
+      const ping = createPingCommand(context);
+      // Use an IP that doesn't exist in our game
+      const result = ping.fn('8.8.8.8', 2);
+
+      const lines: string[] = [];
+      let completed = false;
+      if (isAsyncOutput(result)) {
+        result.start(
+          (line) => lines.push(line),
+          () => { completed = true; }
+        );
+      }
+
+      // Fast-forward through all pings and stats
+      vi.advanceTimersByTime(2000);
+
+      expect(completed).toBe(true);
+      expect(lines.some((l) => l.includes('2 packets transmitted, 0 received, 100% packet loss'))).toBe(true);
+      // Should not have any successful ping responses
+      expect(lines.some((l) => l.includes('icmp_seq'))).toBe(false);
+    });
+
+    it('should show 100% packet loss for unknown IP in local subnet', () => {
+      const context = createMockPingContext({
+        machines: [getMockRemoteMachine({ ip: '192.168.1.50' })],
+      });
+      const ping = createPingCommand(context);
+      // Use an IP in local subnet that doesn't exist
+      const result = ping.fn('192.168.1.99', 2);
+
+      const lines: string[] = [];
+      if (isAsyncOutput(result)) {
+        result.start(
+          (line) => lines.push(line),
+          () => {}
+        );
+      }
+
+      vi.advanceTimersByTime(2000);
+
+      expect(lines.some((l) => l.includes('100% packet loss'))).toBe(true);
+    });
   });
 });

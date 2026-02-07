@@ -91,21 +91,22 @@ export const createPingCommand = (context: PingContext): Command => ({
         // Show header immediately
         onLine(`PING ${host} (${targetIP}): 56 data bytes`);
 
+        // Determine if host is reachable (localhost or known machine)
+        const isReachable = isLocalhost || targetMachine !== undefined;
+
         // Schedule ping responses
         for (let i = 0; i < count; i++) {
           const timeoutId = setTimeout(() => {
             if (cancelled) return;
 
-            // Unknown IP in subnet = packet loss
-            if (!isLocalhost && !targetMachine && targetIP.startsWith('192.168.1.')) {
-              // Packet lost, don't output anything for this one
-            } else {
+            if (isReachable) {
               const time = isLocalhost ? generateLatency() * 0.1 : generateLatency();
               times.push(time);
               totalTime += time;
               received++;
               onLine(formatPingResponse(targetIP, i + 1, 64, time));
             }
+            // else: packet lost, no output for this ping
 
             // After last ping, show statistics
             if (i === count - 1) {
