@@ -88,14 +88,16 @@ type FileSystemsState = Readonly<Record<MachineId, FileNode>>;
 
 const FS_STORAGE_KEY = 'jshack-filesystem';
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
 const isValidPatch = (value: unknown): value is FileSystemPatch =>
-  typeof value === 'object' &&
-  value !== null &&
-  typeof (value as FileSystemPatch).machineId === 'string' &&
-  typeof (value as FileSystemPatch).path === 'string' &&
-  typeof (value as FileSystemPatch).content === 'string' &&
-  typeof (value as FileSystemPatch).owner === 'string' &&
-  ['root', 'user', 'guest'].includes((value as FileSystemPatch).owner);
+  isRecord(value) &&
+  typeof value.machineId === 'string' &&
+  typeof value.path === 'string' &&
+  typeof value.content === 'string' &&
+  typeof value.owner === 'string' &&
+  ['root', 'user', 'guest'].includes(value.owner);
 
 const loadPatches = (): readonly FileSystemPatch[] => {
   try {
