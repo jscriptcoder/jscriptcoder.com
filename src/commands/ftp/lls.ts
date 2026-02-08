@@ -16,22 +16,28 @@ export const createFtpLlsCommand = (context: FtpLlsContext): Command => ({
   name: 'lls',
   description: 'List local directory contents',
   manual: {
-    synopsis: 'lls([path])',
-    description: 'List the contents of a directory on the local machine (where the FTP connection was initiated from). If no path is given, lists the current local directory.',
+    synopsis: 'lls([path], [flags])',
+    description: 'List the contents of a directory on the local machine (where the FTP connection was initiated from). Hidden files (starting with .) are not shown by default. If no path is given, lists the current local directory.',
     arguments: [
       { name: 'path', description: 'Directory to list (optional, defaults to current local directory)', required: false },
+      { name: 'flags', description: 'Options: "-a" to show hidden files', required: false },
     ],
     examples: [
       { command: 'lls()', description: 'List current local directory' },
+      { command: 'lls("-a")', description: 'List all files including hidden ones' },
       { command: 'lls("/home/jshacker")', description: 'List /home/jshacker on local machine' },
     ],
   },
-  fn: (path?: unknown): string => {
+  fn: (...args: unknown[]): string => {
     const originMachine = context.getOriginMachine();
     const originCwd = context.getOriginCwd();
     const userType = context.getOriginUserType();
 
-    const targetPath = typeof path === 'string' ? path : originCwd;
+    const stringArgs = args.filter((arg): arg is string => typeof arg === 'string');
+    const showAll = stringArgs.some((arg) => arg.startsWith('-') && arg.includes('a'));
+    const path = stringArgs.find((arg) => !arg.startsWith('-'));
+
+    const targetPath = path ?? originCwd;
     const resolvedPath = context.resolvePathForMachine(targetPath, originCwd);
 
     const node = context.getNodeFromMachine(originMachine, resolvedPath, '/');
@@ -51,12 +57,14 @@ export const createFtpLlsCommand = (context: FtpLlsContext): Command => ({
       throw new Error(`lls: ${targetPath}: Permission denied`);
     }
 
-    if (entries.length === 0) {
+    const visibleEntries = entries.filter((entry) => showAll || !entry.startsWith('.'));
+
+    if (visibleEntries.length === 0) {
       return '(empty directory)';
     }
 
     // Format entries with type indicators
-    const formattedEntries = entries.map((entry) => {
+    const formattedEntries = visibleEntries.map((entry) => {
       const entryPath = resolvedPath === '/' ? `/${entry}` : `${resolvedPath}/${entry}`;
       const entryNode = context.getNodeFromMachine(originMachine, entryPath, '/');
       if (entryNode?.type === 'directory') {

@@ -67,6 +67,22 @@
 - **Issue**: Users can't use `await` directly: `const log = await output(ping("host"))` fails
 - **Solution**: Provide `resolve()` command to unwrap Promises; users learn about Promises organically
 
+### Dotfile filtering is the command's responsibility, not the filesystem's
+- **Context**: FTP `ls`/`lls` and NC `ls` showed dotfiles while regular `ls` hid them
+- **Issue**: `listDirectoryFromMachine()` returns ALL `Object.keys(node.children)` including dotfiles — it doesn't filter
+- **Solution**: Each `ls` variant must filter dotfiles itself: `entries.filter(name => showAll || !name.startsWith('.'))`
+- **Key insight**: When adding a new ls-like command, always add dotfile filtering — the filesystem layer won't do it for you
+
+### Filesystem factory `extraDirectories` replaces entire branches
+- **Context**: `createFileSystem(config)` uses `extraDirectories` keys as top-level directory names
+- **Issue**: Setting `var: { ... }` in `extraDirectories` replaces ALL of `/var`, not just what you specify — factory defaults for `/var/log` etc. are lost
+- **Solution**: When using `extraDirectories`, include everything you want under that branch (e.g., both `/var/www` and `/var/log` content)
+
+### curl GET vs POST resolve to different filesystem paths
+- **Context**: curl simulates web servers by reading files from the remote machine's filesystem
+- **Issue**: GET and POST have completely different path resolution — easy to add content in the wrong place
+- **Solution**: GET reads `/var/www/html${urlPath}`, POST reads `/var/www/api/${endpoint}.json` — content must exist at the right path for the HTTP method
+
 ## Patterns That Worked
 
 ### Command factory pattern with context injection
@@ -130,6 +146,16 @@
 - **Why it works**: Clear "permission denied" error instead of confusing JS error; `man()` can still look up restricted commands; command metadata preserved for help text
 - **Example**: Guest calls `nmap()` → `Error: permission denied: 'nmap' requires user privileges`
 - **Key insight**: Filtering `commandNames` (for autocomplete) and `help()` happens separately from wrapping execution context
+
+### Consistent flag argument parsing across ls variants
+- **What**: All `ls` commands (regular, FTP ls/lls, NC ls) share the same arg parsing pattern: filter string args, check for `-a`, find first non-flag arg as path
+- **Why it works**: Consistent UX — `-a` works everywhere, dotfiles behave the same across all contexts
+- **Example**: `const showAll = stringArgs.some(arg => arg.startsWith('-') && arg.includes('a'))`
+
+### CTF flag progression through credential chains
+- **What**: Flags are gated behind multi-step chains: hint file → credential → access → flag
+- **Why it works**: Creates natural puzzle flow; each discovery unlocks the next step. Players can't skip ahead without finding credentials.
+- **Example**: `/var/log/auth.log` mentions ftpuser → `/etc/passwd` has ftpuser's hash → crack it → FTP in → find flag in `.hidden_flag.txt`
 
 ### Per-machine server config for HTTP simulation
 - **What**: Static config mapping machine IPs to server names and custom headers
@@ -272,3 +298,6 @@
 - decrypt with invalid key format: "invalid key format" (must be 64 hex chars)
 - decrypt on directory: "Is a directory" error
 - decrypt on empty file: "File is empty" error
+- FTP/NC ls with only dotfiles (no -a): shows "(empty directory)" — consistent with regular ls
+- curl GET to path without `/var/www/html/` content: returns 404 Not Found
+- curl POST to non-existent `/var/www/api/` endpoint: returns 400 Bad Request

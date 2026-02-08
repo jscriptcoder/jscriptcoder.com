@@ -218,6 +218,77 @@ describe('nc ls command', () => {
     });
   });
 
+  describe('hidden files', () => {
+    it('should hide dotfiles by default', () => {
+      const context = createMockNcLsContext({
+        cwd: '/home/ghost',
+        nodes: {
+          '/home/ghost': createMockDirectory('ghost'),
+          '/home/ghost/.secret': createMockFile('.secret'),
+          '/home/ghost/notes.txt': createMockFile('notes.txt'),
+        },
+        listings: { '/home/ghost': ['.secret', 'notes.txt'] },
+      });
+
+      const ls = createNcLsCommand(context);
+      const result = ls.fn();
+
+      expect(result).toBe('notes.txt');
+      expect(result).not.toContain('.secret');
+    });
+
+    it('should show dotfiles with -a flag', () => {
+      const context = createMockNcLsContext({
+        cwd: '/home/ghost',
+        nodes: {
+          '/home/ghost': createMockDirectory('ghost'),
+          '/home/ghost/.secret': createMockFile('.secret'),
+          '/home/ghost/notes.txt': createMockFile('notes.txt'),
+        },
+        listings: { '/home/ghost': ['.secret', 'notes.txt'] },
+      });
+
+      const ls = createNcLsCommand(context);
+      const result = ls.fn('-a');
+
+      expect(result).toContain('.secret');
+      expect(result).toContain('notes.txt');
+    });
+
+    it('should show dotfiles with path and -a flag', () => {
+      const context = createMockNcLsContext({
+        cwd: '/',
+        nodes: {
+          '/opt/tools': createMockDirectory('tools'),
+          '/opt/tools/.backdoor_log': createMockFile('.backdoor_log'),
+          '/opt/tools/scanner': createMockFile('scanner'),
+        },
+        listings: { '/opt/tools': ['.backdoor_log', 'scanner'] },
+      });
+
+      const ls = createNcLsCommand(context);
+      const result = ls.fn('/opt/tools', '-a');
+
+      expect(result).toContain('.backdoor_log');
+      expect(result).toContain('scanner');
+    });
+
+    it('should show empty directory when only dotfiles exist', () => {
+      const context = createMockNcLsContext({
+        cwd: '/home/ghost',
+        nodes: {
+          '/home/ghost': createMockDirectory('ghost'),
+        },
+        listings: { '/home/ghost': ['.only_hidden'] },
+      });
+
+      const ls = createNcLsCommand(context);
+      const result = ls.fn();
+
+      expect(result).toBe('(empty directory)');
+    });
+  });
+
   describe('error handling', () => {
     it('should throw error for non-existent path', () => {
       const context = createMockNcLsContext({

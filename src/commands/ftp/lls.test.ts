@@ -219,6 +219,65 @@ describe('FTP lls command', () => {
     });
   });
 
+  describe('hidden files', () => {
+    it('should hide dotfiles by default', () => {
+      const context = createMockContext({
+        originCwd: '/home/jshacker',
+        nodes: {
+          '/home/jshacker': createMockFileNode({ name: 'jshacker' }),
+          '/home/jshacker/.mission': createMockFileNode({ name: '.mission', type: 'file' }),
+          '/home/jshacker/README.txt': createMockFileNode({ name: 'README.txt', type: 'file' }),
+        },
+        directoryEntries: {
+          '/home/jshacker': ['.mission', 'README.txt'],
+        },
+      });
+      const lls = createFtpLlsCommand(context);
+
+      const result = lls.fn();
+
+      expect(result).toBe('README.txt');
+      expect(result).not.toContain('.mission');
+    });
+
+    it('should show dotfiles with -a flag', () => {
+      const context = createMockContext({
+        originCwd: '/home/jshacker',
+        nodes: {
+          '/home/jshacker': createMockFileNode({ name: 'jshacker' }),
+          '/home/jshacker/.mission': createMockFileNode({ name: '.mission', type: 'file' }),
+          '/home/jshacker/README.txt': createMockFileNode({ name: 'README.txt', type: 'file' }),
+        },
+        directoryEntries: {
+          '/home/jshacker': ['.mission', 'README.txt'],
+        },
+      });
+      const lls = createFtpLlsCommand(context);
+
+      const result = lls.fn('-a');
+
+      expect(result).toContain('.mission');
+      expect(result).toContain('README.txt');
+    });
+
+    it('should show empty directory when only dotfiles exist', () => {
+      const context = createMockContext({
+        originCwd: '/home/jshacker',
+        nodes: {
+          '/home/jshacker': createMockFileNode({ name: 'jshacker' }),
+        },
+        directoryEntries: {
+          '/home/jshacker': ['.hidden_only'],
+        },
+      });
+      const lls = createFtpLlsCommand(context);
+
+      const result = lls.fn();
+
+      expect(result).toBe('(empty directory)');
+    });
+  });
+
   describe('command metadata', () => {
     it('should have correct name', () => {
       const context = createMockContext();

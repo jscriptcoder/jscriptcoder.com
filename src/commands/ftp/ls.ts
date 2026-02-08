@@ -16,22 +16,28 @@ export const createFtpLsCommand = (context: FtpLsContext): Command => ({
   name: 'ls',
   description: 'List remote directory contents',
   manual: {
-    synopsis: 'ls([path])',
-    description: 'List the contents of a directory on the remote FTP server. If no path is given, lists the current remote directory.',
+    synopsis: 'ls([path], [flags])',
+    description: 'List the contents of a directory on the remote FTP server. Hidden files (starting with .) are not shown by default. If no path is given, lists the current remote directory.',
     arguments: [
       { name: 'path', description: 'Directory to list (optional, defaults to current remote directory)', required: false },
+      { name: 'flags', description: 'Options: "-a" to show hidden files', required: false },
     ],
     examples: [
       { command: 'ls()', description: 'List current remote directory' },
+      { command: 'ls("-a")', description: 'List all files including hidden ones' },
       { command: 'ls("/srv/ftp")', description: 'List /srv/ftp on remote' },
     ],
   },
-  fn: (path?: unknown): string => {
+  fn: (...args: unknown[]): string => {
     const remoteMachine = context.getRemoteMachine();
     const remoteCwd = context.getRemoteCwd();
     const userType = context.getRemoteUserType();
 
-    const targetPath = typeof path === 'string' ? path : remoteCwd;
+    const stringArgs = args.filter((arg): arg is string => typeof arg === 'string');
+    const showAll = stringArgs.some((arg) => arg.startsWith('-') && arg.includes('a'));
+    const path = stringArgs.find((arg) => !arg.startsWith('-'));
+
+    const targetPath = path ?? remoteCwd;
     const resolvedPath = context.resolvePathForMachine(targetPath, remoteCwd);
 
     const node = context.getNodeFromMachine(remoteMachine, resolvedPath, '/');
@@ -51,12 +57,14 @@ export const createFtpLsCommand = (context: FtpLsContext): Command => ({
       throw new Error(`ls: ${targetPath}: Permission denied`);
     }
 
-    if (entries.length === 0) {
+    const visibleEntries = entries.filter((entry) => showAll || !entry.startsWith('.'));
+
+    if (visibleEntries.length === 0) {
       return '(empty directory)';
     }
 
     // Format entries with type indicators
-    const formattedEntries = entries.map((entry) => {
+    const formattedEntries = visibleEntries.map((entry) => {
       const entryPath = resolvedPath === '/' ? `/${entry}` : `${resolvedPath}/${entry}`;
       const entryNode = context.getNodeFromMachine(remoteMachine, entryPath, '/');
       if (entryNode?.type === 'directory') {

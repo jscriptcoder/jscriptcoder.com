@@ -274,8 +274,8 @@ To add a command:
 | `lpwd()` | Print local working directory |
 | `cd(path)` | Change remote directory |
 | `lcd(path)` | Change local directory |
-| `ls([path])` | List remote directory contents |
-| `lls([path])` | List local directory contents |
+| `ls([path], [flags])` | List remote directory contents (-a for hidden files) |
+| `lls([path], [flags])` | List local directory contents (-a for hidden files) |
 | `get(remoteFile, [localPath])` | Download file from remote to local |
 | `put(localFile, [remotePath])` | Upload file from local to remote |
 | `quit()` / `bye()` | Close FTP connection |
@@ -286,7 +286,7 @@ To add a command:
 |---------|-------------|
 | `pwd()` | Print working directory |
 | `cd(path)` | Change directory |
-| `ls([path])` | List directory contents |
+| `ls([path], [flags])` | List directory contents (-a for hidden files) |
 | `cat(path)` | Display file contents |
 | `whoami()` | Display current user |
 | `help()` | List available commands |

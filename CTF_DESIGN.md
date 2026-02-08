@@ -611,11 +611,223 @@ Additional directories that require root access, providing incentive for escalat
 - [x] Ensure curl returns correct content for each endpoint
 
 ### Phase 4: Testing & Polish
-- [ ] Update all affected tests
-- [ ] Playtest the full progression start to finish
-- [ ] Verify no dead ends (every flag is reachable)
-- [ ] Verify hints are clear enough without being too obvious
-- [ ] Update documentation (README, CLAUDE.md)
+- [x] Update all affected tests
+- [x] Playtest the full progression start to finish
+- [x] Verify no dead ends (every flag is reachable)
+- [x] Verify hints are clear enough without being too obvious
+- [x] Update documentation (README, CLAUDE.md)
+
+---
+
+## Verified Playtest — Solutions Guide
+
+Complete walkthrough verified against the actual filesystem and command implementations.
+
+### Summary Table
+
+| # | Flag | Machine | Path / Method | Access Required |
+|---|------|---------|---------------|-----------------|
+| 1 | `FLAG{welcome_hacker}` | localhost | `/home/jshacker/README.txt` | `ls`, `cat` as user |
+| 2 | `FLAG{hidden_in_plain_sight}` | localhost | `/home/jshacker/.mission` | `ls -a`, `cat` as user |
+| 3 | `FLAG{root_access_granted}` | localhost | `/root/flag.txt` | Crack passwd hash, `su root` |
+| 4 | `FLAG{network_explorer}` | gateway | `curl("192.168.1.1")` HTML comment | `ifconfig`, `nmap`, `curl` |
+| 5 | `FLAG{gateway_breach}` | gateway | `/root/flag.txt` | SSH as guest, `su admin` |
+| 6 | `FLAG{admin_panel_exposed}` | gateway | `/var/www/html/admin.html` HTML comment | `cat` as admin or `curl` |
+| 7 | `FLAG{file_transfer_pro}` | fileserver | `/srv/ftp/uploads/.backup_notes.txt` | FTP as ftpuser, `ls -a`, `get` |
+| 8 | `FLAG{binary_secrets_revealed}` | webserver | `/opt/tools/scanner` | SSH, `su www-data`, `strings` |
+| 9 | `FLAG{decrypted_intel}` | webserver | `/var/www/backups/encrypted_intel.enc` | `su root`, `decrypt` with split key |
+| 10 | `FLAG{backdoor_found}` | webserver | `/opt/tools/.backdoor_log` | `nc` port 4444, `ls -a`, `cat` |
+| 11 | `FLAG{darknet_discovered}` | darknet | `curl("http://203.0.113.42:8080")` | `nslookup`, `curl` with port |
+| 12 | `FLAG{master_of_the_darknet}` | darknet | `/home/ghost/.encrypted_flag.enc` | SSH, `su root`, `decrypt` |
+
+### Step-by-Step Walkthrough
+
+#### FLAG 1 — `welcome_hacker` (Beginner)
+```javascript
+// Start as jshacker@localhost
+ls()                              // See README.txt
+cat("README.txt")                 // FLAG{welcome_hacker}
+// Hint: "Try ls('.', '-a') to see hidden files"
+```
+
+#### FLAG 2 — `hidden_in_plain_sight` (Beginner)
+```javascript
+ls(".", "-a")                     // See .mission
+cat(".mission")                   // FLAG{hidden_in_plain_sight}
+// Hint: "Check /etc/passwd... Use su('root')"
+```
+
+#### FLAG 3 — `root_access_granted` (Beginner)
+```javascript
+cat("/etc/passwd")                // See root hash: a0ff67e77425eb3cea40ecb60941aea4
+// Crack hash → "sup3rus3r" (use online MD5 lookup)
+su("root")                        // Enter: sup3rus3r
+cat("/root/flag.txt")             // FLAG{root_access_granted}
+// Hint: "ifconfig(), ping(), nmap()"
+```
+
+#### FLAG 4 — `network_explorer` (Intermediate)
+```javascript
+// Credential: localhost /var/log/auth.log → "guest/guest2024" for gateway
+cat("/var/log/auth.log")          // "Auto-configured gateway access: guest/guest2024"
+ifconfig()                        // See gateway 192.168.1.1
+nmap("192.168.1.0/24")            // Discover all machines + open ports
+curl("192.168.1.1")               // HTML contains <!-- FLAG{network_explorer} -->
+// Hint: "Admin panel: /admin.html" + "credentials in system logs"
+```
+
+#### FLAG 5 — `gateway_breach` (Intermediate)
+```javascript
+ssh("guest", "192.168.1.1")       // Enter: guest2024
+// Now guest@gateway — basic commands only
+cat("/var/log/auth.log")          // "pam_audit: admin authenticated with password 'n3tgu4rd!'"
+su("admin")                       // Enter: n3tgu4rd!
+cat("/root/flag.txt")             // FLAG{gateway_breach}
+// Hint: "admin panel at /var/www/html/admin.html" + "FTP to 192.168.1.50"
+```
+
+#### FLAG 6 — `admin_panel_exposed` (Intermediate)
+```javascript
+// As admin@gateway:
+cat("/var/www/html/admin.html")   // <!-- FLAG{admin_panel_exposed} -->
+// OR from localhost: curl("192.168.1.1/admin.html")
+// Hint: network table shows all machines + "webserver guest uses default password"
+// Also: /root/.network_config has fileserver creds: guest/anonymous, ftpuser/tr4nsf3r
+//   and webserver creds: guest/w3lcome
+```
+
+#### FLAG 7 — `file_transfer_pro` (Intermediate)
+```javascript
+exit()                            // Return to localhost
+ftp("192.168.1.50")               // Login as guest / anonymous
+// FTP starts at /home/guest — navigate to FTP directory
+cd("/srv/ftp/public")
+ls()                              // See readme.txt
+cat("readme.txt")                 // "ftpuser — read/write (password: tr4nsf3r)"
+quit()
+ftp("192.168.1.50")               // Login as ftpuser / tr4nsf3r
+cd("/srv/ftp/uploads")
+ls("-a")                          // See .backup_notes.txt
+get(".backup_notes.txt")          // Download to local
+quit()
+cat(".backup_notes.txt")          // FLAG{file_transfer_pro}
+// Hint: "Encrypted backup on webserver /var/www/backups/"
+//   "Key split — part 1 in /opt/tools/scanner"
+//   "Webserver SSH accepts default guest credentials"
+```
+
+#### FLAG 8 — `binary_secrets_revealed` (Advanced)
+```javascript
+ssh("guest", "192.168.1.75")      // Enter: w3lcome
+// guest@webserver — basic commands only, can't use strings
+cat("/var/log/error.log")         // "www-data console login: password 'd3v0ps2024'"
+su("www-data")                    // Enter: d3v0ps2024
+// Now www-data (user) — has strings command
+strings("/opt/tools/scanner")     // Shows:
+//   FLAG{binary_secrets_revealed}
+//   DECRYPT_KEY_PART1=76e2e21dacea215ff2293e4eafc5985c
+//   "See /var/www/backups/ for the encrypted file."
+//   "The second half of the key is in /srv/ftp/config/ on the fileserver."
+```
+
+#### FLAG 9 — `decrypted_intel` (Advanced)
+```javascript
+// Key part 2: get from fileserver FTP
+exit()                            // Return to localhost
+ftp("192.168.1.50")               // Login as ftpuser / tr4nsf3r
+cd("/srv/ftp/config")
+ls("-a")                          // See .key_fragment
+cat(".key_fragment")              // DECRYPT_KEY_PART2=ea2d996cb180258ec89c0000b42db460
+quit()
+
+// Decrypt on webserver (need root for decrypt command)
+ssh("guest", "192.168.1.75")      // Enter: w3lcome
+su("www-data")                    // Enter: d3v0ps2024
+cat("/var/www/backups/db_backup.sql")  // Shows root password: r00tW3b!
+su("root")                        // Enter: r00tW3b!
+// Now root@webserver — has decrypt command
+const key = "76e2e21dacea215ff2293e4eafc5985cea2d996cb180258ec89c0000b42db460"
+resolve(decrypt("/var/www/backups/encrypted_intel.enc", key))
+// FLAG{decrypted_intel}
+// Hint: "webserver backdoor on port 4444" + "darknet.ctf at 203.0.113.42:8080"
+```
+
+#### FLAG 10 — `backdoor_found` (Advanced)
+```javascript
+exit()                            // Return to localhost
+nmap("192.168.1.75")              // Confirm port 4444 (elite) open
+nc("192.168.1.75", 4444)          // Connect as www-data
+ls("/opt/tools", "-a")            // See .backdoor_log
+cat("/opt/tools/.backdoor_log")   // FLAG{backdoor_found}
+// Hint: "darknet.ctf:31337 as C2 server"
+//   "The darknet web portal at port 8080 has login information"
+exit()
+```
+
+#### FLAG 11 — `darknet_discovered` (Expert)
+```javascript
+nslookup("darknet.ctf")           // Resolves to 203.0.113.42
+curl("http://203.0.113.42:8080")  // ASCII art + FLAG{darknet_discovered}
+// Also shows: "ghost/sp3ctr3" + "API: /api/secrets" + "port 31337"
+curl("http://203.0.113.42:8080/api/secrets")  // JSON hints about ghost's home
+```
+
+#### FLAG 12 — `master_of_the_darknet` (Expert)
+```javascript
+// Option A: SSH as guest then escalate
+ssh("guest", "203.0.113.42")      // Enter: sh4d0w (from webserver .darknet_access)
+su("ghost")                       // Enter: sp3ctr3 (from darknet index.html)
+
+// Option B: NC on port 31337 for recon, then SSH
+nc("203.0.113.42", 31337)         // Connects as ghost — explore, then exit
+ssh("ghost", "203.0.113.42")      // Enter: sp3ctr3
+
+// As ghost@darknet:
+ls("-a")                          // See .encrypted_flag.enc, .notes
+cat(".notes")                     // "Need root to use decrypt(). Key in /root/keyfile.txt"
+cat("/var/log/auth.log")          // "pam_audit: root authentication - password 'd4rkn3tR00t'"
+su("root")                        // Enter: d4rkn3tR00t
+cat("/root/keyfile.txt")          // Key: 82eab922d375a8022d7659b58559e59026dbff2768110073a6c3699a15699eda
+const key = "82eab922d375a8022d7659b58559e59026dbff2768110073a6c3699a15699eda"
+resolve(decrypt("/home/ghost/.encrypted_flag.enc", key))
+// FLAG{master_of_the_darknet}
+// "Congratulations! You've completed the JSHACK.ME CTF."
+```
+
+### Credential Discovery Chain
+
+```
+localhost (start as jshacker)
+│
+├─ /etc/passwd → crack root hash (sup3rus3r) → su root [Flag 3]
+├─ /var/log/auth.log → gateway guest/guest2024 [Flag 4, 5]
+│
+├─ gateway (SSH as guest)
+│  ├─ /var/log/auth.log → admin password n3tgu4rd! [Flag 5]
+│  ├─ /root/flag.txt → hints: FTP to fileserver, "anonymous" [Flag 7]
+│  ├─ /root/.network_config → fileserver: guest/anonymous, ftpuser/tr4nsf3r
+│  │                        → webserver: guest/w3lcome
+│  └─ /var/www/html/admin.html → network layout, darknet IP [Flag 6]
+│
+├─ fileserver (FTP as guest → ftpuser)
+│  ├─ /srv/ftp/public/readme.txt → ftpuser/tr4nsf3r
+│  ├─ /srv/ftp/uploads/.backup_notes.txt → webserver hints [Flag 7]
+│  └─ /srv/ftp/config/.key_fragment → decrypt key part 2 [Flag 9]
+│
+├─ webserver (SSH as guest → www-data → root)
+│  ├─ /var/log/error.log → www-data/d3v0ps2024
+│  ├─ /opt/tools/scanner → strings: flag + key part 1 [Flag 8]
+│  ├─ /var/www/backups/db_backup.sql → root/r00tW3b!
+│  ├─ /var/www/backups/encrypted_intel.enc → decrypt [Flag 9]
+│  ├─ nc port 4444 → /opt/tools/.backdoor_log [Flag 10]
+│  └─ /opt/tools/.darknet_access → darknet guest/sh4d0w
+│
+└─ darknet (SSH as guest/ghost → root)
+   ├─ curl :8080 → flag + ghost/sp3ctr3 [Flag 11]
+   ├─ /var/log/auth.log → root/d4rkn3tR00t
+   ├─ /root/keyfile.txt → decrypt key
+   └─ /home/ghost/.encrypted_flag.enc → decrypt [Flag 12]
+```
 
 ---
 

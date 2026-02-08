@@ -219,6 +219,85 @@ describe('FTP ls command', () => {
     });
   });
 
+  describe('hidden files', () => {
+    it('should hide dotfiles by default', () => {
+      const context = createMockContext({
+        remoteCwd: '/srv/ftp',
+        nodes: {
+          '/srv/ftp': createMockFileNode({ name: 'ftp' }),
+          '/srv/ftp/.hidden': createMockFileNode({ name: '.hidden', type: 'file' }),
+          '/srv/ftp/visible.txt': createMockFileNode({ name: 'visible.txt', type: 'file' }),
+        },
+        directoryEntries: {
+          '/srv/ftp': ['.hidden', 'visible.txt'],
+        },
+      });
+      const ls = createFtpLsCommand(context);
+
+      const result = ls.fn();
+
+      expect(result).toBe('visible.txt');
+      expect(result).not.toContain('.hidden');
+    });
+
+    it('should show dotfiles with -a flag', () => {
+      const context = createMockContext({
+        remoteCwd: '/srv/ftp',
+        nodes: {
+          '/srv/ftp': createMockFileNode({ name: 'ftp' }),
+          '/srv/ftp/.hidden': createMockFileNode({ name: '.hidden', type: 'file' }),
+          '/srv/ftp/visible.txt': createMockFileNode({ name: 'visible.txt', type: 'file' }),
+        },
+        directoryEntries: {
+          '/srv/ftp': ['.hidden', 'visible.txt'],
+        },
+      });
+      const ls = createFtpLsCommand(context);
+
+      const result = ls.fn('-a');
+
+      expect(result).toContain('.hidden');
+      expect(result).toContain('visible.txt');
+    });
+
+    it('should show dotfiles with path and -a flag', () => {
+      const context = createMockContext({
+        remoteCwd: '/',
+        nodes: {
+          '/uploads': createMockFileNode({ name: 'uploads' }),
+          '/uploads/.backup': createMockFileNode({ name: '.backup', type: 'file' }),
+          '/uploads/readme.txt': createMockFileNode({ name: 'readme.txt', type: 'file' }),
+        },
+        directoryEntries: {
+          '/uploads': ['.backup', 'readme.txt'],
+        },
+      });
+      const ls = createFtpLsCommand(context);
+
+      const result = ls.fn('/uploads', '-a');
+
+      expect(result).toContain('.backup');
+      expect(result).toContain('readme.txt');
+    });
+
+    it('should show empty directory when only dotfiles exist', () => {
+      const context = createMockContext({
+        remoteCwd: '/srv/ftp',
+        nodes: {
+          '/srv/ftp': createMockFileNode({ name: 'ftp' }),
+        },
+        directoryEntries: {
+          '/srv/ftp': ['.hidden_only'],
+        },
+      });
+      const ls = createFtpLsCommand(context);
+
+      const result = ls.fn();
+
+      expect(result).toBe('(empty directory)');
+    });
+  });
+
   describe('command metadata', () => {
     it('should have correct name', () => {
       const context = createMockContext();

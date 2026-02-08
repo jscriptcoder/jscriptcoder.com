@@ -25,7 +25,9 @@ export const createNcLsCommand = (context: NcLsContext): Command => ({
       listDirectoryFromMachine,
     } = context;
 
-    const path = args[0] as string | undefined;
+    const stringArgs = args.filter((arg): arg is string => typeof arg === 'string');
+    const showAll = stringArgs.some((arg) => arg.startsWith('-') && arg.includes('a'));
+    const path = stringArgs.find((arg) => !arg.startsWith('-'));
     const machine = getMachine();
     const cwd = getCwd();
     const userType = getUserType();
@@ -55,12 +57,14 @@ export const createNcLsCommand = (context: NcLsContext): Command => ({
       throw new Error(`ls: ${path ?? cwd}: Permission denied`);
     }
 
-    if (entries.length === 0) {
+    const visibleEntries = entries.filter((name) => showAll || !name.startsWith('.'));
+
+    if (visibleEntries.length === 0) {
       return '(empty directory)';
     }
 
     // Add trailing slash to directories
-    const formatted = entries.map(name => {
+    const formatted = visibleEntries.map(name => {
       const childPath = targetPath === '/' ? `/${name}` : `${targetPath}/${name}`;
       const childNode = getNodeFromMachine(machine, childPath, cwd);
       return childNode?.type === 'directory' ? `${name}/` : name;

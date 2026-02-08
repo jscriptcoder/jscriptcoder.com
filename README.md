@@ -100,8 +100,8 @@ When connected via FTP, a dedicated command set is available:
 | `lpwd()` | Print local working directory |
 | `cd(path)` | Change remote directory |
 | `lcd(path)` | Change local directory |
-| `ls([path])` | List remote directory contents |
-| `lls([path])` | List local directory contents |
+| `ls([path], [flags])` | List remote directory contents (-a for hidden files) |
+| `lls([path], [flags])` | List local directory contents (-a for hidden files) |
 | `get(file, [dest])` | Download file from remote to local |
 | `put(file, [dest])` | Upload file from local to remote |
 | `quit()` / `bye()` | Close FTP connection |
@@ -177,7 +177,7 @@ npm run test:coverage # Run tests with coverage
 
 ### Test Coverage
 
-593 unit tests across 36 colocated test files covering terminal commands, hooks, components, and utilities.
+604 unit tests across 36 colocated test files covering terminal commands, hooks, components, and utilities.
 
 ## Project Structure
 

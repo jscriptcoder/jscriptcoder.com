@@ -25,7 +25,18 @@ Step 13 of 14: Victory tracking
 - [ ] Step 13: Victory tracking ← next
 - [ ] Step 14: Challenge variety
 
-## Recent Session (2026-02-08)
+## Recent Session (2026-02-09)
+
+Implemented:
+- **CTF redesign Phase 1-4**: Complete flag system overhaul
+  - Phase 1: Command restrictions by user type (guest/user/root tiers)
+  - Phase 2: 12 flag files, encrypted files (AES-256-GCM), binary for strings, hint files
+  - Phase 3: Web content for all machines (gateway, webserver, darknet)
+  - Phase 4: Playtest, fix FTP/NC ls hidden file consistency, update docs
+- **FTP/NC ls hidden file support**: Added `-a` flag to show dotfiles (consistent with regular ls)
+- **Test count**: 604 tests across 36 colocated files
+
+## Previous Session (2026-02-08)
 
 Implemented:
 - **Command restrictions by user type** (`src/commands/permissions.ts`):
@@ -39,7 +50,7 @@ Implemented:
   - FTP/NC modes unaffected (separate command sets)
   - 21 tests for permissions module
 - **CTF flag redesign plan** (`CTF_DESIGN.md`): 12-flag progression, command tiers, escalation paths
-- **Test count**: 593 tests across 36 colocated files
+- **Test count**: 604 tests across 36 colocated files
 
 Previous session (2026-02-08):
 - **curl command**: HTTP client for fetching web content from remote machines
@@ -372,7 +383,7 @@ Flags should be detected from output of:
 - guest@darknet: sh4d0w
 
 ### Test Coverage
-- 593 tests across 36 colocated test files
+- 604 tests across 36 colocated test files
 - All commands with logic are tested
 - FTP subcommands tested (cd, lcd, ls, lls, get, put)
 - NC command and subcommands tested (nc, cat, cd, ls)
