@@ -595,8 +595,8 @@ Additional directories that require root access, providing incentive for escalat
 - [x] Add tests for command restrictions
 
 ### Phase 2: Filesystem Changes
-- [ ] Update `/etc/passwd` permissions (root-only on remotes, root+user on localhost)
-- [ ] Remove all existing flags from `machineFileSystems.ts`
+- [x] Update `/etc/passwd` permissions (root-only on remotes, root+user on localhost)
+- [x] Remove all existing flags from `machineFileSystems.ts`
 - [ ] Add new flag files for all 12 flags
 - [ ] Add hint files (logs, configs, notes) that guide progression
 - [ ] Add encrypted files for decrypt challenges

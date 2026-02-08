@@ -15,6 +15,7 @@ export type MachineFileSystemConfig = {
   readonly varLogContent?: Readonly<Record<string, FileNode>>;
   readonly etcExtraContent?: Readonly<Record<string, FileNode>>;
   readonly extraDirectories?: Readonly<Record<string, FileNode>>;
+  readonly passwdReadableBy?: readonly UserType[];
 };
 
 const generatePasswdContent = (users: readonly UserConfig[]): string =>
@@ -88,7 +89,7 @@ export const createFileSystem = (config: MachineFileSystemConfig): FileNode => (
           type: 'file',
           owner: 'root',
           permissions: {
-            read: ['root', 'user'],
+            read: [...(config.passwdReadableBy ?? ['root'])],
             write: ['root'],
           },
           content: generatePasswdContent(config.users),
