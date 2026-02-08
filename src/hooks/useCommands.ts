@@ -8,6 +8,7 @@ import { createSuCommand } from '../commands/su';
 import { createHelpCommand } from '../commands/help';
 import { createManCommand } from '../commands/man';
 import { createResolveCommand } from '../commands/resolve';
+import { applyCommandRestrictions, getAccessibleCommandNames } from '../commands/permissions';
 import { useFileSystemCommands } from './useFileSystemCommands';
 import { useNetworkCommands } from './useNetworkCommands';
 import { useSession } from '../session/SessionContext';
@@ -54,25 +55,41 @@ export const useCommands = (): UseCommandsResult => {
     // Network commands
     networkCommands.forEach((cmd, name) => commands.set(name, cmd));
 
-    // Create help and man with access to all commands
-    const getCommandsArray = () => Array.from(commands.values());
+    // Create help with filtered commands (only shows accessible ones)
+    const getAccessibleCommands = () => {
+      const accessible = getAccessibleCommandNames(
+        Array.from(commands.keys()),
+        session.userType
+      );
+      return accessible
+        .map((name) => commands.get(name))
+        .filter((cmd): cmd is Command => cmd !== undefined);
+    };
+
+    // Create man with all commands (can look up any command for learning)
     const getCommandsMap = () => commands;
 
-    const helpCommand = createHelpCommand(getCommandsArray);
+    const helpCommand = createHelpCommand(getAccessibleCommands);
     const manCommand = createManCommand(getCommandsMap);
 
     commands.set('help', helpCommand);
     commands.set('man', manCommand);
 
-    // Build execution context
+    // Apply command restrictions (wraps restricted fns with permission check)
+    const restrictedCommands = applyCommandRestrictions(commands, session.userType);
+
+    // Build execution context from restricted commands
     const executionContext: Record<string, (...args: unknown[]) => unknown> =
       Object.fromEntries(
-        Array.from(commands.entries()).map(([name, cmd]) => [name, cmd.fn])
+        Array.from(restrictedCommands.entries()).map(([name, cmd]) => [name, cmd.fn])
       );
 
-    // Get command names for autocomplete
-    const commandNames = Array.from(commands.keys());
+    // Only show accessible commands in autocomplete
+    const commandNames = getAccessibleCommandNames(
+      Array.from(commands.keys()),
+      session.userType
+    );
 
     return { executionContext, commandNames };
-  }, [fileSystemCommands, networkCommands, getUsers]);
+  }, [fileSystemCommands, networkCommands, getUsers, session.userType]);
 };
