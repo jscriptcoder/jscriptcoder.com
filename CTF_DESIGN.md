@@ -605,10 +605,10 @@ Additional directories that require root access, providing incentive for escalat
 - [x] Add `/opt/tools/` directory to webserver
 
 ### Phase 3: Web Content
-- [ ] Redesign gateway web pages (index.html, admin.html)
-- [ ] Redesign darknet web pages (index.html, API responses)
-- [ ] Update webserver API content
-- [ ] Ensure curl returns correct content for each endpoint
+- [x] Redesign gateway web pages (index.html, admin.html)
+- [x] Redesign darknet web pages (index.html, API responses)
+- [x] Update webserver API content
+- [x] Ensure curl returns correct content for each endpoint
 
 ### Phase 4: Testing & Polish
 - [ ] Update all affected tests

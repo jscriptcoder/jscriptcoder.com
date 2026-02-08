@@ -474,6 +474,37 @@ Pass: sh4d0w
           owner: 'root',
           permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
           children: {
+            html: {
+              name: 'html',
+              type: 'directory',
+              owner: 'root',
+              permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+              children: {
+                'index.html': {
+                  name: 'index.html',
+                  type: 'file',
+                  owner: 'root',
+                  permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+                  content: `<!DOCTYPE html>
+<html>
+<head><title>TechCorp Internal</title></head>
+<body>
+<h1>TechCorp Internal Portal</h1>
+<p>Welcome to the TechCorp internal web server.</p>
+<ul>
+  <li><a href="/status">System Status</a></li>
+  <li><a href="/admin">Admin Panel</a> (restricted)</li>
+</ul>
+<!-- Server: Apache/2.4.41 -->
+<!-- Backups stored at /var/www/backups/ -->
+<!-- MySQL running on port 3306 -->
+<!-- TODO: remove debug tools from /opt/tools/ -->
+</body>
+</html>
+`,
+                },
+              },
+            },
             backups: {
               name: 'backups',
               type: 'directory',
@@ -657,13 +688,33 @@ Welcome to the darknet. You shouldn't be here.
 
 FLAG{darknet_discovered}
 
-API endpoint: /api/secrets
+API: /api/secrets
 Ghost in the machine: ghost/sp3ctr3
 Backdoor service running on port 31337.
 </pre>
 </body>
 </html>
 `,
+                },
+                api: {
+                  name: 'api',
+                  type: 'directory',
+                  owner: 'root',
+                  permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+                  children: {
+                    secrets: {
+                      name: 'secrets',
+                      type: 'file',
+                      owner: 'root',
+                      permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+                      content: `{
+  "message": "Welcome to the darknet API",
+  "users": ["ghost", "root"],
+  "hint": "ghost's home directory holds encrypted secrets",
+  "note": "The root password is hidden in auth logs"
+}`,
+                    },
+                  },
                 },
               },
             },
