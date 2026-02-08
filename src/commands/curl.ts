@@ -1,0 +1,267 @@
+import type { Command, AsyncOutput } from '../components/Terminal/types';
+import type { RemoteMachine, DnsRecord } from '../network/types';
+import type { MachineId } from '../filesystem/machineFileSystems';
+import type { UserType } from '../session/SessionContext';
+import { isValidIP } from '../utils/network';
+
+type CurlContext = {
+  readonly getMachine: (ip: string) => RemoteMachine | undefined;
+  readonly resolveDomain: (domain: string) => DnsRecord | undefined;
+  readonly readFileFromMachine: (
+    machineId: MachineId,
+    path: string,
+    cwd: string,
+    userType: UserType
+  ) => string | null;
+};
+
+type ParsedUrl = {
+  readonly protocol: string;
+  readonly host: string;
+  readonly port: number;
+  readonly path: string;
+};
+
+type ServerConfig = {
+  readonly serverName: string;
+  readonly extraHeaders: Readonly<Record<string, string>>;
+};
+
+type HttpResponse = {
+  readonly statusCode: number;
+  readonly statusText: string;
+  readonly headers: readonly (readonly [string, string])[];
+  readonly body: string;
+};
+
+const HTTP_SERVICES = ['http', 'https', 'http-alt'] as const;
+
+const SERVER_CONFIGS: Readonly<Record<string, ServerConfig>> = {
+  '192.168.1.1': {
+    serverName: 'nginx/1.18.0 (Ubuntu)',
+    extraHeaders: { 'X-Powered-By': 'PHP/7.4.3' },
+  },
+  '192.168.1.75': {
+    serverName: 'Apache/2.4.41 (Ubuntu)',
+    extraHeaders: { 'X-Powered-By': 'PHP/7.4.3', 'X-Frame-Options': 'SAMEORIGIN' },
+  },
+  '203.0.113.42': {
+    serverName: 'nginx/1.19.0',
+    extraHeaders: { 'X-Hidden-Service': 'true' },
+  },
+};
+
+const CONTENT_TYPES: Readonly<Record<string, string>> = {
+  '.html': 'text/html; charset=UTF-8',
+  '.php': 'text/html; charset=UTF-8',
+  '.json': 'application/json',
+};
+
+const parseUrl = (urlStr: string): ParsedUrl | null => {
+  const fullMatch = urlStr.match(/^(https?):\/\/([^:/]+)(?::(\d+))?(\/.*)?$/);
+  if (fullMatch) {
+    const [, protocol, host, portStr, path] = fullMatch;
+    return {
+      protocol,
+      host,
+      port: portStr ? parseInt(portStr, 10) : protocol === 'https' ? 443 : 80,
+      path: path || '/',
+    };
+  }
+
+  const shortMatch = urlStr.match(/^([^:/]+)(\/.*)?$/);
+  if (shortMatch) {
+    const [, host, path] = shortMatch;
+    return { protocol: 'http', host, port: 80, path: path || '/' };
+  }
+
+  return null;
+};
+
+const getContentType = (path: string): string => {
+  const ext = path.match(/\.[^.]+$/)?.[0] ?? '';
+  return CONTENT_TYPES[ext] ?? 'text/plain';
+};
+
+const buildHeaders = (
+  ip: string,
+  contentType: string,
+  contentLength: number
+): readonly (readonly [string, string])[] => {
+  const config = SERVER_CONFIGS[ip];
+  const base: readonly (readonly [string, string])[] = [
+    ['Date', new Date().toUTCString()],
+    ['Server', config?.serverName ?? 'nginx/1.18.0'],
+    ['Content-Type', contentType],
+    ['Content-Length', String(contentLength)],
+    ['Connection', 'keep-alive'],
+  ];
+  const extra: readonly (readonly [string, string])[] = config
+    ? Object.entries(config.extraHeaders)
+    : [];
+  return [...base, ...extra];
+};
+
+const handleGet = (
+  context: CurlContext,
+  machineId: MachineId,
+  path: string
+): HttpResponse => {
+  const webPath = path === '/' ? '/var/www/html/index.html' : `/var/www/html${path}`;
+  const content = context.readFileFromMachine(machineId, webPath, '/', 'root');
+
+  if (content === null) {
+    const body = '<html><body><h1>404 Not Found</h1></body></html>';
+    return {
+      statusCode: 404,
+      statusText: 'Not Found',
+      headers: buildHeaders(machineId, 'text/html; charset=UTF-8', body.length),
+      body,
+    };
+  }
+
+  const contentType = getContentType(webPath);
+  return {
+    statusCode: 200,
+    statusText: 'OK',
+    headers: buildHeaders(machineId, contentType, content.length),
+    body: content,
+  };
+};
+
+const handlePost = (
+  context: CurlContext,
+  machineId: MachineId,
+  path: string
+): HttpResponse => {
+  const endpointMatch = path.match(/^\/api\/(.+)$/);
+  if (!endpointMatch) {
+    const body = '{"error": "Invalid API endpoint"}';
+    return {
+      statusCode: 400,
+      statusText: 'Bad Request',
+      headers: buildHeaders(machineId, 'application/json', body.length),
+      body,
+    };
+  }
+
+  const endpoint = endpointMatch[1];
+  const apiPath = `/var/www/api/${endpoint}.json`;
+  const content = context.readFileFromMachine(machineId, apiPath, '/', 'root');
+
+  if (content === null) {
+    const body = '{"error": "Not Found"}';
+    return {
+      statusCode: 404,
+      statusText: 'Not Found',
+      headers: buildHeaders(machineId, 'application/json', body.length),
+      body,
+    };
+  }
+
+  return {
+    statusCode: 200,
+    statusText: 'OK',
+    headers: buildHeaders(machineId, 'application/json', content.length),
+    body: content,
+  };
+};
+
+const formatResponse = (response: HttpResponse, includeHeaders: boolean): string => {
+  if (!includeHeaders) return response.body;
+
+  const headerLines = response.headers
+    .map(([key, value]) => `${key}: ${value}`)
+    .join('\n');
+
+  return `HTTP/1.1 ${response.statusCode} ${response.statusText}\n${headerLines}\n\n${response.body}`;
+};
+
+export const createCurlCommand = (context: CurlContext): Command => ({
+  name: 'curl',
+  description: 'Transfer data from or to a server',
+  manual: {
+    synopsis: 'curl(url: string, [flags: string])',
+    description:
+      'Transfer data from or to a server using HTTP protocol. Supports GET and POST requests. Use -i flag to include HTTP response headers in output. Use -X POST to make POST requests to /api/* endpoints.',
+    arguments: [
+      { name: 'url', description: 'URL to fetch (e.g., "http://webserver.local/index.html")', required: true },
+      { name: 'flags', description: 'Optional flags: -i (include headers), -X POST (POST request)', required: false },
+    ],
+    examples: [
+      { command: 'curl("http://webserver.local/")', description: 'Fetch a web page' },
+      { command: 'curl("webserver.local/config.php")', description: 'Fetch without protocol (defaults to http)' },
+      { command: 'curl("http://webserver.local/", "-i")', description: 'Include HTTP response headers' },
+      { command: 'curl("http://webserver.local/api/users", "-X POST")', description: 'POST request to API' },
+      { command: 'curl("http://darknet.ctf:8080/", "-i")', description: 'Fetch from non-standard port' },
+    ],
+  },
+  fn: (...args: unknown[]): AsyncOutput => {
+    const { getMachine, resolveDomain } = context;
+
+    const urlStr = args[0] as string | undefined;
+    const flags = (args[1] as string | undefined) ?? '';
+
+    if (!urlStr) {
+      throw new Error('curl: no URL specified');
+    }
+
+    const includeHeaders = flags.includes('-i');
+    const isPost = flags.includes('-X POST');
+
+    const parsed = parseUrl(urlStr);
+    if (!parsed) {
+      throw new Error(`curl: invalid URL: ${urlStr}`);
+    }
+
+    const dnsRecord = resolveDomain(parsed.host);
+    const targetIP = dnsRecord?.ip ?? parsed.host;
+
+    if (!isValidIP(targetIP)) {
+      throw new Error(`curl: Could not resolve host: ${parsed.host}`);
+    }
+
+    const machine = getMachine(targetIP);
+    if (!machine) {
+      throw new Error(
+        `curl: Failed to connect to ${parsed.host} port ${parsed.port}: Connection refused`
+      );
+    }
+
+    const port = machine.ports.find((p) => p.port === parsed.port);
+    if (!port || !port.open || !HTTP_SERVICES.includes(port.service as typeof HTTP_SERVICES[number])) {
+      throw new Error(
+        `curl: Failed to connect to ${parsed.host} port ${parsed.port}: Connection refused`
+      );
+    }
+
+    let cancelled = false;
+    const timeoutIds: ReturnType<typeof setTimeout>[] = [];
+
+    return {
+      __type: 'async',
+      start: (onLine, onComplete) => {
+        const delay = Math.random() * 200 + 400;
+
+        const timeoutId = setTimeout(() => {
+          if (cancelled) return;
+
+          const response = isPost
+            ? handlePost(context, targetIP as MachineId, parsed.path)
+            : handleGet(context, targetIP as MachineId, parsed.path);
+
+          const output = formatResponse(response, includeHeaders);
+          output.split('\n').forEach((line) => onLine(line));
+
+          onComplete();
+        }, delay);
+
+        timeoutIds.push(timeoutId);
+      },
+      cancel: () => {
+        cancelled = true;
+        timeoutIds.forEach((id) => clearTimeout(id));
+      },
+    };
+  },
+});

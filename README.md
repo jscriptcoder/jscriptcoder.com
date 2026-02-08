@@ -70,7 +70,7 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 | `author()` | Display author profile card |
 | `clear()` | Clear the terminal screen |
 | `pwd()` | Print current working directory |
-| `ls([path])` | List directory contents |
+| `ls([path], [flags])` | List directory contents (-a for hidden files) |
 | `cd([path])` | Change current directory |
 | `cat(path)` | Display file contents |
 | `su(user)` | Switch user (prompts for password) |
@@ -82,6 +82,7 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 | `ssh(user, host)` | Connect to remote machine via SSH |
 | `exit()` | Close SSH connection and return to previous machine |
 | `ftp(host)` | Connect to remote machine via FTP |
+| `curl(url, [flags])` | Fetch web content via HTTP (supports -i for headers, -X POST) |
 | `nc(host, port)` | Connect to arbitrary port (interactive for special services) |
 | `decrypt(file, key)` | Decrypt file using AES-256-GCM |
 | `output(cmd, [file])` | Capture command output to variable or file |
@@ -135,6 +136,11 @@ ping("localhost")        // Test connectivity
 ssh("admin", "192.168.1.1")  // Connect to gateway
 exit()                       // Return to previous machine
 
+// HTTP requests
+curl("http://webserver.local/")             // Fetch web page
+curl("webserver.local/config.php", "-i")    // Include headers
+curl("webserver.local/api/users", "-X POST") // POST to API
+
 // FTP file transfer
 ftp("192.168.1.50")          // Connect to fileserver
 // In FTP mode:
@@ -170,7 +176,7 @@ npm run test:coverage # Run tests with coverage
 
 ### Test Coverage
 
-545 unit tests across 34 colocated test files covering terminal commands, hooks, components, and utilities.
+572 unit tests across 35 colocated test files covering terminal commands, hooks, components, and utilities.
 
 ## Project Structure
 

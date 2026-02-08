@@ -133,6 +133,7 @@ src/
 │   ├── resolve.ts          # resolve(promise) - unwrap Promise value
 │   ├── strings.ts          # strings(file) - extract printable strings from binary
 │   ├── exit.ts             # exit() - close SSH connection and return
+│   ├── curl.ts             # curl(url, [flags]) - HTTP client for GET/POST
 │   ├── ftp.ts              # ftp(host) - FTP connection command
 │   ├── ftp/                # FTP mode commands
 │   │   ├── pwd.ts          # pwd() - remote working directory
@@ -160,7 +161,8 @@ src/
 │   ├── decrypt.test.ts      # Tests colocated with decrypt.ts
 │   ├── output.test.ts       # Tests colocated with output.ts
 │   ├── resolve.test.ts      # Tests colocated with resolve.ts
-│   └── strings.test.ts      # Tests colocated with strings.ts
+│   ├── strings.test.ts      # Tests colocated with strings.ts
+│   └── curl.test.ts         # Tests colocated with curl.ts
 ├── utils/
 │   ├── md5.ts              # MD5 hashing for password validation
 │   ├── network.ts          # Network utilities (IP validation, range parsing)
@@ -247,6 +249,7 @@ To add a command:
 | `ssh(user, host)` | Connect to remote machine via SSH (async, prompts for password) |
 | `exit()` | Close SSH connection and return to previous machine |
 | `ftp(host)` | Connect to remote machine via FTP (async, prompts for username/password) |
+| `curl(url, [flags])` | HTTP client - fetch web content with GET/POST (async, supports -i and -X POST) |
 | `nc(host, port)` | Netcat - connect to arbitrary port (async, interactive for special services) |
 
 **FTP Mode Commands** (available only when connected via FTP):

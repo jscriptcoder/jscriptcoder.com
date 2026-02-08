@@ -13,12 +13,12 @@ export const createLsCommand = (context: LsContext): Command => ({
   name: 'ls',
   description: 'List directory contents',
   manual: {
-    synopsis: 'ls([path: string], [options: string])',
+    synopsis: 'ls([path: string], [flags: string])',
     description:
       'List the contents of a directory. Directories are shown with a trailing slash. Hidden files (starting with .) are not shown by default. If no path is specified, lists the current directory.',
     arguments: [
       { name: 'path', description: 'Path to the directory to list (absolute or relative)', required: false },
-      { name: 'options', description: 'Options: "-a" to show hidden files', required: false },
+      { name: 'flags', description: 'Options: "-a" to show hidden files', required: false },
     ],
     examples: [
       { command: 'ls()', description: 'List contents of current directory' },
@@ -30,7 +30,7 @@ export const createLsCommand = (context: LsContext): Command => ({
   fn: (...args: unknown[]): string => {
     const { getCurrentPath, resolvePath, getNode, getUserType } = context;
 
-    // Parse arguments - can be path, options, or both in any order
+    // Parse arguments - can be path, flags, or both in any order
     const stringArgs = args.filter((arg): arg is string => typeof arg === 'string');
     const showAll = stringArgs.some((arg) => arg.startsWith('-') && arg.includes('a'));
     const path = stringArgs.find((arg) => !arg.startsWith('-'));

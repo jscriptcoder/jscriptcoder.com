@@ -82,7 +82,7 @@
 ### Async streaming with cancellation support
 - **What**: AsyncOutput interface with `start(onLine, onComplete)` and optional `cancel()`
 - **Why it works**: Simulates realistic delays, supports interruption, keeps Terminal in control
-- **Example**: ping, nmap, nslookup, ssh, ftp all use this pattern
+- **Example**: ping, nmap, nslookup, ssh, ftp, curl all use this pattern
 
 ### Dual-filesystem access for FTP
 - **What**: FileSystemContext stores all machine filesystems in state, provides cross-machine operations
@@ -124,6 +124,16 @@
 - **Why it works**: Small storage footprint, base filesystem updates in code still take effect, clean "factory reset" by clearing one key
 - **Example**: `applyPatches(baseFileSystems, loadPatches())` at init; `upsertPatch(patches, { machineId, path, content, owner })` on write
 - **Key insight**: Persisting the diff instead of the full tree avoids stale data problems and keeps localStorage usage minimal
+
+### Per-machine server config for HTTP simulation
+- **What**: Static config mapping machine IPs to server names and custom headers
+- **Why it works**: Each machine's web server feels unique (Apache vs nginx, different headers)
+- **Example**: webserver returns `X-Powered-By: PHP/7.4.3` and `X-Frame-Options: SAMEORIGIN`
+
+### Cross-machine file reading for HTTP content
+- **What**: curl reads `/var/www/html/` and `/var/www/api/` from remote machine filesystems via `readFileFromMachine()`
+- **Why it works**: Web content lives in the same virtual filesystem as SSH/FTP content, consistent data model
+- **Example**: `curl("http://webserver.local/config.php")` reads `/var/www/html/config.php` on the webserver machine
 
 ### Smart return types for mixed sync/async
 - **What**: `output()` returns string for sync commands, Promise for async commands
@@ -231,6 +241,11 @@
 
 ## Edge Cases
 
+- curl to unknown host: "Could not resolve host" when DNS fails and not a valid IP
+- curl to closed HTTP port: "Connection refused"
+- curl to non-HTTP service port: "Connection refused" (validates service type)
+- curl POST to non-API path: Returns 400 Bad Request with JSON error
+- curl with -i flag: Shows full HTTP response headers before body
 - SSH to localhost: Rejected with "cannot connect to localhost via SSH"
 - SSH to machine without SSH port: "Connection refused"
 - SSH with non-existent user: "Permission denied (publickey,password)"

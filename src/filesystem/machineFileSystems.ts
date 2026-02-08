@@ -135,13 +135,26 @@ WPA_KEY=FLAG{router_misconfiguration}
 `,
     },
   },
-  varLogContent: {
-    'auth.log': {
-      name: 'auth.log',
-      type: 'file',
+  varLogContent: {},
+  extraDirectories: {
+    var: {
+      name: 'var',
+      type: 'directory',
       owner: 'root',
-      permissions: { read: ['root', 'user'], write: ['root'] },
-      content: `Mar 10 08:15:22 gateway sshd[1234]: Failed password for admin from 192.168.1.100
+      permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+      children: {
+        log: {
+          name: 'log',
+          type: 'directory',
+          owner: 'root',
+          permissions: { read: ['root', 'user'], write: ['root'] },
+          children: {
+            'auth.log': {
+              name: 'auth.log',
+              type: 'file',
+              owner: 'root',
+              permissions: { read: ['root', 'user'], write: ['root'] },
+              content: `Mar 10 08:15:22 gateway sshd[1234]: Failed password for admin from 192.168.1.100
 Mar 10 08:15:25 gateway sshd[1234]: Failed password for admin from 192.168.1.100
 Mar 10 09:30:01 gateway sshd[1235]: Accepted password for admin from 10.0.0.5
 Mar 11 14:22:10 gateway sshd[1240]: Failed password for root from 203.0.113.42
@@ -149,6 +162,60 @@ Mar 11 14:22:15 gateway sshd[1240]: Failed password for root from 203.0.113.42
 Mar 12 03:00:00 gateway sshd[1250]: Connection from 192.168.1.50 port 22
 Mar 12 03:00:05 gateway sshd[1250]: Accepted publickey for admin
 `,
+            },
+          },
+        },
+        www: {
+          name: 'www',
+          type: 'directory',
+          owner: 'root',
+          permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+          children: {
+            html: {
+              name: 'html',
+              type: 'directory',
+              owner: 'root',
+              permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+              children: {
+                'index.html': {
+                  name: 'index.html',
+                  type: 'file',
+                  owner: 'root',
+                  permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+                  content: `<!DOCTYPE html>
+<html>
+<head><title>Router Admin Panel</title></head>
+<body>
+<h1>NETGEAR Gateway</h1>
+<p>Firmware: v2.1.3</p>
+<p>Status: Online</p>
+<!-- Admin login: /admin.html -->
+</body>
+</html>
+`,
+                },
+                'admin.html': {
+                  name: 'admin.html',
+                  type: 'file',
+                  owner: 'root',
+                  permissions: { read: ['root'], write: ['root'] },
+                  content: `<!DOCTYPE html>
+<html>
+<head><title>Admin Panel</title></head>
+<body>
+<h1>Router Administration</h1>
+<p>Firewall: Disabled</p>
+<p>Port Forwarding: Enabled</p>
+<p>FLAG{router_admin_panel}</p>
+</body>
+</html>
+`,
+                },
+              },
+            },
+          },
+        },
+      },
     },
   },
 };
@@ -405,6 +472,42 @@ INSERT INTO users VALUES (2, 'guest', 'guest123');
                 },
               },
             },
+            api: {
+              name: 'api',
+              type: 'directory',
+              owner: 'user',
+              permissions: { read: ['root', 'user', 'guest'], write: ['root', 'user'] },
+              children: {
+                'users.json': {
+                  name: 'users.json',
+                  type: 'file',
+                  owner: 'user',
+                  permissions: { read: ['root', 'user', 'guest'], write: ['root', 'user'] },
+                  content: `{
+  "users": [
+    {"id": 1, "username": "admin", "role": "administrator"},
+    {"id": 2, "username": "www-data", "role": "service"},
+    {"id": 3, "username": "guest", "role": "guest"}
+  ]
+}`,
+                },
+                'config.json': {
+                  name: 'config.json',
+                  type: 'file',
+                  owner: 'user',
+                  permissions: { read: ['root', 'user'], write: ['root'] },
+                  content: `{
+  "database": {
+    "host": "localhost",
+    "user": "webapp",
+    "password": "W3bApp_S3cr3t!"
+  },
+  "debug": true,
+  "flag": "FLAG{api_config_exposed}"
+}`,
+                },
+              },
+            },
           },
         },
       },
@@ -465,18 +568,94 @@ The shadows welcome you.
 `,
     },
   },
-  varLogContent: {
-    'messages': {
-      name: 'messages',
-      type: 'file',
+  varLogContent: {},
+  extraDirectories: {
+    var: {
+      name: 'var',
+      type: 'directory',
       owner: 'root',
-      permissions: { read: ['root', 'user'], write: ['root'] },
-      content: `Mar 10 00:00:00 darknet kernel: System initialized
+      permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+      children: {
+        log: {
+          name: 'log',
+          type: 'directory',
+          owner: 'root',
+          permissions: { read: ['root', 'user'], write: ['root'] },
+          children: {
+            'messages': {
+              name: 'messages',
+              type: 'file',
+              owner: 'root',
+              permissions: { read: ['root', 'user'], write: ['root'] },
+              content: `Mar 10 00:00:00 darknet kernel: System initialized
 Mar 10 00:00:01 darknet systemd: Starting encrypted services...
 Mar 11 03:33:33 darknet ???: VGhlIHNoYWRvd3Mga25vdyB5b3VyIG5hbWU=
 Mar 11 03:33:34 darknet ???: Q29uZ3JhdHVsYXRpb25zIG9uIG1ha2luZyBpdCB0aGlzIGZhcg==
 Mar 12 06:66:66 darknet ???: Connection from the void accepted
 `,
+            },
+          },
+        },
+        www: {
+          name: 'www',
+          type: 'directory',
+          owner: 'root',
+          permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+          children: {
+            html: {
+              name: 'html',
+              type: 'directory',
+              owner: 'user',
+              permissions: { read: ['root', 'user', 'guest'], write: ['root', 'user'] },
+              children: {
+                'index.html': {
+                  name: 'index.html',
+                  type: 'file',
+                  owner: 'user',
+                  permissions: { read: ['root', 'user', 'guest'], write: ['root', 'user'] },
+                  content: `<!DOCTYPE html>
+<html>
+<head><title>Welcome to the Darknet</title></head>
+<body style="background:#000;color:#0f0;font-family:monospace;">
+<h1>ACCESS GRANTED</h1>
+<pre>
+ ____             _    _   _      _
+|  _ \\  __ _ _ __| | _| \\ | | ___| |_
+| | | |/ _\` | '__| |/ /  \\| |/ _ \\ __|
+| |_| | (_| | |  |   <| |\\  |  __/ |_
+|____/ \\__,_|_|  |_|\\_\\_| \\_|\\___|\\__|
+</pre>
+<p>The shadows know your name.</p>
+<p>Hint: POST to /api/secrets for more...</p>
+</body>
+</html>
+`,
+                },
+              },
+            },
+            api: {
+              name: 'api',
+              type: 'directory',
+              owner: 'root',
+              permissions: { read: ['root', 'user'], write: ['root'] },
+              children: {
+                'secrets.json': {
+                  name: 'secrets.json',
+                  type: 'file',
+                  owner: 'root',
+                  permissions: { read: ['root', 'user'], write: ['root'] },
+                  content: `{
+  "message": "You found the darknet API",
+  "encoded": "VGhlIGZpbmFsIGZsYWcgaXMgd2l0aCByb290",
+  "hint": "Root's password is a common word",
+  "flag": "FLAG{darknet_api_discovered}"
+}`,
+                },
+              },
+            },
+          },
+        },
+      },
     },
   },
 };

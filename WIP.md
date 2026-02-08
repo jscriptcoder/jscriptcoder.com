@@ -25,7 +25,26 @@ Step 13 of 14: Victory tracking
 - [ ] Step 13: Victory tracking ← next
 - [ ] Step 14: Challenge variety
 
-## Recent Session (2026-02-07)
+## Recent Session (2026-02-08)
+
+Implemented:
+- **curl command**: HTTP client for fetching web content from remote machines
+  - `curl(url)` - GET request, serves from `/var/www/html/` on target machine
+  - `curl(url, "-X POST")` - POST request, reads from `/var/www/api/{endpoint}.json`
+  - `curl(url, "-i")` - include HTTP response headers (Server, Content-Type, custom)
+  - Per-machine server config (Apache/nginx, custom headers like X-Powered-By)
+  - DNS resolution via existing `resolveDomain()`
+  - Port validation: must be open HTTP/HTTPS/HTTP-ALT service
+  - AsyncOutput with 400-600ms delay for realism
+  - 27 tests covering errors, GET, POST, headers, DNS, async, cancellation
+- **Web content added to machine filesystems**:
+  - Gateway: `/var/www/html/index.html` (router page), `admin.html` (root-only, has flag)
+  - Webserver: `/var/www/api/users.json`, `config.json` (DB creds + flag)
+  - Darknet: `/var/www/html/index.html` (ASCII art), `/var/www/api/secrets.json` (encoded hint + flag)
+- **New flags**: FLAG{router_admin_panel}, FLAG{api_config_exposed}, FLAG{darknet_api_discovered}
+- **Test count**: 572 tests across 35 colocated files
+
+## Session (2026-02-07)
 
 Implemented:
 - **Filesystem persistence**: User-created/modified files now survive page refresh
@@ -51,7 +70,7 @@ Implemented:
   - `strings(file, [minLength])` - extracts ASCII sequences (4+ chars default)
   - Added binary file detection to `cat` - shows warning for binary files
   - Added `/bin/sudo` binary on webserver with hidden FLAG
-- **Test count**: 545 tests across 34 colocated files
+- **Test count**: 545 tests across 34 colocated files (before curl)
 
 ## Session (2026-02-06)
 
@@ -138,13 +157,16 @@ Victory tracking (Step 13):
 - **flags() command**: Check progress anytime, shows found flags and progress (3/6)
 - **Victory screen**: ASCII art celebration when all 6 flags found, with stats (time, flags)
 
-### Flags to Track (6 total)
+### Flags to Track (9 total)
 1. `FLAG{welcome_to_the_underground}` - localhost
 2. `FLAG{router_misconfiguration}` - gateway
-3. `FLAG{ftp_hidden_treasure}` - fileserver
-4. `FLAG{sql_history_exposed}` - webserver
-5. `FLAG{database_backup_gold}` - webserver
-6. `FLAG{master_of_the_darknet}` - darknet
+3. `FLAG{router_admin_panel}` - gateway (via curl)
+4. `FLAG{ftp_hidden_treasure}` - fileserver
+5. `FLAG{sql_history_exposed}` - webserver
+6. `FLAG{database_backup_gold}` - webserver
+7. `FLAG{api_config_exposed}` - webserver (via curl POST)
+8. `FLAG{darknet_api_discovered}` - darknet (via curl POST)
+9. `FLAG{master_of_the_darknet}` - darknet
 
 ---
 
@@ -307,10 +329,10 @@ Flags should be detected from output of:
 | Machine | IP | Users | Flags |
 |---------|-----|-------|-------|
 | localhost | 192.168.1.100 | jshacker, root, guest | FLAG{welcome_to_the_underground} |
-| gateway | 192.168.1.1 | admin, guest | FLAG{router_misconfiguration} |
+| gateway | 192.168.1.1 | admin, guest | FLAG{router_misconfiguration}, FLAG{router_admin_panel} |
 | fileserver | 192.168.1.50 | root, ftpuser, guest | FLAG{ftp_hidden_treasure} |
-| webserver | 192.168.1.75 | root, www-data, guest | FLAG{sql_history_exposed}, FLAG{database_backup_gold} |
-| darknet | 203.0.113.42 | root, ghost, guest | FLAG{master_of_the_darknet} |
+| webserver | 192.168.1.75 | root, www-data, guest | FLAG{sql_history_exposed}, FLAG{database_backup_gold}, FLAG{api_config_exposed} |
+| darknet | 203.0.113.42 | root, ghost, guest | FLAG{master_of_the_darknet}, FLAG{darknet_api_discovered} |
 
 ### Backdoors (nc interactive mode)
 
@@ -329,10 +351,11 @@ Flags should be detected from output of:
 - jshacker@localhost: hackme
 
 ### Test Coverage
-- 545 tests across 34 colocated test files
+- 572 tests across 35 colocated test files
 - All commands with logic are tested
 - FTP subcommands tested (cd, lcd, ls, lls, get, put)
 - NC command and subcommands tested (nc, cat, cd, ls)
+- Curl command tested (27 tests: errors, GET, POST, headers, DNS, async)
 - Decrypt command tested (17 tests)
 - Output command tested (16 tests)
 - Resolve command tested (14 tests)
