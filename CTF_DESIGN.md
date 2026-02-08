@@ -597,12 +597,12 @@ Additional directories that require root access, providing incentive for escalat
 ### Phase 2: Filesystem Changes
 - [x] Update `/etc/passwd` permissions (root-only on remotes, root+user on localhost)
 - [x] Remove all existing flags from `machineFileSystems.ts`
-- [ ] Add new flag files for all 12 flags
-- [ ] Add hint files (logs, configs, notes) that guide progression
-- [ ] Add encrypted files for decrypt challenges
-- [ ] Add binary file(s) for strings challenges
-- [ ] Update `/var/log/` files with credential-leaking logs
-- [ ] Add `/opt/tools/` directory to webserver
+- [x] Add new flag files for all 12 flags
+- [x] Add hint files (logs, configs, notes) that guide progression
+- [x] Add encrypted files for decrypt challenges
+- [x] Add binary file(s) for strings challenges
+- [x] Update `/var/log/` files with credential-leaking logs
+- [x] Add `/opt/tools/` directory to webserver
 
 ### Phase 3: Web Content
 - [ ] Redesign gateway web pages (index.html, admin.html)
