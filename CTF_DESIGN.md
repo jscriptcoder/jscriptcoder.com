@@ -588,11 +588,11 @@ Additional directories that require root access, providing incentive for escalat
 ## Implementation Checklist
 
 ### Phase 1: Command Restrictions
-- [ ] Add user type checking to command registration in `useCommands.ts`
-- [ ] Define command tiers (guest/user/root) as a configuration
-- [ ] Show permission error when restricted command is called
-- [ ] Update `useFtpCommands.ts` and `useNcCommands.ts` for consistency
-- [ ] Add tests for command restrictions
+- [x] Add user type checking to command registration in `useCommands.ts`
+- [x] Define command tiers (guest/user/root) as a configuration
+- [x] Show permission error when restricted command is called
+- [x] ~~Update `useFtpCommands.ts` and `useNcCommands.ts` for consistency~~ — Not needed, FTP/NC modes bypass restrictions (separate command sets)
+- [x] Add tests for command restrictions
 
 ### Phase 2: Filesystem Changes
 - [ ] Update `/etc/passwd` permissions (root-only on remotes, root+user on localhost)

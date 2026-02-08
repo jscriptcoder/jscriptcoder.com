@@ -26,6 +26,7 @@ Start with `help()` to see available commands. Good luck, hacker.
 - **Tab Autocompletion** - Complete commands and variables with Tab key
 - **Variable Support** - Create variables with `const` and `let` declarations
 - **Virtual Environment** - Explore a simulated system with secrets to uncover
+- **Command Restrictions** - Commands are tiered by privilege level; escalate from guest to root to unlock tools
 - **Network Simulation** - Discover and hack into remote machines
 - **Session Persistence** - Your location and files are saved; return where you left off after refresh
 - **Retro CRT Theme** - Classic amber-on-black terminal aesthetic
@@ -176,7 +177,7 @@ npm run test:coverage # Run tests with coverage
 
 ### Test Coverage
 
-572 unit tests across 35 colocated test files covering terminal commands, hooks, components, and utilities.
+593 unit tests across 36 colocated test files covering terminal commands, hooks, components, and utilities.
 
 ## Project Structure
 

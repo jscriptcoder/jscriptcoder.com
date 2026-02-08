@@ -4,6 +4,18 @@ All terminal commands live here. Each command implements the `Command` type and 
 
 Commands use a factory pattern with context injection: `createXCommand(context) => Command`.
 
+## Command Restrictions (`permissions.ts`)
+
+Commands are tiered by user type. Restricted commands show `permission denied: 'name' requires TYPE privileges` and are hidden from `help()` and tab autocomplete. `man()` can still look up any command.
+
+| Tier | User Type | Available Commands |
+|------|-----------|-------------------|
+| Basic | `guest` | help, man, echo, whoami, pwd, ls, cd, cat, su, clear, author |
+| Standard | `user` | All basic + ifconfig, ping, nmap, nslookup, ssh, ftp, nc, curl, strings, output, resolve, exit |
+| Full | `root` | All standard + decrypt |
+
+FTP and NC modes have their own separate command sets and are not restricted.
+
 ## General
 
 | Command | File | Signature | Description |

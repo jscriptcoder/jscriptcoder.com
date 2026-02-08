@@ -28,9 +28,14 @@ useCommands()
 └── help, man (created last, with access to all commands above)
 ```
 
+After assembly, commands are filtered through `permissions.ts`:
+- Restricted commands get their `fn` wrapped with a permission check (throws `permission denied` error)
+- `commandNames` is filtered to only accessible commands (for tab autocomplete)
+- `help()` receives only accessible commands; `man()` receives all commands
+
 Returns `{ executionContext, commandNames }` where:
-- `executionContext` — `Record<string, Function>` injected into `new Function()` for evaluation
-- `commandNames` — list of names for tab autocompletion
+- `executionContext` — `Record<string, Function>` injected into `new Function()` for evaluation (with restrictions applied)
+- `commandNames` — list of accessible names for tab autocompletion
 
 ## Mode-Specific Hooks
 

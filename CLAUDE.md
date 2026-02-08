@@ -134,6 +134,7 @@ src/
 │   ├── strings.ts          # strings(file) - extract printable strings from binary
 │   ├── exit.ts             # exit() - close SSH connection and return
 │   ├── curl.ts             # curl(url, [flags]) - HTTP client for GET/POST
+│   ├── permissions.ts      # Command restrictions by user type (guest/user/root)
 │   ├── ftp.ts              # ftp(host) - FTP connection command
 │   ├── ftp/                # FTP mode commands
 │   │   ├── pwd.ts          # pwd() - remote working directory
@@ -162,7 +163,8 @@ src/
 │   ├── output.test.ts       # Tests colocated with output.ts
 │   ├── resolve.test.ts      # Tests colocated with resolve.ts
 │   ├── strings.test.ts      # Tests colocated with strings.ts
-│   └── curl.test.ts         # Tests colocated with curl.ts
+│   ├── curl.test.ts         # Tests colocated with curl.ts
+│   └── permissions.test.ts  # Tests colocated with permissions.ts
 ├── utils/
 │   ├── md5.ts              # MD5 hashing for password validation
 │   ├── network.ts          # Network utilities (IP validation, range parsing)
@@ -197,6 +199,18 @@ User input flows through `Terminal.tsx`:
 1. Input is first checked for variable operations (`const`/`let` declarations or reassignments) via `useVariables` hook
 2. If not a variable operation, the input is executed as a command using dynamic `new Function()` evaluation
 3. Commands and variables are injected into the execution context, making them callable (e.g., `echo("hello")`)
+
+### Command Restrictions by User Type
+
+Commands are tiered by user type (`src/commands/permissions.ts`). Restricted commands show a `permission denied` error and are hidden from `help()` and tab autocomplete. `man()` can still look up any command.
+
+| Tier | User Type | Commands |
+|------|-----------|----------|
+| Basic | `guest` | help, man, echo, whoami, pwd, ls, cd, cat, su, clear, author |
+| Standard | `user` | All basic + ifconfig, ping, nmap, nslookup, ssh, ftp, nc, curl, strings, output, resolve, exit |
+| Full | `root` | All standard + decrypt |
+
+FTP and NC modes are not restricted (they have their own separate command sets).
 
 ### Adding New Commands
 

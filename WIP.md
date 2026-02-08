@@ -28,6 +28,20 @@ Step 13 of 14: Victory tracking
 ## Recent Session (2026-02-08)
 
 Implemented:
+- **Command restrictions by user type** (`src/commands/permissions.ts`):
+  - Guest: basic navigation only (ls, cd, cat, su, help, man, echo, whoami, pwd, clear, author)
+  - User: all basic + network/analysis tools (nmap, ssh, ftp, nc, curl, ifconfig, ping, nslookup, strings, output, resolve, exit)
+  - Root: all user + decrypt
+  - Restricted commands wrapped with permission-checking fn (clear "permission denied" error)
+  - `help()` and tab autocomplete filter out restricted commands
+  - `man()` can still look up any command (for learning)
+  - Privileges update instantly on `su()` via `session.userType` in `useMemo` deps
+  - FTP/NC modes unaffected (separate command sets)
+  - 21 tests for permissions module
+- **CTF flag redesign plan** (`CTF_DESIGN.md`): 12-flag progression, command tiers, escalation paths
+- **Test count**: 593 tests across 36 colocated files
+
+Previous session (2026-02-08):
 - **curl command**: HTTP client for fetching web content from remote machines
   - `curl(url)` - GET request, serves from `/var/www/html/` on target machine
   - `curl(url, "-X POST")` - POST request, reads from `/var/www/api/{endpoint}.json`
@@ -351,7 +365,7 @@ Flags should be detected from output of:
 - jshacker@localhost: hackme
 
 ### Test Coverage
-- 572 tests across 35 colocated test files
+- 593 tests across 36 colocated test files
 - All commands with logic are tested
 - FTP subcommands tested (cd, lcd, ls, lls, get, put)
 - NC command and subcommands tested (nc, cat, cd, ls)

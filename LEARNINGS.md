@@ -125,6 +125,12 @@
 - **Example**: `applyPatches(baseFileSystems, loadPatches())` at init; `upsertPatch(patches, { machineId, path, content, owner })` on write
 - **Key insight**: Persisting the diff instead of the full tree avoids stale data problems and keeps localStorage usage minimal
 
+### Command restriction wrapping over removal
+- **What**: Instead of removing restricted commands from executionContext (causing "X is not defined" JS errors), wrap their `fn` with a permission-checking function
+- **Why it works**: Clear "permission denied" error instead of confusing JS error; `man()` can still look up restricted commands; command metadata preserved for help text
+- **Example**: Guest calls `nmap()` → `Error: permission denied: 'nmap' requires user privileges`
+- **Key insight**: Filtering `commandNames` (for autocomplete) and `help()` happens separately from wrapping execution context
+
 ### Per-machine server config for HTTP simulation
 - **What**: Static config mapping machine IPs to server names and custom headers
 - **Why it works**: Each machine's web server feels unique (Apache vs nginx, different headers)
