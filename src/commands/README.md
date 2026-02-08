@@ -1,0 +1,79 @@
+# Commands
+
+All terminal commands live here. Each command implements the `Command` type and is registered in `src/hooks/useCommands.ts` (general/filesystem) or `src/hooks/useNetworkCommands.ts` (network).
+
+Commands use a factory pattern with context injection: `createXCommand(context) => Command`.
+
+## General
+
+| Command | File | Signature | Description |
+|---------|------|-----------|-------------|
+| help | `help.ts` | `help()` | List all available commands |
+| man | `man.ts` | `man(cmd)` | Display detailed manual for a command |
+| echo | `echo.ts` | `echo(value)` | Output a stringified value |
+| author | `author.ts` | `author()` | Display author profile card |
+| clear | `clear.ts` | `clear()` | Clear the terminal screen |
+| exit | `exit.ts` | `exit()` | Close SSH/nc connection and return to previous machine |
+| resolve | `resolve.ts` | `resolve(promise)` | Unwrap a Promise and display its resolved value |
+
+## File System
+
+| Command | File | Signature | Description |
+|---------|------|-----------|-------------|
+| pwd | `pwd.ts` | `pwd()` | Print current working directory |
+| ls | `ls.ts` | `ls([path], [flags])` | List directory contents (`-a` for hidden files) |
+| cd | `cd.ts` | `cd([path])` | Change current directory |
+| cat | `cat.ts` | `cat(path)` | Display file contents |
+| whoami | `whoami.ts` | `whoami()` | Display current username |
+| decrypt | `decrypt.ts` | `decrypt(file, key)` | Decrypt file using AES-256-GCM (async) |
+| output | `output.ts` | `output(cmd, [file])` | Capture command output to variable or file |
+| strings | `strings.ts` | `strings(file, [min])` | Extract printable strings from binary files |
+
+## User Management
+
+| Command | File | Signature | Description |
+|---------|------|-----------|-------------|
+| su | `su.ts` | `su(user)` | Switch user (prompts for password) |
+
+## Network
+
+| Command | File | Signature | Description |
+|---------|------|-----------|-------------|
+| ifconfig | `ifconfig.ts` | `ifconfig([iface])` | Display network interface configuration |
+| ping | `ping.ts` | `ping(host, [count])` | Send ICMP echo request to network host (async) |
+| nmap | `nmap.ts` | `nmap(target)` | Network exploration and port scanning (async) |
+| nslookup | `nslookup.ts` | `nslookup(domain)` | Query DNS to resolve domain to IP address (async) |
+| ssh | `ssh.ts` | `ssh(user, host)` | Connect to remote machine via SSH (async) |
+| curl | `curl.ts` | `curl(url, [flags])` | HTTP client for GET/POST requests (async, `-i` for headers, `-X POST`) |
+| ftp | `ftp.ts` | `ftp(host)` | Connect to remote machine via FTP (async) |
+| nc | `nc.ts` | `nc(host, port)` | Netcat - connect to arbitrary port (async, interactive for special services) |
+
+## FTP Mode (`ftp/`)
+
+Available only when connected via FTP. Registered in `src/hooks/useFtpCommands.ts`.
+
+| Command | File | Signature | Description |
+|---------|------|-----------|-------------|
+| pwd | `ftp/pwd.ts` | `pwd()` | Print remote working directory |
+| lpwd | `ftp/lpwd.ts` | `lpwd()` | Print local working directory |
+| cd | `ftp/cd.ts` | `cd(path)` | Change remote directory |
+| lcd | `ftp/lcd.ts` | `lcd(path)` | Change local directory |
+| ls | `ftp/ls.ts` | `ls([path])` | List remote directory contents |
+| lls | `ftp/lls.ts` | `lls([path])` | List local directory contents |
+| get | `ftp/get.ts` | `get(file, [dest])` | Download file from remote to local |
+| put | `ftp/put.ts` | `put(file, [dest])` | Upload file from local to remote |
+| quit | `ftp/quit.ts` | `quit()` / `bye()` | Close FTP connection |
+
+## NC Mode (`nc/`)
+
+Available when connected to interactive services via nc. Registered in `src/hooks/useNcCommands.ts`.
+
+| Command | File | Signature | Description |
+|---------|------|-----------|-------------|
+| pwd | `nc/pwd.ts` | `pwd()` | Print working directory |
+| cd | `nc/cd.ts` | `cd(path)` | Change directory |
+| ls | `nc/ls.ts` | `ls([path])` | List directory contents |
+| cat | `nc/cat.ts` | `cat(path)` | Display file contents |
+| whoami | `nc/whoami.ts` | `whoami()` | Display current user |
+| help | (inline) | `help()` | List available nc commands |
+| exit | (inline) | `exit()` | Close connection |
