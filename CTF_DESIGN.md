@@ -68,20 +68,20 @@ On remote machines, players must discover credentials through:
 
 | Machine | Username | Type | Password | How player discovers password |
 |---------|----------|------|----------|-------------------------------|
-| **localhost** | jshacker | user | hackme | Player starts as this user |
-| **localhost** | root | root | toor | Crack from /etc/passwd (readable) |
-| **localhost** | guest | guest | guest1 | Not needed |
-| **gateway** | guest | guest | guest | Hinted in localhost log files |
-| **gateway** | admin | root | admin | Found in gateway config/log file (readable by guest) |
-| **fileserver** | guest | guest | guest | Hinted on gateway web page |
-| **fileserver** | ftpuser | user | password | Found in fileserver log or hint file |
-| **fileserver** | root | root | root | Crack from /etc/passwd (after su to root) |
-| **webserver** | guest | guest | guest | Found via curl or fileserver clue |
-| **webserver** | www-data | user | webmaster | Found in web config or log file |
-| **webserver** | root | root | root | Crack from /etc/passwd (after su to root) |
-| **darknet** | guest | guest | guest | Found via webserver backdoor clue |
-| **darknet** | ghost | user | fun123 | Found via darknet web page or API |
-| **darknet** | root | root | password | Requires decrypting a file |
+| **localhost** | jshacker | user | h4ckth3pl4n3t | Player starts as this user |
+| **localhost** | root | root | sup3rus3r | Crack from /etc/passwd (readable by user on localhost) |
+| **localhost** | guest | guest | guestpass | Not needed for progression |
+| **gateway** | guest | guest | guest2024 | Hinted in localhost `/var/log/auth.log` |
+| **gateway** | admin | root | n3tgu4rd! | Found in gateway auth.log (readable by guest) |
+| **fileserver** | guest | guest | anonymous | Classic FTP default, hinted on gateway admin page |
+| **fileserver** | ftpuser | user | tr4nsf3r | Hinted on gateway admin page or web content |
+| **fileserver** | root | root | b4ckup2024 | Found in config file after escalating to ftpuser |
+| **webserver** | guest | guest | w3lcome | Hinted in fileserver backup notes |
+| **webserver** | www-data | user | d3v0ps2024 | Found in webserver `/var/log/access.log` (readable by guest) |
+| **webserver** | root | root | r00tW3b! | Found in database backup or web config |
+| **darknet** | guest | guest | sh4d0w | Found via webserver backdoor (nc) output |
+| **darknet** | ghost | user | sp3ctr3 | Found via darknet web page or API response |
+| **darknet** | root | root | d4rkn3tR00t | Requires decrypting a file |
 
 ---
 

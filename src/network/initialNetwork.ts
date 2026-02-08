@@ -17,12 +17,13 @@ export const createInitialNetwork = (): NetworkConfig => ({
       ip: '192.168.1.1',
       hostname: 'gateway',
       ports: [
-        { port: 22, service: 'ssh', open: false },
+        { port: 22, service: 'ssh', open: true },
         { port: 80, service: 'http', open: true },
         { port: 443, service: 'https', open: true },
       ],
       users: [
-        { username: 'admin', passwordHash: '21232f297a57a5a743894a0e4a801fc3', userType: 'root' }, // admin
+        { username: 'admin', passwordHash: 'dab569cb96513965ca00379d69b2f40c', userType: 'root' }, // n3tgu4rd!
+        { username: 'guest', passwordHash: 'dbf0171774108c80c94819b1ce0dbd9b', userType: 'guest' }, // guest2024
       ],
     },
     // File server
@@ -34,8 +35,9 @@ export const createInitialNetwork = (): NetworkConfig => ({
         { port: 22, service: 'ssh', open: true },
       ],
       users: [
-        { username: 'root', passwordHash: '63a9f0ea7bb98050796b649e85481845', userType: 'root' }, // root
-        { username: 'ftpuser', passwordHash: '5f4dcc3b5aa765d61d8327deb882cf99', userType: 'user' }, // password
+        { username: 'root', passwordHash: '4a080e0e088d55294ab894a02b5c8e3f', userType: 'root' }, // b4ckup2024
+        { username: 'ftpuser', passwordHash: 'be7a9d8e813210208cb7fba28717cda7', userType: 'user' }, // tr4nsf3r
+        { username: 'guest', passwordHash: '294de3557d9d00b3d2d8a1e6aab028cf', userType: 'guest' }, // anonymous
       ],
     },
     // Web server
@@ -54,8 +56,9 @@ export const createInitialNetwork = (): NetworkConfig => ({
         },
       ],
       users: [
-        { username: 'root', passwordHash: '63a9f0ea7bb98050796b649e85481845', userType: 'root' }, // root
-        { username: 'www-data', passwordHash: 'a384b6463fc216a5f8ecb6670f86456a', userType: 'user' }, // webmaster
+        { username: 'root', passwordHash: 'a6f6c10dc3602b020c56ff49fb043ca9', userType: 'root' }, // r00tW3b!
+        { username: 'www-data', passwordHash: 'd2d8d0cdf38ea5a54439ffadf7597722', userType: 'user' }, // d3v0ps2024
+        { username: 'guest', passwordHash: 'b2ce03aefab9060e1a42bd1aa1c571f6', userType: 'guest' }, // w3lcome
       ],
     },
     // External secret server (outside local network)
@@ -73,8 +76,9 @@ export const createInitialNetwork = (): NetworkConfig => ({
         },
       ],
       users: [
-        { username: 'root', passwordHash: '5f4dcc3b5aa765d61d8327deb882cf99', userType: 'root' }, // password
-        { username: 'ghost', passwordHash: '7c6a180b36896a65c3ccdc6e70b6b8f7', userType: 'user' }, // fun123
+        { username: 'root', passwordHash: '63d7f708b7feb9c0494c64dbfb087f83', userType: 'root' }, // d4rkn3tR00t
+        { username: 'ghost', passwordHash: 'd2aef0b37551aecfb067036d57f14930', userType: 'user' }, // sp3ctr3
+        { username: 'guest', passwordHash: 'e5ec4133db0a2e088310e8ecb0ee51d7', userType: 'guest' }, // sh4d0w
       ],
     },
   ],

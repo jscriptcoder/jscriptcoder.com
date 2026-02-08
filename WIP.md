@@ -356,13 +356,20 @@ Flags should be detected from output of:
 | darknet | 31337 | elite | ghost | /home/ghost |
 
 ### Known Passwords (MD5 hashed)
-- ftpuser@fileserver: password
-- root@darknet: password
-- ghost@darknet: fun123
-- www-data@webserver: webmaster
-- admin@gateway: admin
-- root@localhost: toor
-- jshacker@localhost: hackme
+- root@localhost: sup3rus3r
+- jshacker@localhost: h4ckth3pl4n3t
+- guest@localhost: guestpass
+- admin@gateway: n3tgu4rd!
+- guest@gateway: guest2024
+- root@fileserver: b4ckup2024
+- ftpuser@fileserver: tr4nsf3r
+- guest@fileserver: anonymous
+- root@webserver: r00tW3b!
+- www-data@webserver: d3v0ps2024
+- guest@webserver: w3lcome
+- root@darknet: d4rkn3tR00t
+- ghost@darknet: sp3ctr3
+- guest@darknet: sh4d0w
 
 ### Test Coverage
 - 593 tests across 36 colocated test files

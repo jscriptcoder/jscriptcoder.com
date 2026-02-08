@@ -17,9 +17,9 @@ const getChildNode = (parent: FileNode, name: string): FileNode => {
 
 const localhostConfig: MachineFileSystemConfig = {
   users: [
-    { username: 'root', passwordHash: '7b24afc8bc80e548d66c4e7ff72171c5', userType: 'root', uid: 0 }, // toor
-    { username: 'jshacker', passwordHash: 'de9b9ed78d7e2e1dceeffee780e2f919', userType: 'user', uid: 1000 }, // hackme
-    { username: 'guest', passwordHash: 'fcf41657f02f88137a1bcf068a32c0a3', userType: 'guest', uid: 1001 }, // guest1
+    { username: 'root', passwordHash: 'a0ff67e77425eb3cea40ecb60941aea4', userType: 'root', uid: 0 }, // sup3rus3r
+    { username: 'jshacker', passwordHash: '25cd52d0d5975297e6c28700caa9dd72', userType: 'user', uid: 1000 }, // h4ckth3pl4n3t
+    { username: 'guest', passwordHash: '0fb9cbecb7b8881511c69c39db643e8c', userType: 'guest', uid: 1001 }, // guestpass
   ],
   rootContent: {
     '.secret': {
@@ -114,8 +114,8 @@ Good luck, hacker.
 
 const gatewayConfig: MachineFileSystemConfig = {
   users: [
-    { username: 'admin', passwordHash: '21232f297a57a5a743894a0e4a801fc3', userType: 'root', uid: 0 }, // admin
-    { username: 'guest', passwordHash: '084e0343a0486ff05530df6c705c8bb4', userType: 'guest', uid: 1001 }, // guest
+    { username: 'admin', passwordHash: 'dab569cb96513965ca00379d69b2f40c', userType: 'root', uid: 0 }, // n3tgu4rd!
+    { username: 'guest', passwordHash: 'dbf0171774108c80c94819b1ce0dbd9b', userType: 'guest', uid: 1001 }, // guest2024
   ],
   rootContent: {
     '.router_backup': {
@@ -226,9 +226,9 @@ Mar 12 03:00:05 gateway sshd[1250]: Accepted publickey for admin
 
 const fileserverConfig: MachineFileSystemConfig = {
   users: [
-    { username: 'root', passwordHash: '63a9f0ea7bb98050796b649e85481845', userType: 'root', uid: 0 }, // root
-    { username: 'ftpuser', passwordHash: '5f4dcc3b5aa765d61d8327deb882cf99', userType: 'user', uid: 1000 }, // password
-    { username: 'guest', passwordHash: '084e0343a0486ff05530df6c705c8bb4', userType: 'guest', uid: 1001 }, // guest
+    { username: 'root', passwordHash: '4a080e0e088d55294ab894a02b5c8e3f', userType: 'root', uid: 0 }, // b4ckup2024
+    { username: 'ftpuser', passwordHash: 'be7a9d8e813210208cb7fba28717cda7', userType: 'user', uid: 1000 }, // tr4nsf3r
+    { username: 'guest', passwordHash: '294de3557d9d00b3d2d8a1e6aab028cf', userType: 'guest', uid: 1001 }, // anonymous
   ],
   rootContent: {
     '.bash_history': {
@@ -320,9 +320,9 @@ Contact: admin@fileserver.local
 
 const webserverConfig: MachineFileSystemConfig = {
   users: [
-    { username: 'root', passwordHash: '63a9f0ea7bb98050796b649e85481845', userType: 'root', uid: 0 }, // root
-    { username: 'www-data', passwordHash: 'a384b6463fc216a5f8ecb6670f86456a', userType: 'user', uid: 1000 }, // webmaster
-    { username: 'guest', passwordHash: '084e0343a0486ff05530df6c705c8bb4', userType: 'guest', uid: 1001 }, // guest
+    { username: 'root', passwordHash: 'a6f6c10dc3602b020c56ff49fb043ca9', userType: 'root', uid: 0 }, // r00tW3b!
+    { username: 'www-data', passwordHash: 'd2d8d0cdf38ea5a54439ffadf7597722', userType: 'user', uid: 1000 }, // d3v0ps2024
+    { username: 'guest', passwordHash: 'b2ce03aefab9060e1a42bd1aa1c571f6', userType: 'guest', uid: 1001 }, // w3lcome
   ],
   rootContent: {
     '.mysql_history': {
@@ -544,9 +544,9 @@ const webserverWithVar: FileNode = {
 
 const darknetConfig: MachineFileSystemConfig = {
   users: [
-    { username: 'root', passwordHash: '5f4dcc3b5aa765d61d8327deb882cf99', userType: 'root', uid: 0 }, // password
-    { username: 'ghost', passwordHash: '7c6a180b36896a65c3ccdc6e70b6b8f7', userType: 'user', uid: 1000 }, // fun123
-    { username: 'guest', passwordHash: '084e0343a0486ff05530df6c705c8bb4', userType: 'guest', uid: 1001 }, // guest
+    { username: 'root', passwordHash: '63d7f708b7feb9c0494c64dbfb087f83', userType: 'root', uid: 0 }, // d4rkn3tR00t
+    { username: 'ghost', passwordHash: 'd2aef0b37551aecfb067036d57f14930', userType: 'user', uid: 1000 }, // sp3ctr3
+    { username: 'guest', passwordHash: 'e5ec4133db0a2e088310e8ecb0ee51d7', userType: 'guest', uid: 1001 }, // sh4d0w
   ],
   rootContent: {
     'FINAL_FLAG.txt': {
