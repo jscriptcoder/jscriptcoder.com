@@ -617,6 +617,19 @@ Additional directories that require root access, providing incentive for escalat
 - [x] Verify hints are clear enough without being too obvious
 - [x] Update documentation (README, CLAUDE.md)
 
+### Phase 5: Filesystem Noise
+- [x] Localhost: /etc (hostname, hosts, crontab), ~/.bash_history, ~/.bashrc, ~/downloads/ (cheatsheet, todo)
+- [x] Localhost: /var/log/syslog
+- [x] Gateway: /etc (hostname, hosts, iptables.rules), guest ~/.bash_history
+- [x] Gateway: /var/log/firewall.log, /var/www/html/robots.txt, /var/www/html/css/style.css
+- [x] Fileserver: /etc (hostname, vsftpd.conf), /var/log/syslog
+- [x] Fileserver: FTP noise (CHANGELOG.txt, meeting_notes, tmp_data.csv)
+- [x] Webserver: /etc (hostname, apache2/apache2.conf, mysql/my.cnf)
+- [x] Webserver: /var/log/mysql.log, web noise (robots.txt, .htaccess, style.css), backup_manifest.txt
+- [x] Darknet: /etc (hostname, hosts with .onion entries)
+- [x] Darknet: ghost (bash_history, tools/port_scanner.py, tools/README.md), root .bash_history, cron.log
+- [x] Verified no noise file contains FLAG{} pattern
+
 ---
 
 ## Verified Playtest — Solutions Guide

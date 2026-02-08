@@ -312,11 +312,16 @@ The terminal includes a virtual Unix-like file system (`src/filesystem/`). Each 
 ├── home/
 │   └── [users]/    # Home directories for each user
 ├── etc/
-│   └── passwd      # User passwords (MD5 hashed)
+│   ├── passwd      # User passwords (MD5 hashed)
+│   ├── hostname    # Machine hostname
+│   ├── hosts       # Host-to-IP mappings
+│   └── [configs]   # Machine-specific configs (iptables, vsftpd, apache2, mysql)
 ├── var/
-│   └── log/        # Log files with hints
+│   └── log/        # Log files (auth.log, syslog, firewall.log, mysql.log, etc.)
 └── tmp/            # Temporary files (world writable)
 ```
+
+Each machine also includes noise files (dotfiles, configs, logs, web assets, red herrings) alongside CTF flag/hint files to create a realistic Linux environment. Noise files never contain `FLAG{` patterns.
 
 **Filesystem Factory** (`fileSystemFactory.ts`):
 ```typescript
@@ -324,6 +329,7 @@ const config: MachineFileSystemConfig = {
   users: [...],           // Users with password hashes
   rootContent: {...},     // Custom /root content
   varLogContent: {...},   // Log files with hints
+  etcExtraContent: {...}, // Extra /etc files (hostname, hosts, configs)
   extraDirectories: {...} // Machine-specific directories
 };
 const fs = createFileSystem(config);

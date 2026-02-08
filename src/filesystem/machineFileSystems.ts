@@ -44,6 +44,83 @@ NEXT STEPS:
    Hint: Use su("root") after figuring out the password.
 `,
   },
+  '.bash_history': {
+    name: '.bash_history',
+    type: 'file',
+    owner: 'user',
+    permissions: { read: ['root', 'user'], write: ['root', 'user'] },
+    content: `ls
+cd /etc
+cat passwd
+cd ~
+ifconfig
+ping 192.168.1.1
+nmap 192.168.1.0/24
+cat /var/log/auth.log
+ssh admin 192.168.1.1
+`,
+  },
+  '.bashrc': {
+    name: '.bashrc',
+    type: 'file',
+    owner: 'user',
+    permissions: { read: ['root', 'user'], write: ['root', 'user'] },
+    content: `# ~/.bashrc: executed by bash for non-login shells
+export PATH="/usr/local/bin:/usr/bin:/bin"
+export EDITOR=vim
+export LANG=en_US.UTF-8
+
+alias ll='ls -la'
+alias grep='grep --color=auto'
+
+# Custom prompt
+PS1='\\u@\\h:\\w\\$ '
+`,
+  },
+  downloads: {
+    name: 'downloads',
+    type: 'directory',
+    owner: 'user',
+    permissions: { read: ['root', 'user'], write: ['root', 'user'] },
+    children: {
+      'nmap_cheatsheet.txt': {
+        name: 'nmap_cheatsheet.txt',
+        type: 'file',
+        owner: 'user',
+        permissions: { read: ['root', 'user'], write: ['root', 'user'] },
+        content: `=== NMAP QUICK REFERENCE ===
+
+Host Discovery:
+  nmap 192.168.1.0/24     Scan entire subnet
+  nmap 192.168.1.1        Scan single host
+
+Common Ports:
+  21  FTP       22  SSH       80  HTTP
+  443 HTTPS     3306 MySQL    8080 HTTP-ALT
+
+Tips:
+  - Always start with a subnet scan to find live hosts
+  - Check for non-standard ports (4444, 31337, etc.)
+  - FTP servers sometimes allow anonymous access
+`,
+      },
+      'todo.txt': {
+        name: 'todo.txt',
+        type: 'file',
+        owner: 'user',
+        permissions: { read: ['root', 'user'], write: ['root', 'user'] },
+        content: `TODO
+====
+[x] Set up dev environment
+[x] Configure network interfaces
+[ ] Check gateway for misconfigurations
+[ ] Scan full network range
+[ ] Investigate that weird darknet traffic in the logs
+[ ] Update passwords (they're too weak!)
+`,
+      },
+    },
+  },
 };
 
 const localhostConfig: MachineFileSystemConfig = {
@@ -53,6 +130,42 @@ const localhostConfig: MachineFileSystemConfig = {
     { username: 'guest', passwordHash: '0fb9cbecb7b8881511c69c39db643e8c', userType: 'guest', uid: 1001 }, // guestpass
   ],
   passwdReadableBy: ['root', 'user'],
+  etcExtraContent: {
+    hostname: {
+      name: 'hostname',
+      type: 'file',
+      owner: 'root',
+      permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+      content: 'jshack-dev\n',
+    },
+    hosts: {
+      name: 'hosts',
+      type: 'file',
+      owner: 'root',
+      permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+      content: `127.0.0.1       localhost
+192.168.1.1     gateway.local
+192.168.1.50    fileserver.local
+192.168.1.75    webserver.local
+192.168.1.100   jshack-dev
+`,
+    },
+    crontab: {
+      name: 'crontab',
+      type: 'file',
+      owner: 'root',
+      permissions: { read: ['root'], write: ['root'] },
+      content: `# /etc/crontab: system-wide crontab
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+# m h dom mon dow user  command
+0 2 * * *   root    /usr/local/bin/backup.sh
+0 4 * * 0   root    /usr/sbin/logrotate /etc/logrotate.conf
+*/15 * * * * root   /usr/bin/check_services.sh
+`,
+    },
+  },
   // FLAG 3: Root-only flag
   rootContent: {
     'flag.txt': {
@@ -87,6 +200,21 @@ Mar 16 03:15:00 localhost sshd[2510]: Failed password for root from 203.0.113.42
 Mar 16 03:15:05 localhost sshd[2510]: Failed password for root from 203.0.113.42
 `,
     },
+    syslog: {
+      name: 'syslog',
+      type: 'file',
+      owner: 'root',
+      permissions: { read: ['root', 'user'], write: ['root'] },
+      content: `Mar 15 08:29:50 localhost kernel: [    0.000000] Linux version 5.15.0-91-generic
+Mar 15 08:29:51 localhost systemd[1]: Started Journal Service.
+Mar 15 08:29:52 localhost systemd[1]: Starting Network Manager...
+Mar 15 08:29:53 localhost NetworkManager[845]: <info> NetworkManager is starting
+Mar 15 08:29:55 localhost systemd[1]: Started OpenSSH server daemon.
+Mar 15 08:29:56 localhost systemd[1]: Reached target Multi-User System.
+Mar 15 08:30:00 localhost CRON[2500]: (root) CMD (/usr/local/bin/backup.sh)
+Mar 16 08:30:00 localhost CRON[3100]: (root) CMD (/usr/local/bin/backup.sh)
+`,
+    },
   },
 };
 
@@ -94,11 +222,66 @@ Mar 16 03:15:05 localhost sshd[2510]: Failed password for root from 203.0.113.42
 // GATEWAY (192.168.1.1)
 // ============================================================================
 
+const gatewayGuestHome: Readonly<Record<string, FileNode>> = {
+  '.bash_history': {
+    name: '.bash_history',
+    type: 'file',
+    owner: 'guest',
+    permissions: { read: ['root', 'user', 'guest'], write: ['root', 'guest'] },
+    content: `ls
+pwd
+cat /etc/passwd
+ls /var/log
+`,
+  },
+};
+
 const gatewayConfig: MachineFileSystemConfig = {
   users: [
     { username: 'admin', passwordHash: 'dab569cb96513965ca00379d69b2f40c', userType: 'root', uid: 0 }, // n3tgu4rd!
-    { username: 'guest', passwordHash: 'dbf0171774108c80c94819b1ce0dbd9b', userType: 'guest', uid: 1001 }, // guest2024
+    { username: 'guest', passwordHash: 'dbf0171774108c80c94819b1ce0dbd9b', userType: 'guest', uid: 1001, homeContent: gatewayGuestHome }, // guest2024
   ],
+  etcExtraContent: {
+    hostname: {
+      name: 'hostname',
+      type: 'file',
+      owner: 'root',
+      permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+      content: 'gateway\n',
+    },
+    hosts: {
+      name: 'hosts',
+      type: 'file',
+      owner: 'root',
+      permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+      content: `127.0.0.1       localhost
+192.168.1.1     gateway gateway.local
+192.168.1.50    fileserver.local
+192.168.1.75    webserver.local
+192.168.1.100   jshack-dev
+`,
+    },
+    'iptables.rules': {
+      name: 'iptables.rules',
+      type: 'file',
+      owner: 'root',
+      permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+      content: `# Generated by iptables-save v1.8.7
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+-A INPUT -i lo -j ACCEPT
+-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+-A INPUT -p tcp --dport 22 -j ACCEPT
+-A INPUT -p tcp --dport 80 -j ACCEPT
+-A INPUT -p tcp --dport 443 -j ACCEPT
+-A INPUT -p icmp --icmp-type echo-request -j ACCEPT
+-A INPUT -j DROP
+COMMIT
+`,
+    },
+  },
   rootContent: {
     // FLAG 5: Root flag on gateway
     'flag.txt': {
@@ -159,6 +342,19 @@ Mar 12 03:00:01 gateway sshd[1250]: session opened for admin
 Mar 13 11:00:00 gateway sshd[1260]: Connection from 192.168.1.50 port 22
 `,
             },
+            'firewall.log': {
+              name: 'firewall.log',
+              type: 'file',
+              owner: 'root',
+              permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+              content: `Mar 10 00:05:12 gateway kernel: DROP IN=eth0 SRC=45.33.32.156 DST=192.168.1.1 PROTO=TCP DPT=23
+Mar 10 01:22:45 gateway kernel: DROP IN=eth0 SRC=185.220.101.34 DST=192.168.1.1 PROTO=TCP DPT=3389
+Mar 10 03:14:00 gateway kernel: DROP IN=eth0 SRC=91.240.118.50 DST=192.168.1.1 PROTO=TCP DPT=445
+Mar 11 06:30:22 gateway kernel: DROP IN=eth0 SRC=203.0.113.42 DST=192.168.1.1 PROTO=TCP DPT=8080
+Mar 11 14:22:08 gateway kernel: DROP IN=eth0 SRC=203.0.113.42 DST=192.168.1.1 PROTO=TCP DPT=4444
+Mar 12 09:00:00 gateway kernel: ACCEPT IN=eth1 SRC=192.168.1.75 DST=192.168.1.1 PROTO=TCP DPT=80
+`,
+            },
           },
         },
         www: {
@@ -215,6 +411,39 @@ Mar 13 11:00:00 gateway sshd[1260]: Connection from 192.168.1.50 port 22
 </html>
 `,
                 },
+                'robots.txt': {
+                  name: 'robots.txt',
+                  type: 'file',
+                  owner: 'root',
+                  permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+                  content: `User-agent: *
+Disallow: /admin.html
+Disallow: /backup/
+Disallow: /config/
+`,
+                },
+                css: {
+                  name: 'css',
+                  type: 'directory',
+                  owner: 'root',
+                  permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+                  children: {
+                    'style.css': {
+                      name: 'style.css',
+                      type: 'file',
+                      owner: 'root',
+                      permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+                      content: `/* NetGuard Router UI */
+body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+table { border-collapse: collapse; width: 100%; }
+td { padding: 8px; border: 1px solid #ddd; }
+.status-ok { color: #27ae60; }
+.status-warn { color: #e67e22; }
+`,
+                    },
+                  },
+                },
               },
             },
           },
@@ -234,6 +463,36 @@ const fileserverConfig: MachineFileSystemConfig = {
     { username: 'ftpuser', passwordHash: 'be7a9d8e813210208cb7fba28717cda7', userType: 'user', uid: 1000 }, // tr4nsf3r
     { username: 'guest', passwordHash: '294de3557d9d00b3d2d8a1e6aab028cf', userType: 'guest', uid: 1001 }, // anonymous
   ],
+  etcExtraContent: {
+    hostname: {
+      name: 'hostname',
+      type: 'file',
+      owner: 'root',
+      permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+      content: 'fileserver\n',
+    },
+    'vsftpd.conf': {
+      name: 'vsftpd.conf',
+      type: 'file',
+      owner: 'root',
+      permissions: { read: ['root', 'user'], write: ['root'] },
+      content: `# vsftpd configuration file
+listen=YES
+listen_port=21
+anonymous_enable=YES
+local_enable=YES
+write_enable=YES
+anon_root=/srv/ftp/public
+local_root=/srv/ftp
+chroot_local_user=YES
+pasv_enable=YES
+pasv_min_port=10000
+pasv_max_port=10100
+xferlog_enable=YES
+xferlog_file=/var/log/vsftpd.log
+`,
+    },
+  },
   // HINT: FTP activity log
   varLogContent: {
     'vsftpd.log': {
@@ -247,6 +506,19 @@ Wed Mar 10 10:15:10 2024 [pid 1001] [ftpuser] OK DOWNLOAD: Client "192.168.1.100
 Wed Mar 10 10:20:00 2024 [pid 1002] [ftpuser] OK UPLOAD: Client "192.168.1.75", "/srv/ftp/uploads/db_dump.sql"
 Thu Mar 11 02:00:00 2024 [pid 1010] CONNECT: Client "203.0.113.42"
 Thu Mar 11 02:00:05 2024 [pid 1010] FAIL LOGIN: Client "203.0.113.42", user "anonymous"
+`,
+    },
+    syslog: {
+      name: 'syslog',
+      type: 'file',
+      owner: 'root',
+      permissions: { read: ['root', 'user'], write: ['root'] },
+      content: `Mar 10 08:00:00 fileserver systemd[1]: Starting vsftpd FTP server...
+Mar 10 08:00:01 fileserver vsftpd[890]: Listening on port 21
+Mar 10 08:00:02 fileserver systemd[1]: Started vsftpd FTP server.
+Mar 10 08:00:05 fileserver systemd[1]: Starting OpenSSH server...
+Mar 10 08:00:06 fileserver systemd[1]: Started OpenSSH server.
+Mar 11 04:00:00 fileserver CRON[2100]: (root) CMD (/usr/bin/find /srv/ftp/uploads -mtime +30 -delete)
 `,
     },
   },
@@ -287,6 +559,29 @@ Service accounts:
 For admin access, contact root.
 `,
                 },
+                'CHANGELOG.txt': {
+                  name: 'CHANGELOG.txt',
+                  type: 'file',
+                  owner: 'root',
+                  permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+                  content: `FileServer CHANGELOG
+====================
+
+v2.1.0 (2024-03-01)
+  - Upgraded vsftpd to 3.0.5
+  - Added passive mode support
+  - Increased upload limit to 100MB
+
+v2.0.0 (2024-01-15)
+  - Migrated from ProFTPD to vsftpd
+  - New directory structure (/srv/ftp)
+  - Added anonymous access for public/
+
+v1.0.0 (2023-06-01)
+  - Initial deployment
+  - Basic FTP with local users only
+`,
+                },
               },
             },
             uploads: {
@@ -310,6 +605,39 @@ Encryption key was split — part 1 is in the webserver binary at /opt/tools/sca
 The key file will be needed for decryption.
 
 Webserver SSH accepts default guest credentials.
+`,
+                },
+                'meeting_notes_2024.txt': {
+                  name: 'meeting_notes_2024.txt',
+                  type: 'file',
+                  owner: 'user',
+                  permissions: { read: ['root', 'user'], write: ['root', 'user'] },
+                  content: `Team Standup — March 2024
+=========================
+
+Attendees: admin, www-data, ftpuser
+
+Action Items:
+- [admin] Review firewall rules on gateway
+- [www-data] Deploy new portal update by Friday
+- [ftpuser] Clean up old uploads directory
+- [admin] Schedule quarterly password rotation
+- [www-data] Fix Apache config warnings
+
+Next meeting: April 1, 2024
+`,
+                },
+                'tmp_data.csv': {
+                  name: 'tmp_data.csv',
+                  type: 'file',
+                  owner: 'user',
+                  permissions: { read: ['root', 'user'], write: ['root', 'user'] },
+                  content: `timestamp,source_ip,dest_ip,bytes,protocol
+2024-03-10T10:00:00,192.168.1.100,192.168.1.75,4520,TCP
+2024-03-10T10:05:00,192.168.1.75,192.168.1.50,12800,TCP
+2024-03-10T10:10:00,192.168.1.1,192.168.1.100,890,ICMP
+2024-03-10T10:15:00,203.0.113.42,192.168.1.75,33200,TCP
+2024-03-10T10:20:00,192.168.1.50,192.168.1.1,1200,TCP
 `,
                 },
               },
@@ -380,6 +708,74 @@ const webserverConfig: MachineFileSystemConfig = {
     { username: 'www-data', passwordHash: 'd2d8d0cdf38ea5a54439ffadf7597722', userType: 'user', uid: 1000 }, // d3v0ps2024
     { username: 'guest', passwordHash: 'b2ce03aefab9060e1a42bd1aa1c571f6', userType: 'guest', uid: 1001 }, // w3lcome
   ],
+  etcExtraContent: {
+    hostname: {
+      name: 'hostname',
+      type: 'file',
+      owner: 'root',
+      permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+      content: 'webserver\n',
+    },
+    apache2: {
+      name: 'apache2',
+      type: 'directory',
+      owner: 'root',
+      permissions: { read: ['root', 'user'], write: ['root'] },
+      children: {
+        'apache2.conf': {
+          name: 'apache2.conf',
+          type: 'file',
+          owner: 'root',
+          permissions: { read: ['root', 'user'], write: ['root'] },
+          content: `# Apache2 Configuration
+ServerRoot "/etc/apache2"
+Listen 80
+ServerName webserver.local
+DocumentRoot "/var/www/html"
+
+<Directory "/var/www/html">
+    Options Indexes FollowSymLinks
+    AllowOverride All
+    Require all granted
+</Directory>
+
+<Directory "/var/www/backups">
+    Require all denied
+</Directory>
+
+ErrorLog /var/log/error.log
+CustomLog /var/log/access.log combined
+`,
+        },
+      },
+    },
+    mysql: {
+      name: 'mysql',
+      type: 'directory',
+      owner: 'root',
+      permissions: { read: ['root', 'user'], write: ['root'] },
+      children: {
+        'my.cnf': {
+          name: 'my.cnf',
+          type: 'file',
+          owner: 'root',
+          permissions: { read: ['root', 'user'], write: ['root'] },
+          content: `# MySQL Configuration
+[mysqld]
+datadir=/var/lib/mysql
+socket=/var/run/mysqld/mysqld.sock
+port=3306
+bind-address=127.0.0.1
+max_connections=100
+innodb_buffer_pool_size=256M
+log_error=/var/log/mysql.log
+general_log=1
+general_log_file=/var/log/mysql.log
+`,
+        },
+      },
+    },
+  },
   extraDirectories: {
     opt: {
       name: 'opt',
@@ -466,6 +862,20 @@ Pass: sh4d0w
 [error] Backup script failed — check /var/www/backups/
 `,
             },
+            'mysql.log': {
+              name: 'mysql.log',
+              type: 'file',
+              owner: 'root',
+              permissions: { read: ['root', 'user'], write: ['root'] },
+              content: `2024-03-10T08:00:00.000000Z 0 [System] mysqld: ready for connections. Version: '5.7.42'
+2024-03-10T10:00:15.123456Z 12 [Query] SELECT * FROM sessions WHERE expires > NOW()
+2024-03-10T10:05:22.654321Z 12 [Query] UPDATE users SET last_login = NOW() WHERE id = 2
+2024-03-10T10:10:00.000000Z 15 [Query] SELECT COUNT(*) FROM access_log
+2024-03-10T12:30:45.789012Z 18 [Query] INSERT INTO sessions (token, user_id, expires) VALUES (...)
+2024-03-11T04:00:00.000000Z 0 [System] mysqld: Shutdown complete
+2024-03-11T04:00:05.000000Z 0 [System] mysqld: ready for connections. Version: '5.7.42'
+`,
+            },
           },
         },
         www: {
@@ -503,6 +913,48 @@ Pass: sh4d0w
 </html>
 `,
                 },
+                'robots.txt': {
+                  name: 'robots.txt',
+                  type: 'file',
+                  owner: 'root',
+                  permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+                  content: `User-agent: *
+Disallow: /admin/
+Disallow: /api/
+Disallow: /backups/
+Sitemap: http://webserver.local/sitemap.xml
+`,
+                },
+                '.htaccess': {
+                  name: '.htaccess',
+                  type: 'file',
+                  owner: 'root',
+                  permissions: { read: ['root', 'user'], write: ['root'] },
+                  content: `RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ /index.html [L]
+
+# Security headers
+Header set X-Content-Type-Options "nosniff"
+Header set X-Frame-Options "SAMEORIGIN"
+Header set X-XSS-Protection "1; mode=block"
+`,
+                },
+                'style.css': {
+                  name: 'style.css',
+                  type: 'file',
+                  owner: 'root',
+                  permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+                  content: `/* TechCorp Internal Portal */
+:root { --primary: #1a5276; --accent: #2ecc71; --bg: #ecf0f1; }
+body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; }
+.header { background: var(--primary); color: white; padding: 1rem 2rem; }
+.nav a { color: #85c1e9; margin-right: 1rem; text-decoration: none; }
+.content { padding: 2rem; max-width: 960px; margin: 0 auto; }
+.alert { background: #f9e79f; padding: 10px; border-left: 4px solid #f1c40f; }
+`,
+                },
               },
             },
             backups: {
@@ -518,6 +970,25 @@ Pass: sh4d0w
                   owner: 'root',
                   permissions: { read: ['root', 'user'], write: ['root'] },
                   content: encryptedIntel,
+                },
+                'backup_manifest.txt': {
+                  name: 'backup_manifest.txt',
+                  type: 'file',
+                  owner: 'root',
+                  permissions: { read: ['root', 'user'], write: ['root'] },
+                  content: `Backup Manifest — TechCorp Webserver
+=====================================
+
+Date        File                    Size     Status
+2024-03-10  db_backup.sql           2.4 KB   OK
+2024-03-10  encrypted_intel.enc     0.5 KB   OK (encrypted)
+2024-03-03  db_backup_old.sql       2.1 KB   ARCHIVED
+2024-02-24  site_backup.tar.gz      45.2 MB  ARCHIVED
+
+Schedule: Daily at 02:00 UTC
+Retention: 30 days
+Encryption: AES-256-GCM (key stored separately)
+`,
                 },
                 // HINT: Database dump reveals root password
                 'db_backup.sql': {
@@ -591,6 +1062,76 @@ The key is in /root/keyfile.txt.
 Check the logs to find root's password.
 `,
   },
+  '.bash_history': {
+    name: '.bash_history',
+    type: 'file',
+    owner: 'user',
+    permissions: { read: ['root', 'user'], write: ['root', 'user'] },
+    content: `nmap -sV 192.168.1.0/24
+ssh www-data@192.168.1.75
+cat /opt/tools/.backdoor_log
+nc 192.168.1.75 4444
+python3 tools/port_scanner.py 192.168.1.75
+ls -la /var/log
+cat /var/log/auth.log
+su root
+`,
+  },
+  tools: {
+    name: 'tools',
+    type: 'directory',
+    owner: 'user',
+    permissions: { read: ['root', 'user'], write: ['root', 'user'] },
+    children: {
+      'port_scanner.py': {
+        name: 'port_scanner.py',
+        type: 'file',
+        owner: 'user',
+        permissions: { read: ['root', 'user'], write: ['root', 'user'] },
+        content: `#!/usr/bin/env python3
+"""Simple port scanner - ghost's toolkit"""
+import socket
+import sys
+
+def scan(target, ports=range(1, 1024)):
+    print(f"Scanning {target}...")
+    for port in ports:
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(0.5)
+            result = s.connect_ex((target, port))
+            if result == 0:
+                print(f"  Port {port}: OPEN")
+            s.close()
+        except:
+            pass
+
+if __name__ == "__main__":
+    target = sys.argv[1] if len(sys.argv) > 1 else "127.0.0.1"
+    scan(target)
+`,
+      },
+      'README.md': {
+        name: 'README.md',
+        type: 'file',
+        owner: 'user',
+        permissions: { read: ['root', 'user'], write: ['root', 'user'] },
+        content: `# Ghost's Toolkit
+
+Collection of recon and exploitation scripts.
+
+## Tools
+- port_scanner.py — TCP port scanner
+- More tools available on the C2 server
+
+## Notes
+- Webserver backdoor on port 4444 (www-data)
+- Local backdoor on port 31337
+- Always clean logs after access
+`,
+      },
+    },
+  },
 };
 
 const darknetConfig: MachineFileSystemConfig = {
@@ -599,6 +1140,27 @@ const darknetConfig: MachineFileSystemConfig = {
     { username: 'ghost', passwordHash: 'd2aef0b37551aecfb067036d57f14930', userType: 'user', uid: 1000, homeContent: ghostHome }, // sp3ctr3
     { username: 'guest', passwordHash: 'e5ec4133db0a2e088310e8ecb0ee51d7', userType: 'guest', uid: 1001 }, // sh4d0w
   ],
+  etcExtraContent: {
+    hostname: {
+      name: 'hostname',
+      type: 'file',
+      owner: 'root',
+      permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+      content: 'darknet\n',
+    },
+    hosts: {
+      name: 'hosts',
+      type: 'file',
+      owner: 'root',
+      permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+      content: `127.0.0.1       localhost darknet
+203.0.113.42    darknet.ctf www.darknet.ctf
+10.66.66.1      shadow.onion
+10.66.66.2      void.onion
+10.66.66.3      abyss.onion
+`,
+    },
+  },
   // Key for FLAG 12 decryption
   rootContent: {
     'keyfile.txt': {
@@ -610,6 +1172,19 @@ const darknetConfig: MachineFileSystemConfig = {
 # Use with: decrypt("/home/ghost/.encrypted_flag.enc", key)
 
 82eab922d375a8022d7659b58559e59026dbff2768110073a6c3699a15699eda
+`,
+    },
+    '.bash_history': {
+      name: '.bash_history',
+      type: 'file',
+      owner: 'root',
+      permissions: { read: ['root'], write: ['root'] },
+      content: `systemctl restart tor
+iptables -L -n
+cat /var/log/auth.log
+ls /home/ghost
+cat /home/ghost/.notes
+systemctl status encrypted-services
 `,
     },
   },
@@ -652,6 +1227,19 @@ Mar 10 00:00:01 darknet systemd: Starting encrypted services...
 Mar 11 03:33:33 darknet ???: VGhlIHNoYWRvd3Mga25vdyB5b3VyIG5hbWU=
 Mar 11 03:33:34 darknet ???: Q29uZ3JhdHVsYXRpb25zIG9uIG1ha2luZyBpdCB0aGlzIGZhcg==
 Mar 12 06:66:66 darknet ???: Connection from the void accepted
+`,
+            },
+            'cron.log': {
+              name: 'cron.log',
+              type: 'file',
+              owner: 'root',
+              permissions: { read: ['root', 'user'], write: ['root'] },
+              content: `Mar 10 00:00:00 darknet CRON[100]: (root) CMD (/opt/encrypted-services/rotate.sh)
+Mar 10 06:00:00 darknet CRON[200]: (root) CMD (/usr/bin/find /tmp -mtime +1 -delete)
+Mar 10 12:00:00 darknet CRON[300]: (ghost) CMD (/home/ghost/tools/port_scanner.py 192.168.1.75)
+Mar 11 00:00:00 darknet CRON[400]: (root) CMD (/opt/encrypted-services/rotate.sh)
+Mar 11 06:00:00 darknet CRON[500]: (root) CMD (/usr/bin/find /tmp -mtime +1 -delete)
+Mar 12 00:00:00 darknet CRON[600]: (root) CMD (/opt/encrypted-services/rotate.sh)
 `,
             },
           },

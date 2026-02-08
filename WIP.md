@@ -28,11 +28,19 @@ Step 13 of 14: Victory tracking
 ## Recent Session (2026-02-09)
 
 Implemented:
-- **CTF redesign Phase 1-4**: Complete flag system overhaul
+- **CTF redesign Phase 1-5**: Complete flag system overhaul
   - Phase 1: Command restrictions by user type (guest/user/root tiers)
   - Phase 2: 12 flag files, encrypted files (AES-256-GCM), binary for strings, hint files
   - Phase 3: Web content for all machines (gateway, webserver, darknet)
   - Phase 4: Playtest, fix FTP/NC ls hidden file consistency, update docs
+  - Phase 5: Filesystem noise for realism (configs, logs, dotfiles, red herrings across all 5 machines)
+- **Filesystem noise**: Added ~35 noise files across all machines
+  - /etc files: hostname, hosts, crontab, iptables.rules, vsftpd.conf, apache2.conf, my.cnf
+  - Home dotfiles: .bash_history, .bashrc on localhost; .bash_history on gateway guest, darknet ghost/root
+  - Logs: syslog, firewall.log, mysql.log, cron.log
+  - Web assets: robots.txt, .htaccess, style.css on gateway and webserver
+  - Red herrings: nmap_cheatsheet.txt, todo.txt, meeting_notes, tmp_data.csv, backup_manifest.txt
+  - Darknet flavor: ghost tools/ with port_scanner.py, /etc/hosts with .onion entries
 - **FTP/NC ls hidden file support**: Added `-a` flag to show dotfiles (consistent with regular ls)
 - **Test count**: 604 tests across 36 colocated files
 
