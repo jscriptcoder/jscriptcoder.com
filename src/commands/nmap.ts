@@ -2,11 +2,11 @@ import type { Command, AsyncOutput } from '../components/Terminal/types';
 import type { RemoteMachine } from '../network/types';
 import { isValidIP, parseIPRange } from '../utils/network';
 
-interface NmapContext {
+type NmapContext = {
   readonly getMachine: (ip: string) => RemoteMachine | undefined;
   readonly getMachines: () => readonly RemoteMachine[];
   readonly getLocalIP: () => string;
-}
+};
 
 // Delay constants for realistic scanning simulation
 const SCAN_DELAY_MS = 150; // Delay per IP in range scan

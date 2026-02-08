@@ -2,11 +2,11 @@ import type { Command, AsyncOutput } from '../components/Terminal/types';
 import type { RemoteMachine } from '../network/types';
 import { isValidIP } from '../utils/network';
 
-interface PingContext {
+type PingContext = {
   readonly getMachine: (ip: string) => RemoteMachine | undefined;
   readonly getMachines: () => readonly RemoteMachine[];
   readonly getLocalIP: () => string;
-}
+};
 
 const generateLatency = (): number => {
   // Generate realistic LAN latency (0.5ms to 5ms)

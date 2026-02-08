@@ -3,16 +3,16 @@ import { useSession } from '../../session/SessionContext';
 
 type PromptMode = 'username' | 'password';
 
-interface TerminalInputProps {
-  value: string;
-  onChange: (value: string) => void;
-  onSubmit: () => void;
-  onHistoryUp: () => void;
-  onHistoryDown: () => void;
-  onTab: () => void;
-  promptMode?: PromptMode;
-  disabled?: boolean;
-}
+type TerminalInputProps = {
+  readonly value: string;
+  readonly onChange: (value: string) => void;
+  readonly onSubmit: () => void;
+  readonly onHistoryUp: () => void;
+  readonly onHistoryDown: () => void;
+  readonly onTab: () => void;
+  readonly promptMode?: PromptMode;
+  readonly disabled?: boolean;
+};
 
 export const TerminalInput = ({
   value,

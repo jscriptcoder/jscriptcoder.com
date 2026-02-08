@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useCallback, type ReactNode } from
 import type { NetworkConfig, NetworkInterface, RemoteMachine, DnsRecord } from './types';
 import { createInitialNetwork } from './initialNetwork';
 
-interface NetworkContextType {
+type NetworkContextType = {
   readonly config: NetworkConfig;
   readonly getInterface: (name: string) => NetworkInterface | undefined;
   readonly getInterfaces: () => readonly NetworkInterface[];
@@ -12,7 +12,7 @@ interface NetworkContextType {
   readonly getLocalIP: () => string;
   readonly resolveDomain: (domain: string) => DnsRecord | undefined;
   readonly getDnsRecords: () => readonly DnsRecord[];
-}
+};
 
 const NetworkContext = createContext<NetworkContextType | null>(null);
 

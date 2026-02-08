@@ -2,12 +2,12 @@ import type { Command } from '../components/Terminal/types';
 import type { UserType } from '../session/SessionContext';
 import type { FileNode } from '../filesystem/types';
 
-interface LsContext {
-  getCurrentPath: () => string;
-  resolvePath: (path: string) => string;
-  getNode: (path: string) => FileNode | null;
-  getUserType: () => UserType;
-}
+type LsContext = {
+  readonly getCurrentPath: () => string;
+  readonly resolvePath: (path: string) => string;
+  readonly getNode: (path: string) => FileNode | null;
+  readonly getUserType: () => UserType;
+};
 
 export const createLsCommand = (context: LsContext): Command => ({
   name: 'ls',
@@ -31,22 +31,9 @@ export const createLsCommand = (context: LsContext): Command => ({
     const { getCurrentPath, resolvePath, getNode, getUserType } = context;
 
     // Parse arguments - can be path, options, or both in any order
-    let path: string | undefined;
-    let showAll = false;
-
-    for (const arg of args) {
-      if (typeof arg === 'string') {
-        if (arg.startsWith('-')) {
-          // It's an option
-          if (arg.includes('a')) {
-            showAll = true;
-          }
-        } else {
-          // It's a path
-          path = arg;
-        }
-      }
-    }
+    const stringArgs = args.filter((arg): arg is string => typeof arg === 'string');
+    const showAll = stringArgs.some((arg) => arg.startsWith('-') && arg.includes('a'));
+    const path = stringArgs.find((arg) => !arg.startsWith('-'));
 
     const userType = getUserType();
     const targetPath = path ? resolvePath(path) : getCurrentPath();

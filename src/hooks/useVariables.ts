@@ -23,13 +23,10 @@ const REASSIGNMENT = /^([a-zA-Z_$][a-zA-Z0-9_$]*)\s*=\s*(.+)$/;
 export const useVariables = () => {
   const [variables, setVariables] = useState<VariableStore>({});
 
-  const getVariables = useCallback((): Record<string, unknown> => {
-    const result: Record<string, unknown> = {};
-    for (const [name, variable] of Object.entries(variables)) {
-      result[name] = variable.value;
-    }
-    return result;
-  }, [variables]);
+  const getVariables = useCallback((): Record<string, unknown> =>
+    Object.fromEntries(
+      Object.entries(variables).map(([name, variable]) => [name, variable.value])
+    ), [variables]);
 
   const getVariableNames = useCallback((): string[] => {
     return Object.keys(variables);

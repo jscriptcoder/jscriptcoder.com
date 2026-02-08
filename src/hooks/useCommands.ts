@@ -65,10 +65,10 @@ export const useCommands = (): UseCommandsResult => {
     commands.set('man', manCommand);
 
     // Build execution context
-    const executionContext: Record<string, (...args: unknown[]) => unknown> = {};
-    commands.forEach((cmd, name) => {
-      executionContext[name] = cmd.fn;
-    });
+    const executionContext: Record<string, (...args: unknown[]) => unknown> =
+      Object.fromEntries(
+        Array.from(commands.entries()).map(([name, cmd]) => [name, cmd.fn])
+      );
 
     // Get command names for autocomplete
     const commandNames = Array.from(commands.keys());

@@ -1,10 +1,10 @@
 import type { Command } from '../components/Terminal/types';
 import type { NetworkInterface } from '../network/types';
 
-interface IfconfigContext {
+type IfconfigContext = {
   readonly getInterfaces: () => readonly NetworkInterface[];
   readonly getInterface: (name: string) => NetworkInterface | undefined;
-}
+};
 
 const formatInterface = (iface: NetworkInterface): string => {
   const flags = iface.flags.join(',');

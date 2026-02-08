@@ -1,10 +1,10 @@
 import type { Command, AsyncOutput } from '../components/Terminal/types';
 import type { DnsRecord } from '../network/types';
 
-interface NslookupContext {
-  resolveDomain: (domain: string) => DnsRecord | undefined;
-  getGateway: () => string;
-}
+type NslookupContext = {
+  readonly resolveDomain: (domain: string) => DnsRecord | undefined;
+  readonly getGateway: () => string;
+};
 
 // Delay to simulate DNS lookup
 const DNS_LOOKUP_DELAY_MS = 600;

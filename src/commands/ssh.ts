@@ -1,10 +1,10 @@
 import type { Command, AsyncOutput, SshPromptData } from '../components/Terminal/types';
 import type { RemoteMachine } from '../network/types';
 
-interface SshContext {
-  getMachine: (ip: string) => RemoteMachine | undefined;
-  getLocalIP: () => string;
-}
+type SshContext = {
+  readonly getMachine: (ip: string) => RemoteMachine | undefined;
+  readonly getLocalIP: () => string;
+};
 
 // Delays for SSH connection simulation
 const SSH_CONNECT_DELAY_MS = 800;

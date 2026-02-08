@@ -1,8 +1,8 @@
 import type { OutputLine, AuthorData } from './types';
 
-interface TerminalOutputProps {
-  lines: OutputLine[];
-}
+type TerminalOutputProps = {
+  readonly lines: readonly OutputLine[];
+};
 
 const AuthorCard = ({ data }: { data: AuthorData }) => (
   <div className="flex items-start gap-6 py-4 pl-4 max-w-3xl">

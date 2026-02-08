@@ -2,13 +2,13 @@ import type { Command } from '../components/Terminal/types';
 import type { UserType } from '../session/SessionContext';
 import type { FileNode } from '../filesystem/types';
 
-interface CdContext {
-  resolvePath: (path: string) => string;
-  getNode: (path: string) => FileNode | null;
-  setCurrentPath: (path: string) => void;
-  getUserType: () => UserType;
-  getHomePath: () => string;
-}
+type CdContext = {
+  readonly resolvePath: (path: string) => string;
+  readonly getNode: (path: string) => FileNode | null;
+  readonly setCurrentPath: (path: string) => void;
+  readonly getUserType: () => UserType;
+  readonly getHomePath: () => string;
+};
 
 export const createCdCommand = (context: CdContext): Command => ({
   name: 'cd',
