@@ -177,7 +177,7 @@ npm run test:coverage # Run tests with coverage
 
 ### Test Coverage
 
-604 unit tests across 36 colocated test files covering terminal commands, hooks, components, and utilities.
+632 unit tests across 38 colocated test files covering terminal commands, hooks, components, utilities, and persistence.
 
 ## Project Structure
 
@@ -189,6 +189,7 @@ src/
 ├── network/                # Network simulation
 ├── hooks/                  # Custom React hooks
 ├── commands/               # Terminal commands
+├── utils/                  # Utilities (crypto, storage, network)
 └── App.tsx                 # Root component
 ```
 

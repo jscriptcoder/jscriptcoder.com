@@ -1,4 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
+import { getCachedSessionState, getDatabase } from '../utils/storageCache';
+import { saveSessionState } from '../utils/storage';
 
 export type UserType = 'root' | 'user' | 'guest';
 
@@ -38,9 +40,7 @@ export type NcSession = {
 
 // --- Persistence ---
 
-const STORAGE_KEY = 'jshack-session';
-
-type PersistedState = {
+export type PersistedState = {
   readonly session: Session;
   readonly sessionStack: readonly SessionSnapshot[];
   readonly ftpSession: FtpSession | null;
@@ -83,7 +83,7 @@ const isValidNcSession = (value: unknown): value is NcSession =>
   typeof (value as NcSession).currentPath === 'string' &&
   isValidUserType((value as NcSession).userType);
 
-const isValidPersistedState = (value: unknown): value is PersistedState =>
+export const isValidPersistedState = (value: unknown): value is PersistedState =>
   typeof value === 'object' &&
   value !== null &&
   isValidSession((value as PersistedState).session) &&
@@ -94,28 +94,6 @@ const isValidPersistedState = (value: unknown): value is PersistedState =>
   ((value as PersistedState).ncSession === null ||
     (value as PersistedState).ncSession === undefined ||
     isValidNcSession((value as PersistedState).ncSession));
-
-const loadPersistedState = (): PersistedState | null => {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (!stored) return null;
-
-    const parsed: unknown = JSON.parse(stored);
-    if (!isValidPersistedState(parsed)) return null;
-
-    return parsed;
-  } catch {
-    return null;
-  }
-};
-
-const savePersistedState = (state: PersistedState): void => {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  } catch {
-    // Ignore storage errors (quota exceeded, etc.)
-  }
-};
 
 type SessionContextValue = {
   readonly session: Session;
@@ -152,7 +130,7 @@ const defaultSession: Session = {
 const SessionContext = createContext<SessionContextValue | null>(null);
 
 const getInitialState = (): PersistedState => {
-  const persisted = loadPersistedState();
+  const persisted = getCachedSessionState();
   if (persisted) return { ...persisted, ncSession: persisted.ncSession ?? null };
   return {
     session: defaultSession,
@@ -169,9 +147,12 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
   const [ftpSession, setFtpSession] = useState<FtpSession | null>(initialState.ftpSession);
   const [ncSession, setNcSession] = useState<NcSession | null>(initialState.ncSession);
 
-  // Persist state changes to localStorage
+  // Persist state changes to IndexedDB
   useEffect(() => {
-    savePersistedState({ session, sessionStack, ftpSession, ncSession });
+    const db = getDatabase();
+    if (db) {
+      saveSessionState(db, { session, sessionStack, ftpSession, ncSession });
+    }
   }, [session, sessionStack, ftpSession, ncSession]);
 
   const setUsername = useCallback((username: string, userType: UserType = 'user') => {

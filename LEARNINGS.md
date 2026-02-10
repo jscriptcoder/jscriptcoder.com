@@ -130,16 +130,22 @@
 - **Why it works**: Browser-native, secure algorithm, async API fits AsyncOutput pattern
 - **Example**: `decrypt("secret.enc", "64-char-hex-key")` decrypts base64-encoded ciphertext
 
-### Session persistence with localStorage
-- **What**: Save session state (machine, user, path, stacks) to localStorage, restore on page load
-- **Why it works**: Player progress survives page refresh, validates data with type guards before restoring
-- **Example**: `localStorage.setItem('session', JSON.stringify(session))` with fallback to defaults on invalid data
+### IndexedDB persistence with pre-load cache
+- **What**: Save session state and filesystem patches to IndexedDB, pre-load into a module-level cache before React mounts
+- **Why it works**: Player progress survives page refresh; pre-load avoids loading states or UI flashes; IndexedDB has no 5MB limit; validates data with type guards before restoring
+- **Example**: `await initializeStorage()` in `main.tsx` before `createRoot().render()`; contexts read from `getCachedSessionState()` synchronously
+- **Key insight**: The async-to-sync bridge (pre-load cache) is the cleanest pattern for using async storage with React's synchronous `useState` initializers. The data is tiny (sub-5ms reads), so the startup delay is imperceptible.
 
 ### Filesystem persistence via patches
-- **What**: Store only user-created/modified files as patches in localStorage, replay on top of base filesystem at init
-- **Why it works**: Small storage footprint, base filesystem updates in code still take effect, clean "factory reset" by clearing one key
-- **Example**: `applyPatches(baseFileSystems, loadPatches())` at init; `upsertPatch(patches, { machineId, path, content, owner })` on write
-- **Key insight**: Persisting the diff instead of the full tree avoids stale data problems and keeps localStorage usage minimal
+- **What**: Store only user-created/modified files as patches in IndexedDB, replay on top of base filesystem at init
+- **Why it works**: Small storage footprint, base filesystem updates in code still take effect, clean "factory reset" by clearing the database
+- **Example**: `applyPatches(baseFileSystems, getCachedFilesystemPatches())` at init; `upsertPatch(patches, { machineId, path, content, owner })` on write
+- **Key insight**: Persisting the diff instead of the full tree avoids stale data problems and keeps storage usage minimal
+
+### localStorage to IndexedDB migration
+- **What**: One-time auto-migration from localStorage to IndexedDB for returning users
+- **Why it works**: Idempotent (checks IndexedDB first), removes localStorage keys after successful migration, graceful fallback if IndexedDB unavailable
+- **Key insight**: Migration in the pre-load phase (before React mounts) means the app never sees a mixed state
 
 ### Command restriction wrapping over removal
 - **What**: Instead of removing restricted commands from executionContext (causing "X is not defined" JS errors), wrap their `fn` with a permission-checking function
@@ -226,15 +232,16 @@
 - **Rationale**: Consistent style, types handle unions/intersections better, no accidental extension
 - **Trade-offs**: Slightly different syntax (= vs {), but more explicit about intent
 
-### localStorage for session persistence
+### IndexedDB for persistence (migrated from localStorage)
 - **Options considered**: No persistence, localStorage, IndexedDB, URL state
-- **Decision**: localStorage with JSON serialization
-- **Rationale**: Simple API, sufficient for small state, survives page refresh
-- **Trade-offs**: 5MB limit (not a concern), sync API (fast enough), need type guards for validation
+- **Decision**: IndexedDB with pre-load cache pattern
+- **Rationale**: Better storage limits, structured data support, modern standard. Pre-load cache avoids loading states.
+- **Trade-offs**: Async API requires pre-load bridge, but data is tiny so startup delay is imperceptible. `fake-indexeddb` needed for tests.
+- **Migration**: Auto-migrates from localStorage on first run; localStorage keys removed after successful migration
 
 ### Patches approach for filesystem persistence
-- **Options considered**: Persist full filesystem tree, persist only patches/diff, IndexedDB
-- **Decision**: Patches in localStorage
+- **Options considered**: Persist full filesystem tree, persist only patches/diff
+- **Decision**: Patches in IndexedDB
 - **Rationale**: Base filesystem is already in code; only user mutations need persisting. Patches are small, deduped by machineId+path, and base filesystem updates in code still apply to returning users.
 - **Trade-offs**: Need to intercept all mutation points (writeFileToMachine, createFileOnMachine), but only two exist
 

@@ -92,9 +92,9 @@ src/
 │   ├── TerminalOutput.tsx  # Output display (text, errors, cards)
 │   └── types.ts            # TypeScript types (Command, CommandManual, AsyncOutput, type guards)
 ├── session/
-│   └── SessionContext.tsx  # Global session state (user, machine, path) with localStorage persistence
+│   └── SessionContext.tsx  # Global session state (user, machine, path) with IndexedDB persistence
 ├── filesystem/
-│   ├── FileSystemContext.tsx  # Virtual filesystem operations with localStorage persistence
+│   ├── FileSystemContext.tsx  # Virtual filesystem operations with IndexedDB persistence
 │   ├── fileSystemFactory.ts   # Factory function for generating filesystems
 │   ├── machineFileSystems.ts  # Per-machine filesystem configurations
 │   └── types.ts               # FileNode, FilePermissions, FileSystemPatch types
@@ -169,9 +169,11 @@ src/
 │   ├── md5.ts              # MD5 hashing for password validation
 │   ├── network.ts          # Network utilities (IP validation, range parsing)
 │   ├── crypto.ts           # Crypto utilities (AES-256-GCM encrypt/decrypt, hex conversion)
-│   └── stringify.ts        # Value stringification (used by echo, output, resolve)
+│   ├── stringify.ts        # Value stringification (used by echo, output, resolve)
+│   ├── storage.ts          # IndexedDB wrapper (open, read, write for session and filesystem stores)
+│   └── storageCache.ts     # Pre-load cache: loads IndexedDB before React mounts, localStorage migration
 ├── test/
-│   └── setup.ts            # Test setup with jest-dom
+│   └── setup.ts            # Test setup with jest-dom and fake-indexeddb
 └── App.tsx                 # Root component (wraps Terminal with providers)
 ```
 
@@ -359,7 +361,7 @@ type FileNode = {
 
 **Filesystem Persistence (Patches):**
 
-User-created and modified files are persisted to localStorage (`jshack-filesystem` key) using a patches approach. Only the diff from the base filesystem is stored — not the full tree.
+User-created and modified files are persisted to IndexedDB (`jshack-db` database, `filesystem` store, `patches` key) using a patches approach. Only the diff from the base filesystem is stored — not the full tree.
 
 ```typescript
 type FileSystemPatch = {
@@ -372,11 +374,11 @@ type FileSystemPatch = {
 
 **How it works:**
 - On every `writeFileToMachine` or `createFileOnMachine` call, a patch is recorded (upserted by machineId + path)
-- Patches are saved to localStorage via `useEffect` whenever they change
+- Patches are saved to IndexedDB via `useEffect` whenever they change (fire-and-forget async)
 - On initialization, `applyPatches()` replays patches on top of the base filesystem from `machineFileSystems`
 - Existing files get their content updated; new files are created with `read/write: ['root', owner]` permissions
 - Base filesystem updates in code still take effect — patches layer on top
-- Clearing the `jshack-filesystem` localStorage key resets to factory state
+- Clearing the IndexedDB `jshack-db` database resets to factory state
 
 **Write operations that trigger patches:**
 - `output(cmd, filePath)` — captures command output to a file
@@ -565,11 +567,12 @@ type Session = {
 When SSH-ing to a remote machine, the current session is saved to a stack. The `exit()` command pops from this stack to restore the previous session state (user, machine, working directory).
 
 **Session Persistence:**
-Session state is automatically persisted to localStorage (`jshack-session` key):
-- Persisted on every state change
-- Restored on app initialization
+Session state is automatically persisted to IndexedDB (`jshack-db` database, `session` store, `state` key):
+- Persisted on every state change (fire-and-forget async write)
+- Pre-loaded from IndexedDB before React mounts via `storageCache.ts`
 - Validates data with type guards before restoring
 - Falls back to defaults if invalid/corrupted
+- One-time auto-migration from localStorage on first run after upgrade
 
 Persisted data includes:
 - `session`: machine, username, userType, currentPath
@@ -577,7 +580,27 @@ Persisted data includes:
 - `ftpSession`: FTP mode state (if active)
 
 **Filesystem Persistence:**
-File changes (creates/writes) are separately persisted to localStorage (`jshack-filesystem` key) as patches. See the "Filesystem Persistence (Patches)" section under Virtual File System for details.
+File changes (creates/writes) are separately persisted to IndexedDB (`filesystem` store, `patches` key) as patches. See the "Filesystem Persistence (Patches)" section under Virtual File System for details.
+
+**Persistence Architecture:**
+
+The persistence layer consists of three modules:
+
+1. **`src/utils/storage.ts`** — Low-level IndexedDB wrapper. Handles database creation (`jshack-db`, version 1), typed read/write operations for `session` and `filesystem` stores. All operations are Promise-based with try/catch error handling.
+
+2. **`src/utils/storageCache.ts`** — Pre-load cache that bridges async IndexedDB with synchronous React `useState` initializers. `initializeStorage()` is called in `main.tsx` before `createRoot().render()`, loading both stores into a module-level cache. Contexts read from this cache during initialization. Also handles one-time migration from localStorage keys (`jshack-session`, `jshack-filesystem`).
+
+3. **Contexts** — `SessionContext` and `FileSystemContext` read initial state from the cache (synchronous), and write updates to IndexedDB via `useEffect` (async, fire-and-forget).
+
+```
+main.tsx: await initializeStorage()  →  IndexedDB → module cache
+                                                        ↓
+SessionContext:    useState(getCachedSessionState)       (sync read)
+FileSystemContext: useState(getCachedFilesystemPatches)  (sync read)
+                                                        ↓
+useEffect:         saveSessionState(db, state)           (async write)
+useEffect:         saveFilesystemPatches(db, patches)    (async write)
+```
 
 **Usage in commands:**
 ```typescript

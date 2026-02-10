@@ -21,11 +21,24 @@ Step 13 of 14: Victory tracking
 - [x] Step 9: Add hints and breadcrumbs
 - [x] Step 10: Remote machine file systems
 - [x] Step 11: Additional exploitation commands (exit, ftp, nc)
-- [x] Step 12: Session persistence (localStorage)
+- [x] Step 12: Session persistence (IndexedDB, migrated from localStorage)
 - [ ] Step 13: Victory tracking ← next
 - [ ] Step 14: Challenge variety
 
-## Recent Session (2026-02-09)
+## Recent Session (2026-02-10)
+
+Implemented:
+- **IndexedDB migration**: Migrated all persistence from localStorage to IndexedDB
+  - Created `src/utils/storage.ts` — IndexedDB wrapper with typed read/write for `session` and `filesystem` stores
+  - Created `src/utils/storageCache.ts` — Pre-load cache: loads IndexedDB before React mounts (async→sync bridge)
+  - Updated `src/main.tsx` — Async startup: `await initializeStorage()` before `createRoot().render()`
+  - Updated `SessionContext.tsx` and `FileSystemContext.tsx` — Replaced localStorage with cache reads and IndexedDB writes
+  - One-time auto-migration from localStorage keys (`jshack-session`, `jshack-filesystem`) for returning users
+  - Added `fake-indexeddb` dev dependency for test environment polyfill
+  - 28 new tests (14 for storage wrapper, 14 for cache/migration)
+- **Test count**: 632 tests across 38 colocated files
+
+## Session (2026-02-09)
 
 Implemented:
 - **CTF redesign Phase 1-5**: Complete flag system overhaul
@@ -42,7 +55,7 @@ Implemented:
   - Red herrings: nmap_cheatsheet.txt, todo.txt, meeting_notes, tmp_data.csv, backup_manifest.txt
   - Darknet flavor: ghost tools/ with port_scanner.py, /etc/hosts with .onion entries
 - **FTP/NC ls hidden file support**: Added `-a` flag to show dotfiles (consistent with regular ls)
-- **Test count**: 604 tests across 36 colocated files
+- **Test count**: 604 tests across 36 colocated files (before IndexedDB migration)
 
 ## Previous Session (2026-02-08)
 
@@ -175,7 +188,7 @@ Victory tracking (Step 13):
 - Mark flag as found without requiring special command
 
 ### Storage
-- Store found flags in localStorage (similar to session persistence)
+- Store found flags in IndexedDB (similar to session/filesystem persistence)
 - Track: list of found flags, timestamp when each was discovered
 - Type: `FlagState = { foundFlags: string[], firstFoundAt: Record<string, number> }`
 
@@ -391,7 +404,7 @@ Flags should be detected from output of:
 - guest@darknet: sh4d0w
 
 ### Test Coverage
-- 604 tests across 36 colocated test files
+- 632 tests across 38 colocated test files
 - All commands with logic are tested
 - FTP subcommands tested (cd, lcd, ls, lls, get, put)
 - NC command and subcommands tested (nc, cat, cd, ls)

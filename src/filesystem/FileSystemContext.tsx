@@ -9,6 +9,8 @@ import {
 import type { FileNode, FileSystemPatch, PermissionResult } from './types';
 import { useSession, type UserType } from '../session/SessionContext';
 import { machineFileSystems, getDefaultHomePath, type MachineId } from './machineFileSystems';
+import { getCachedFilesystemPatches, getDatabase } from '../utils/storageCache';
+import { saveFilesystemPatches } from '../utils/storage';
 
 type FileSystemContextValue = {
   readonly fileSystem: FileNode;
@@ -86,40 +88,16 @@ type FileSystemsState = Readonly<Record<MachineId, FileNode>>;
 
 // --- Patch Persistence ---
 
-const FS_STORAGE_KEY = 'jshack-filesystem';
-
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
 
-const isValidPatch = (value: unknown): value is FileSystemPatch =>
+export const isValidPatch = (value: unknown): value is FileSystemPatch =>
   isRecord(value) &&
   typeof value.machineId === 'string' &&
   typeof value.path === 'string' &&
   typeof value.content === 'string' &&
   typeof value.owner === 'string' &&
   ['root', 'user', 'guest'].includes(value.owner);
-
-const loadPatches = (): readonly FileSystemPatch[] => {
-  try {
-    const stored = localStorage.getItem(FS_STORAGE_KEY);
-    if (!stored) return [];
-
-    const parsed: unknown = JSON.parse(stored);
-    if (!Array.isArray(parsed) || !parsed.every(isValidPatch)) return [];
-
-    return parsed;
-  } catch {
-    return [];
-  }
-};
-
-const savePatches = (patches: readonly FileSystemPatch[]): void => {
-  try {
-    localStorage.setItem(FS_STORAGE_KEY, JSON.stringify(patches));
-  } catch {
-    // Ignore storage errors (quota exceeded, etc.)
-  }
-};
 
 const getNodeFromFileSystemStatic = (fs: FileNode, resolvedPath: string): FileNode | null => {
   const parts = resolvedPath.split('/').filter(Boolean);
@@ -180,15 +158,19 @@ const upsertPatch = (
 };
 
 const initializeFileSystems = (): FileSystemsState =>
-  applyPatches({ ...machineFileSystems }, loadPatches());
+  applyPatches({ ...machineFileSystems }, getCachedFilesystemPatches());
 
 export const FileSystemProvider = ({ children }: { children: ReactNode }) => {
   const { session } = useSession();
   const [fileSystems, setFileSystems] = useState<FileSystemsState>(initializeFileSystems);
-  const [patches, setPatches] = useState<readonly FileSystemPatch[]>(loadPatches);
+  const [patches, setPatches] = useState<readonly FileSystemPatch[]>(getCachedFilesystemPatches);
 
+  // Persist patches to IndexedDB
   useEffect(() => {
-    savePatches(patches);
+    const db = getDatabase();
+    if (db) {
+      saveFilesystemPatches(db, patches);
+    }
   }, [patches]);
 
   const currentMachine = session.machine as MachineId;
