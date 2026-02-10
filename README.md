@@ -29,6 +29,7 @@ Start with `help()` to see available commands. Good luck, hacker.
 - **Command Restrictions** - Commands are tiered by privilege level; escalate from guest to root to unlock tools
 - **Network Simulation** - Discover and hack into remote machines
 - **Session Persistence** - Your location and files are saved; return where you left off after refresh
+- **SEO & Social Sharing** - Open Graph and Twitter Card meta tags for rich link previews
 - **Retro CRT Theme** - Classic amber-on-black terminal aesthetic
 
 ## Tech Stack
@@ -191,6 +192,15 @@ src/
 ├── commands/               # Terminal commands
 ├── utils/                  # Utilities (crypto, storage, network)
 └── App.tsx                 # Root component
+```
+
+## SEO & Social Sharing
+
+The site includes Open Graph and Twitter Card meta tags for rich social media previews when sharing the URL. The OG image features the CRT terminal aesthetic with a simulated network scan.
+
+To regenerate the OG image after edits to `public/og-image.html`:
+```bash
+npx playwright screenshot --viewport-size="1200,630" --full-page public/og-image.html public/og-image.png
 ```
 
 ## Deployment

@@ -245,6 +245,12 @@
 - **Rationale**: Base filesystem is already in code; only user mutations need persisting. Patches are small, deduped by machineId+path, and base filesystem updates in code still apply to returning users.
 - **Trade-offs**: Need to intercept all mutation points (writeFileToMachine, createFileOnMachine), but only two exist
 
+### Static OG image from HTML template
+- **Options considered**: Dynamic server-side rendering, static SVG, HTML screenshot to PNG
+- **Decision**: HTML template (`og-image.html`) screenshotted to PNG via Playwright
+- **Rationale**: Full CSS control (fonts, gradients, scanlines, glow effects) produces the best visual result. SVG has font/filter limitations. Server-side rendering requires infrastructure.
+- **Trade-offs**: PNG must be regenerated manually after HTML edits, but changes are rare. Playwright command: `npx playwright screenshot --viewport-size="1200,630" --full-page og-image.html og-image.png`
+
 ### Configuration-driven service ownership
 - **Options considered**: Hardcoded user per command, configuration on port, separate service registry
 - **Decision**: Optional `owner` field on Port type

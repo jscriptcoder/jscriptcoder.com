@@ -174,7 +174,16 @@ src/
 │   └── storageCache.ts     # Pre-load cache: loads IndexedDB before React mounts, localStorage migration
 ├── test/
 │   └── setup.ts            # Test setup with jest-dom and fake-indexeddb
-└── App.tsx                 # Root component (wraps Terminal with providers)
+├── App.tsx                 # Root component (wraps Terminal with providers)
+│
+public/
+├── favicon.svg             # SVG favicon (terminal prompt icon)
+├── apple-touch-icon.png    # iOS home screen icon (180x180)
+├── og-image.png            # Open Graph social preview image (1200x630)
+├── og-image.svg            # SVG version of OG image
+├── og-image.html           # Source HTML for regenerating OG image PNG
+├── robots.txt              # Search engine crawler rules
+└── sitemap.xml             # Sitemap for search engines
 ```
 
 ## Architecture
@@ -618,6 +627,29 @@ setCurrentPath('/home/admin');
 - **Colors**: `text-amber-400`/`text-amber-500` for text, `bg-black` background, `text-red-500` for errors
 - **Font**: Monospace (`font-mono`)
 - **Layout**: Full viewport height, flex column with scrollable output area
+
+## SEO & Open Graph
+
+The site includes full SEO and social sharing optimization:
+
+**Static assets** (`public/`):
+- `robots.txt` — Allows all crawlers, references sitemap
+- `sitemap.xml` — Single URL entry for the SPA
+- `og-image.png` — 1200x630 social preview image (CRT terminal aesthetic)
+- `og-image.svg` — SVG version of the OG image
+- `og-image.html` — Source HTML for regenerating the PNG (open in browser, screenshot)
+- `apple-touch-icon.png` — 180x180 iOS home screen icon
+
+**Meta tags** (`index.html`):
+- SEO: description, keywords, author, theme-color, canonical URL
+- Open Graph: og:title, og:description, og:image (1200x630), og:url, og:type, og:site_name
+- Twitter Card: summary_large_image with title, description, image
+- Icons: SVG favicon + Apple touch icon
+
+**Regenerating the OG image:**
+1. Edit `public/og-image.html` to change the design
+2. Open in a browser at 1200x630 viewport
+3. Screenshot to `public/og-image.png` (or use Playwright: `npx playwright screenshot --viewport-size="1200,630" --full-page "file:///path/to/og-image.html" "og-image.png"`)
 
 ## Deployment
 

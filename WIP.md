@@ -28,6 +28,12 @@ Step 13 of 14: Victory tracking
 ## Recent Session (2026-02-10)
 
 Implemented:
+- **SEO & Open Graph**: Full search engine optimization and social sharing support
+  - Added `robots.txt` and `sitemap.xml` for search engine crawlers
+  - Created OG image (1200x630) with CRT terminal aesthetic — ASCII banner, nmap scan, amber glow
+  - Generated `og-image.png` via Playwright screenshot of `og-image.html` template
+  - Created `apple-touch-icon.png` (180x180) for iOS home screen
+  - Added comprehensive meta tags to `index.html`: SEO (description, keywords, author, theme-color, canonical), Open Graph (title, description, image, url, type, site_name), Twitter Card (summary_large_image)
 - **IndexedDB migration**: Migrated all persistence from localStorage to IndexedDB
   - Created `src/utils/storage.ts` — IndexedDB wrapper with typed read/write for `session` and `filesystem` stores
   - Created `src/utils/storageCache.ts` — Pre-load cache: loads IndexedDB before React mounts (async→sync bridge)
