@@ -55,21 +55,46 @@ const createMockContext = (config: MockContextConfig = {}) => {
     return cwd === '/' ? `/${path}` : `${cwd}/${path}`;
   };
 
-  const getNodeFromMachine = (_machineId: MachineId, path: string, _cwd: string): FileNode | null => {
+  const getNodeFromMachine = (
+    _machineId: MachineId,
+    path: string,
+    _cwd: string,
+  ): FileNode | null => {
     return nodes[path] ?? null;
   };
 
-  const readFileFromMachine = (_machineId: MachineId, path: string, _cwd: string, _userType: UserType): string | null => {
+  const readFileFromMachine = (
+    _machineId: MachineId,
+    path: string,
+    _cwd: string,
+    _userType: UserType,
+  ): string | null => {
     return fileContents[path] ?? null;
   };
 
-  const createFileOnMachine = vi.fn((_machineId: MachineId, path: string, _cwd: string, _content: string, _userType: UserType): PermissionResult => {
-    return createResults[path] ?? { allowed: true };
-  });
+  const createFileOnMachine = vi.fn(
+    (
+      _machineId: MachineId,
+      path: string,
+      _cwd: string,
+      _content: string,
+      _userType: UserType,
+    ): PermissionResult => {
+      return createResults[path] ?? { allowed: true };
+    },
+  );
 
-  const writeFileToMachine = vi.fn((_machineId: MachineId, path: string, _cwd: string, _content: string, _userType: UserType): PermissionResult => {
-    return writeResults[path] ?? { allowed: true };
-  });
+  const writeFileToMachine = vi.fn(
+    (
+      _machineId: MachineId,
+      path: string,
+      _cwd: string,
+      _content: string,
+      _userType: UserType,
+    ): PermissionResult => {
+      return writeResults[path] ?? { allowed: true };
+    },
+  );
 
   return {
     getRemoteMachine: () => remoteMachine,

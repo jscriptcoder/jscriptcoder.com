@@ -28,11 +28,7 @@ export const openDatabase = (): Promise<IDBDatabase> =>
     request.onerror = () => reject(request.error);
   });
 
-const getValue = <T>(
-  db: IDBDatabase,
-  storeName: string,
-  key: string
-): Promise<T | null> =>
+const getValue = <T>(db: IDBDatabase, storeName: string, key: string): Promise<T | null> =>
   new Promise((resolve, reject) => {
     const transaction = db.transaction(storeName, 'readonly');
     const store = transaction.objectStore(storeName);
@@ -42,12 +38,7 @@ const getValue = <T>(
     request.onerror = () => reject(request.error);
   });
 
-const setValue = <T>(
-  db: IDBDatabase,
-  storeName: string,
-  key: string,
-  value: T
-): Promise<void> =>
+const setValue = <T>(db: IDBDatabase, storeName: string, key: string, value: T): Promise<void> =>
   new Promise((resolve, reject) => {
     const transaction = db.transaction(storeName, 'readwrite');
     const store = transaction.objectStore(storeName);
@@ -57,9 +48,7 @@ const setValue = <T>(
     request.onerror = () => reject(request.error);
   });
 
-export const loadSessionState = async (
-  db: IDBDatabase
-): Promise<PersistedState | null> => {
+export const loadSessionState = async (db: IDBDatabase): Promise<PersistedState | null> => {
   try {
     const data = await getValue<unknown>(db, SESSION_STORE, SESSION_KEY);
     if (!data || !isValidPersistedState(data)) return null;
@@ -69,10 +58,7 @@ export const loadSessionState = async (
   }
 };
 
-export const saveSessionState = async (
-  db: IDBDatabase,
-  state: PersistedState
-): Promise<void> => {
+export const saveSessionState = async (db: IDBDatabase, state: PersistedState): Promise<void> => {
   try {
     await setValue(db, SESSION_STORE, SESSION_KEY, state);
   } catch {
@@ -81,7 +67,7 @@ export const saveSessionState = async (
 };
 
 export const loadFilesystemPatches = async (
-  db: IDBDatabase
+  db: IDBDatabase,
 ): Promise<readonly FileSystemPatch[] | null> => {
   try {
     const data = await getValue<unknown>(db, FILESYSTEM_STORE, FILESYSTEM_KEY);
@@ -95,7 +81,7 @@ export const loadFilesystemPatches = async (
 
 export const saveFilesystemPatches = async (
   db: IDBDatabase,
-  patches: readonly FileSystemPatch[]
+  patches: readonly FileSystemPatch[],
 ): Promise<void> => {
   try {
     await setValue(db, FILESYSTEM_STORE, FILESYSTEM_KEY, [...patches]);

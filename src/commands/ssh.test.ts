@@ -70,7 +70,7 @@ describe('ssh command', () => {
       const ssh = createSshCommand(context);
 
       expect(() => ssh.fn('user', '192.168.1.100')).toThrow(
-        'ssh: cannot connect to localhost via SSH'
+        'ssh: cannot connect to localhost via SSH',
       );
     });
 
@@ -78,18 +78,14 @@ describe('ssh command', () => {
       const context = createMockSshContext();
       const ssh = createSshCommand(context);
 
-      expect(() => ssh.fn('user', '127.0.0.1')).toThrow(
-        'ssh: cannot connect to localhost via SSH'
-      );
+      expect(() => ssh.fn('user', '127.0.0.1')).toThrow('ssh: cannot connect to localhost via SSH');
     });
 
     it('should throw error when connecting to localhost hostname', () => {
       const context = createMockSshContext();
       const ssh = createSshCommand(context);
 
-      expect(() => ssh.fn('user', 'localhost')).toThrow(
-        'ssh: cannot connect to localhost via SSH'
-      );
+      expect(() => ssh.fn('user', 'localhost')).toThrow('ssh: cannot connect to localhost via SSH');
     });
 
     it('should throw error when machine does not exist', () => {
@@ -97,7 +93,7 @@ describe('ssh command', () => {
       const ssh = createSshCommand(context);
 
       expect(() => ssh.fn('admin', '10.0.0.1')).toThrow(
-        'ssh: connect to host 10.0.0.1 port 22: Connection refused'
+        'ssh: connect to host 10.0.0.1 port 22: Connection refused',
       );
     });
 
@@ -113,7 +109,7 @@ describe('ssh command', () => {
       const ssh = createSshCommand(context);
 
       expect(() => ssh.fn('admin', '192.168.1.50')).toThrow(
-        'ssh: connect to host 192.168.1.50 port 22: Connection refused'
+        'ssh: connect to host 192.168.1.50 port 22: Connection refused',
       );
     });
 
@@ -129,7 +125,7 @@ describe('ssh command', () => {
       const ssh = createSshCommand(context);
 
       expect(() => ssh.fn('admin', '192.168.1.50')).toThrow(
-        'ssh: connect to host 192.168.1.50 port 22: Connection refused'
+        'ssh: connect to host 192.168.1.50 port 22: Connection refused',
       );
     });
 
@@ -146,7 +142,7 @@ describe('ssh command', () => {
       const ssh = createSshCommand(context);
 
       expect(() => ssh.fn('nobody', '192.168.1.50')).toThrow(
-        'ssh: nobody@192.168.1.50: Permission denied (publickey,password)'
+        'ssh: nobody@192.168.1.50: Permission denied (publickey,password)',
       );
     });
   });
@@ -226,7 +222,7 @@ describe('ssh command', () => {
       if (isAsyncOutput(result)) {
         result.start(
           (line) => lines.push(line),
-          () => {}
+          () => {},
         );
       }
 
@@ -250,7 +246,7 @@ describe('ssh command', () => {
       if (isAsyncOutput(result)) {
         result.start(
           (line) => lines.push(line),
-          () => {}
+          () => {},
         );
       }
 
@@ -277,7 +273,7 @@ describe('ssh command', () => {
       if (isAsyncOutput(result)) {
         result.start(
           (line) => lines.push(line),
-          () => {}
+          () => {},
         );
       }
 
@@ -306,7 +302,7 @@ describe('ssh command', () => {
           () => {},
           (data) => {
             followUp = data;
-          }
+          },
         );
       }
 
@@ -342,7 +338,7 @@ describe('ssh command', () => {
           () => {},
           (data) => {
             followUp = data;
-          }
+          },
         );
       }
 
@@ -372,7 +368,7 @@ describe('ssh command', () => {
       if (isAsyncOutput(result)) {
         result.start(
           (line) => lines.push(line),
-          () => {}
+          () => {},
         );
 
         // Cancel before first delay completes
@@ -406,7 +402,7 @@ describe('ssh command', () => {
           (line) => lines.push(line),
           () => {
             completed = true;
-          }
+          },
         );
 
         // Advance past first delay, then cancel

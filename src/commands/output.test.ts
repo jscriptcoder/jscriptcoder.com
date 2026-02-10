@@ -9,7 +9,7 @@ import { createOutputCommand } from './output';
 const createMockFile = (
   name: string,
   content: string,
-  overrides?: Partial<FileNode>
+  overrides?: Partial<FileNode>,
 ): FileNode => ({
   name,
   type: 'file',
@@ -146,11 +146,7 @@ describe('output command', () => {
 
       output.fn('content', '/tmp/new-file.txt');
 
-      expect(mocks.createFile).toHaveBeenCalledWith(
-        '/tmp/new-file.txt',
-        'content',
-        'user'
-      );
+      expect(mocks.createFile).toHaveBeenCalledWith('/tmp/new-file.txt', 'content', 'user');
     });
 
     it('should write to existing file', () => {
@@ -162,11 +158,7 @@ describe('output command', () => {
 
       output.fn('new content', '/tmp/existing.txt');
 
-      expect(mocks.writeFile).toHaveBeenCalledWith(
-        '/tmp/existing.txt',
-        'new content',
-        'user'
-      );
+      expect(mocks.writeFile).toHaveBeenCalledWith('/tmp/existing.txt', 'new content', 'user');
     });
 
     it('should throw on permission denied for create', () => {
@@ -176,7 +168,7 @@ describe('output command', () => {
       const output = createOutputCommand(context);
 
       expect(() => output.fn('content', '/root/file.txt')).toThrow(
-        'output: Permission denied: /root/file.txt'
+        'output: Permission denied: /root/file.txt',
       );
     });
 
@@ -189,7 +181,7 @@ describe('output command', () => {
       const output = createOutputCommand(context);
 
       expect(() => output.fn('new content', '/protected.txt')).toThrow(
-        'output: Permission denied: /protected.txt'
+        'output: Permission denied: /protected.txt',
       );
     });
 
@@ -203,7 +195,7 @@ describe('output command', () => {
       expect(mocks.createFile).toHaveBeenCalledWith(
         '/tmp/async-output.txt',
         'line 1\nline 2',
-        'user'
+        'user',
       );
     });
 

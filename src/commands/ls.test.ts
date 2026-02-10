@@ -27,7 +27,7 @@ const getMockFile = (overrides?: Partial<FileNode>): FileNode =>
 const getMockDirectory = (
   name: string,
   children: Record<string, FileNode>,
-  overrides?: Partial<FileNode>
+  overrides?: Partial<FileNode>,
 ): FileNode =>
   getMockFileNode({
     name,
@@ -95,8 +95,8 @@ describe('ls command', () => {
 
     it('should list specified path', () => {
       const etcDir = getMockDirectory('etc', {
-        'passwd': getMockFile({ name: 'passwd' }),
-        'hosts': getMockFile({ name: 'hosts' }),
+        passwd: getMockFile({ name: 'passwd' }),
+        hosts: getMockFile({ name: 'hosts' }),
       });
 
       const context = createMockFileSystemContext({
@@ -112,7 +112,7 @@ describe('ls command', () => {
 
     it('should mark directories with trailing slash', () => {
       const homeDir = getMockDirectory('home', {
-        'documents': getMockDirectory('documents', {}),
+        documents: getMockDirectory('documents', {}),
         'file.txt': getMockFile({ name: 'file.txt' }),
       });
 
@@ -236,17 +236,21 @@ describe('ls command', () => {
       const ls = createLsCommand(context);
 
       expect(() => ls.fn('/nonexistent')).toThrow(
-        "ls: cannot access '/nonexistent': No such file or directory"
+        "ls: cannot access '/nonexistent': No such file or directory",
       );
     });
 
     it('should throw error when permission denied', () => {
-      const restrictedDir = getMockDirectory('root', {}, {
-        permissions: {
-          read: ['root'],
-          write: ['root'],
+      const restrictedDir = getMockDirectory(
+        'root',
+        {},
+        {
+          permissions: {
+            read: ['root'],
+            write: ['root'],
+          },
         },
-      });
+      );
 
       const context = createMockFileSystemContext({
         userType: 'guest',
@@ -255,20 +259,22 @@ describe('ls command', () => {
 
       const ls = createLsCommand(context);
 
-      expect(() => ls.fn('/root')).toThrow(
-        "ls: cannot open directory '/root': Permission denied"
-      );
+      expect(() => ls.fn('/root')).toThrow("ls: cannot open directory '/root': Permission denied");
     });
 
     it('should allow root to list any directory', () => {
-      const restrictedDir = getMockDirectory('secret', {
-        'secret.txt': getMockFile({ name: 'secret.txt' }),
-      }, {
-        permissions: {
-          read: ['root'],
-          write: ['root'],
+      const restrictedDir = getMockDirectory(
+        'secret',
+        {
+          'secret.txt': getMockFile({ name: 'secret.txt' }),
         },
-      });
+        {
+          permissions: {
+            read: ['root'],
+            write: ['root'],
+          },
+        },
+      );
 
       const context = createMockFileSystemContext({
         userType: 'root',

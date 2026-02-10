@@ -59,7 +59,7 @@ export type AsyncOutput = {
   readonly __type: 'async';
   readonly start: (
     onLine: (line: string) => void,
-    onComplete: (followUp?: AsyncFollowUp) => void
+    onComplete: (followUp?: AsyncFollowUp) => void,
   ) => void;
   readonly cancel?: () => void;
 };

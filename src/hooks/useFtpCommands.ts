@@ -17,11 +17,7 @@ import type { Command } from '../components/Terminal/types';
 import type { MachineId } from '../filesystem/machineFileSystems';
 
 export const useFtpCommands = (): Map<string, Command> | null => {
-  const {
-    ftpSession,
-    updateFtpRemoteCwd,
-    updateFtpOriginCwd,
-  } = useSession();
+  const { ftpSession, updateFtpRemoteCwd, updateFtpOriginCwd } = useSession();
 
   const {
     resolvePathForMachine,
@@ -52,74 +48,92 @@ export const useFtpCommands = (): Map<string, Command> | null => {
     commands.set('lpwd', createFtpLpwdCommand({ getOriginCwd }));
 
     // cd - change remote directory
-    commands.set('cd', createFtpCdCommand({
-      getRemoteMachine,
-      getRemoteCwd,
-      getRemoteUserType,
-      setRemoteCwd: updateFtpRemoteCwd,
-      resolvePathForMachine,
-      getNodeFromMachine,
-    }));
+    commands.set(
+      'cd',
+      createFtpCdCommand({
+        getRemoteMachine,
+        getRemoteCwd,
+        getRemoteUserType,
+        setRemoteCwd: updateFtpRemoteCwd,
+        resolvePathForMachine,
+        getNodeFromMachine,
+      }),
+    );
 
     // lcd - change local directory
-    commands.set('lcd', createFtpLcdCommand({
-      getOriginMachine,
-      getOriginCwd,
-      getOriginUserType,
-      setOriginCwd: updateFtpOriginCwd,
-      resolvePathForMachine,
-      getNodeFromMachine,
-    }));
+    commands.set(
+      'lcd',
+      createFtpLcdCommand({
+        getOriginMachine,
+        getOriginCwd,
+        getOriginUserType,
+        setOriginCwd: updateFtpOriginCwd,
+        resolvePathForMachine,
+        getNodeFromMachine,
+      }),
+    );
 
     // ls - list remote directory
-    commands.set('ls', createFtpLsCommand({
-      getRemoteMachine,
-      getRemoteCwd,
-      getRemoteUserType,
-      resolvePathForMachine,
-      getNodeFromMachine,
-      listDirectoryFromMachine,
-    }));
+    commands.set(
+      'ls',
+      createFtpLsCommand({
+        getRemoteMachine,
+        getRemoteCwd,
+        getRemoteUserType,
+        resolvePathForMachine,
+        getNodeFromMachine,
+        listDirectoryFromMachine,
+      }),
+    );
 
     // lls - list local directory
-    commands.set('lls', createFtpLlsCommand({
-      getOriginMachine,
-      getOriginCwd,
-      getOriginUserType,
-      resolvePathForMachine,
-      getNodeFromMachine,
-      listDirectoryFromMachine,
-    }));
+    commands.set(
+      'lls',
+      createFtpLlsCommand({
+        getOriginMachine,
+        getOriginCwd,
+        getOriginUserType,
+        resolvePathForMachine,
+        getNodeFromMachine,
+        listDirectoryFromMachine,
+      }),
+    );
 
     // get - download file
-    commands.set('get', createFtpGetCommand({
-      getRemoteMachine,
-      getRemoteCwd,
-      getRemoteUserType,
-      getOriginMachine,
-      getOriginCwd,
-      getOriginUserType,
-      resolvePathForMachine,
-      getNodeFromMachine,
-      readFileFromMachine,
-      writeFileToMachine,
-      createFileOnMachine,
-    }));
+    commands.set(
+      'get',
+      createFtpGetCommand({
+        getRemoteMachine,
+        getRemoteCwd,
+        getRemoteUserType,
+        getOriginMachine,
+        getOriginCwd,
+        getOriginUserType,
+        resolvePathForMachine,
+        getNodeFromMachine,
+        readFileFromMachine,
+        writeFileToMachine,
+        createFileOnMachine,
+      }),
+    );
 
     // put - upload file
-    commands.set('put', createFtpPutCommand({
-      getRemoteMachine,
-      getRemoteCwd,
-      getRemoteUserType,
-      getOriginMachine,
-      getOriginCwd,
-      getOriginUserType,
-      resolvePathForMachine,
-      getNodeFromMachine,
-      readFileFromMachine,
-      writeFileToMachine,
-      createFileOnMachine,
-    }));
+    commands.set(
+      'put',
+      createFtpPutCommand({
+        getRemoteMachine,
+        getRemoteCwd,
+        getRemoteUserType,
+        getOriginMachine,
+        getOriginCwd,
+        getOriginUserType,
+        resolvePathForMachine,
+        getNodeFromMachine,
+        readFileFromMachine,
+        writeFileToMachine,
+        createFileOnMachine,
+      }),
+    );
 
     // quit and bye - exit FTP mode
     commands.set('quit', ftpQuitCommand);

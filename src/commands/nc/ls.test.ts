@@ -6,10 +6,7 @@ import { createNcLsCommand } from './ls';
 
 // --- Factory Functions ---
 
-const createMockDirectory = (
-  name: string,
-  overrides?: Partial<FileNode>
-): FileNode => ({
+const createMockDirectory = (name: string, overrides?: Partial<FileNode>): FileNode => ({
   name,
   type: 'directory',
   owner: 'root',
@@ -75,13 +72,12 @@ const createMockNcLsContext = (config: NcLsContextConfig = {}) => {
     getCwd: () => cwd,
     getUserType: () => userType,
     resolvePath,
-    getNodeFromMachine: (_machineId: MachineId, path: string, _cwd: string) =>
-      nodes[path] ?? null,
+    getNodeFromMachine: (_machineId: MachineId, path: string, _cwd: string) => nodes[path] ?? null,
     listDirectoryFromMachine: (
       _machineId: MachineId,
       path: string,
       _cwd: string,
-      _userType: UserType
+      _userType: UserType,
     ) => listings[path] ?? null,
   };
 };
@@ -297,9 +293,7 @@ describe('nc ls command', () => {
 
       const ls = createNcLsCommand(context);
 
-      expect(() => ls.fn('nonexistent')).toThrow(
-        'ls: nonexistent: No such file or directory'
-      );
+      expect(() => ls.fn('nonexistent')).toThrow('ls: nonexistent: No such file or directory');
     });
 
     it('should throw error for non-existent absolute path', () => {
@@ -309,9 +303,7 @@ describe('nc ls command', () => {
 
       const ls = createNcLsCommand(context);
 
-      expect(() => ls.fn('/no/such/path')).toThrow(
-        'ls: /no/such/path: No such file or directory'
-      );
+      expect(() => ls.fn('/no/such/path')).toThrow('ls: /no/such/path: No such file or directory');
     });
 
     it('should throw error when permission denied on directory', () => {
@@ -329,9 +321,7 @@ describe('nc ls command', () => {
 
       const ls = createNcLsCommand(context);
 
-      expect(() => ls.fn('/root/secret')).toThrow(
-        'ls: /root/secret: Permission denied'
-      );
+      expect(() => ls.fn('/root/secret')).toThrow('ls: /root/secret: Permission denied');
     });
 
     it('should throw error when listing returns null', () => {
@@ -345,9 +335,7 @@ describe('nc ls command', () => {
 
       const ls = createNcLsCommand(context);
 
-      expect(() => ls.fn('/protected')).toThrow(
-        'ls: /protected: Permission denied'
-      );
+      expect(() => ls.fn('/protected')).toThrow('ls: /protected: Permission denied');
     });
   });
 

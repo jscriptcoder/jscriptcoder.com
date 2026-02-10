@@ -20,6 +20,7 @@ description: TypeScript strict mode patterns. Use when writing any TypeScript co
 ### Organize Schemas by Usage
 
 **Common patterns:**
+
 - Centralized: `src/schemas/` for shared schemas
 - Co-located: Near the modules that use them
 - Layered: Separate by architectural layer (if using layered/hexagonal architecture)
@@ -31,11 +32,13 @@ description: TypeScript strict mode patterns. Use when writing any TypeScript co
 **Common anti-pattern:**
 
 Defining the same schema in multiple places:
+
 - Validation logic duplicated across endpoints
 - Same business rules defined in multiple adapters
 - Type definitions not shared
 
 **Why This Is Wrong:**
+
 - ❌ Duplication creates multiple sources of truth
 - ❌ Changes require updating multiple files
 - ❌ Breaks DRY principle at the knowledge level
@@ -65,15 +68,16 @@ import type { RemoteMachine, Port } from '../network/types';
 
 // In NetworkContext
 const getMachine = (ip: string): RemoteMachine | undefined => {
-  return config.machines.find(m => m.ip === ip);
+  return config.machines.find((m) => m.ip === ip);
 };
 
 // In ssh command
-const sshPort = machine.ports.find(p => p.port === 22 && p.open);
+const sshPort = machine.ports.find((p) => p.port === 22 && p.open);
 if (!sshPort) throw new Error('Connection refused');
 ```
 
 **Key Benefits:**
+
 - ✅ Single source of truth for validation
 - ✅ Schema changes propagate everywhere automatically
 - ✅ Type safety maintained across codebase
@@ -88,6 +92,7 @@ if (!sshPort) throw new Error('Connection refused');
 ### Inject Dependencies, Don't Create Them
 
 **The Rule:**
+
 - Dependencies are always injected via parameters
 - Never use `new` to create dependencies inside functions
 - Factory functions accept dependencies as parameters
@@ -95,6 +100,7 @@ if (!sshPort) throw new Error('Connection refused');
 ### Why This Matters
 
 Without dependency injection:
+
 - ❌ Only one implementation possible
 - ❌ Can't test with mocks (poor testability)
 - ❌ Tight coupling to specific implementations
@@ -102,6 +108,7 @@ Without dependency injection:
 - ❌ Can't swap implementations
 
 With dependency injection:
+
 - ✅ Any implementation works (in-memory, database, remote API)
 - ✅ Fully testable (inject mocks for testing)
 - ✅ Loose coupling
@@ -113,14 +120,10 @@ With dependency injection:
 **❌ WRONG - Creating implementation internally**
 
 ```typescript
-export const createSshCommand = ({
-  getLocalIP,
-}: {
-  getLocalIP: () => string;
-}): Command => {
+export const createSshCommand = ({ getLocalIP }: { getLocalIP: () => string }): Command => {
   // ❌ Hardcoded implementation!
   const networkConfig = createInitialNetwork();
-  const getMachine = (ip: string) => networkConfig.machines.find(m => m.ip === ip);
+  const getMachine = (ip: string) => networkConfig.machines.find((m) => m.ip === ip);
 
   return {
     name: 'ssh',
@@ -133,6 +136,7 @@ export const createSshCommand = ({
 ```
 
 **Why this is WRONG:**
+
 - Only ONE network implementation possible
 - Can't test with mock machines
 - Can't swap network configuration
@@ -142,8 +146,8 @@ export const createSshCommand = ({
 
 ```typescript
 export const createSshCommand = ({
-  getMachine,  // ✅ Injected
-  getLocalIP,  // ✅ Injected
+  getMachine, // ✅ Injected
+  getLocalIP, // ✅ Injected
 }: {
   getMachine: (ip: string) => RemoteMachine | undefined;
   getLocalIP: () => string;
@@ -160,6 +164,7 @@ export const createSshCommand = ({
 ```
 
 **Why this is CORRECT:**
+
 - ✅ Any network implementation works (test mocks, different configs)
 - ✅ Easy to test (inject mock machines)
 - ✅ Loose coupling (depends on function signatures, not implementations)
@@ -297,6 +302,7 @@ This pattern supports clean architecture:
 ### What Each Setting Does
 
 **Core strict flags:**
+
 - **`strict: true`** - Enables all strict type checking options
 - **`noImplicitAny`** - Error on expressions/declarations with implied `any` type
 - **`strictNullChecks`** - `null` and `undefined` have their own types (not assignable to everything)
@@ -306,6 +312,7 @@ This pattern supports clean architecture:
 - **`noFallthroughCasesInSwitch`** - Error on fallthrough cases in switch statements
 
 **Additional safety flags (CRITICAL):**
+
 - **`noUncheckedIndexedAccess`** - Array/object access returns `T | undefined` (prevents runtime errors from assuming elements exist)
 - **`exactOptionalPropertyTypes`** - Distinguishes `property?: T` from `property: T | undefined` (more precise types)
 - **`noPropertyAccessFromIndexSignature`** - Requires bracket notation for index signature properties (forces awareness of dynamic access)
@@ -390,6 +397,7 @@ const canRead = (path: string, userType: UserType): PermissionResult => {
 ```
 
 **Why result types?**
+
 - Explicit error handling (type system enforces checking)
 - No hidden control flow (unlike exceptions)
 - Functional programming alignment
@@ -423,9 +431,7 @@ export const createNmapCommand = (context: {
 
 // ❌ WRONG - Class-based creation
 export class NmapCommand {
-  constructor(
-    private getMachine: (ip: string) => RemoteMachine | undefined,
-  ) {}
+  constructor(private getMachine: (ip: string) => RemoteMachine | undefined) {}
 
   execute(target: string) {
     // Implementation with `this`
@@ -434,6 +440,7 @@ export class NmapCommand {
 ```
 
 **Why factory functions?**
+
 - Functional programming alignment
 - No `this` context issues
 - Easier to compose
@@ -449,31 +456,37 @@ export class NmapCommand {
 This project uses the following structure:
 
 **Types (Data Structures)**
+
 - Location: Co-located with features (`src/filesystem/types.ts`, `src/network/types.ts`)
 - Examples: `FileNode`, `RemoteMachine`, `OutputLine`, `Command`
 - Why: Types stay close to the code that uses them
 
 **Context Providers (State & Behavior)**
+
 - Location: `src/context/`, `src/filesystem/`, `src/network/`
 - Examples: `SessionContext`, `FileSystemContext`, `NetworkContext`
 - Why: React context for global state, provides behavior contracts
 
 **Commands (Terminal Commands)**
+
 - Location: `src/commands/`
 - Examples: `createLsCommand`, `createSshCommand`, `createNmapCommand`
 - Why: Factory functions that create command objects with injected dependencies
 
 **Hooks (React Hooks)**
+
 - Location: `src/hooks/`
 - Examples: `useCommands`, `useVariables`, `useCommandHistory`
 - Why: Custom hooks for terminal behavior
 
 **Components (UI)**
+
 - Location: `src/components/Terminal/`
 - Examples: `Terminal`, `TerminalInput`, `TerminalOutput`
 - Why: React components for the terminal UI
 
 **Key principles for this project:**
+
 - Types co-located with features
 - Commands use factory pattern with dependency injection
 - Context providers define behavior contracts
@@ -512,9 +525,7 @@ const user = UserSchema.parse(apiResponse);
 
 ```typescript
 // ✅ CORRECT - No schema needed
-type Result<T, E> =
-  | { success: true; data: T }
-  | { success: false; error: E };
+type Result<T, E> = { success: true; data: T } | { success: false; error: E };
 
 // ✅ CORRECT - Interface, no validation
 interface UserService {
@@ -540,6 +551,7 @@ const length = data!.items!.length; // Multiple points of failure
 ```
 
 **Problems:**
+
 - Bypasses `strictNullChecks` - defeats the purpose of strict mode
 - Runtime errors when assumption is wrong
 - Similar to `as Type` - you're lying to the compiler
@@ -548,6 +560,7 @@ const length = data!.items!.length; // Multiple points of failure
 ### Better Alternatives
 
 **1. Type guards with early return:**
+
 ```typescript
 // ✅ CORRECT - Type guard
 const user = getUser(id);
@@ -559,6 +572,7 @@ const name = user.name;
 ```
 
 **2. Optional chaining with nullish coalescing:**
+
 ```typescript
 // ✅ CORRECT - Safe access with default
 const name = user?.name ?? 'Anonymous';
@@ -566,6 +580,7 @@ const length = data?.items?.length ?? 0;
 ```
 
 **3. Explicit error handling:**
+
 ```typescript
 // ✅ CORRECT - Handle the null case
 const machine = getMachine(ip);
@@ -577,6 +592,7 @@ const ports = machine.ports;
 ```
 
 **4. Proper typing that can't be null:**
+
 ```typescript
 // ✅ CORRECT - Design types to avoid nullability
 type User = {
@@ -591,6 +607,7 @@ const createUser = (name: string, email: string): User => ({ name, email });
 ### Acceptable Exception: Test Files
 
 In test files, `!` may be acceptable when:
+
 - You control the test data and know it's defined
 - Tests will fail anyway if the value is undefined
 - The alternative makes tests significantly harder to read
@@ -609,6 +626,7 @@ expect(result!.value).toBe(expected); // Test fails if null
 ### Key Principle
 
 If you find yourself reaching for `!`, ask:
+
 1. Can I restructure the code to avoid nullability?
 2. Can I use a type guard to narrow the type?
 3. Can I use optional chaining with a sensible default?
@@ -651,10 +669,7 @@ const addOutputLine = (lines: OutputLine[], newLine: OutputLine): void => {
 
 ```typescript
 // ✅ CORRECT - Immutable update
-const updateSession = (
-  session: Session,
-  updates: Partial<Session>,
-): Session => {
+const updateSession = (session: Session, updates: Partial<Session>): Session => {
   return { ...session, ...updates }; // New object
 };
 
@@ -672,8 +687,12 @@ const updateSession = (session: Session, updates: Partial<Session>): void => {
 
 ```typescript
 // ✅ CORRECT - Composed functions
-const normalizePath = (path: string): string => { /* ... */ };
-const getNode = (path: string): FileNode | null => { /* ... */ };
+const normalizePath = (path: string): string => {
+  /* ... */
+};
+const getNode = (path: string): FileNode | null => {
+  /* ... */
+};
 const canRead = (path: string, userType: UserType): boolean =>
   getNode(normalizePath(path))?.permissions.read.includes(userType) ?? false;
 
@@ -681,7 +700,9 @@ const canRead = (path: string, userType: UserType): boolean =>
 const canRead = (path: string, userType: UserType): boolean => {
   const parts = path.split('/').filter(Boolean);
   let current = fileSystem;
-  for (const part of parts) { /* ... nested logic ... */ }
+  for (const part of parts) {
+    /* ... nested logic ... */
+  }
   // ... 30 more lines
 };
 ```
@@ -694,8 +715,8 @@ const canRead = (path: string, userType: UserType): boolean => {
 
 ```typescript
 // ✅ CORRECT - Functional array methods
-const openPorts = machine.ports.filter(p => p.open);
-const serviceNames = openPorts.map(p => p.service);
+const openPorts = machine.ports.filter((p) => p.open);
+const serviceNames = openPorts.map((p) => p.service);
 
 // ❌ WRONG - Imperative loops
 const openPorts = [];

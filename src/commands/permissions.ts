@@ -37,35 +37,31 @@ export const hasPrivilege = (current: UserType, required: UserType): boolean =>
 
 export const getAccessibleCommandNames = (
   commandNames: readonly string[],
-  userType: UserType
+  userType: UserType,
 ): readonly string[] =>
   commandNames.filter((name) => {
     const required = COMMAND_TIERS[name];
     return required === undefined || hasPrivilege(userType, required);
   });
 
-const createRestrictedFn = (
-  name: string,
-  requiredType: UserType
-): ((...args: readonly unknown[]) => never) =>
+const createRestrictedFn =
+  (name: string, requiredType: UserType): ((...args: readonly unknown[]) => never) =>
   (): never => {
     throw new Error(
-      `permission denied: '${name}' requires ${PRIVILEGE_LABEL[requiredType]} privileges`
+      `permission denied: '${name}' requires ${PRIVILEGE_LABEL[requiredType]} privileges`,
     );
   };
 
 export const applyCommandRestrictions = (
   commands: ReadonlyMap<string, Command>,
-  userType: UserType
+  userType: UserType,
 ): ReadonlyMap<string, Command> =>
   new Map(
-    Array.from(commands.entries()).map(
-      ([name, cmd]): readonly [string, Command] => {
-        const required = COMMAND_TIERS[name];
-        if (required === undefined || hasPrivilege(userType, required)) {
-          return [name, cmd];
-        }
-        return [name, { ...cmd, fn: createRestrictedFn(name, required) }];
+    Array.from(commands.entries()).map(([name, cmd]): readonly [string, Command] => {
+      const required = COMMAND_TIERS[name];
+      if (required === undefined || hasPrivilege(userType, required)) {
+        return [name, cmd];
       }
-    )
+      return [name, { ...cmd, fn: createRestrictedFn(name, required) }];
+    }),
   );

@@ -4,12 +4,12 @@ Simulated network environment for CTF puzzles. Defines the topology, machines, p
 
 ## Files
 
-| File | Description |
-|------|-------------|
-| `types.ts` | Core types: `NetworkInterface`, `RemoteMachine`, `Port`, `DnsRecord`, `NetworkConfig` |
-| `initialNetwork.ts` | `createInitialNetwork()` — defines the full network topology (machines, ports, DNS) |
+| File                 | Description                                                                                                         |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `types.ts`           | Core types: `NetworkInterface`, `RemoteMachine`, `Port`, `DnsRecord`, `NetworkConfig`                               |
+| `initialNetwork.ts`  | `createInitialNetwork()` — defines the full network topology (machines, ports, DNS)                                 |
 | `NetworkContext.tsx` | React context providing network queries: `getMachine`, `resolveDomain`, `getInterfaces`, `getLocalIP`, `getGateway` |
-| `index.ts` | Module exports |
+| `index.ts`           | Module exports                                                                                                      |
 
 ## Network Topology
 
@@ -26,22 +26,22 @@ External
 
 ## Machines & Services
 
-| Machine | IP | Open Ports | Services |
-|---------|-----|-----------|----------|
-| gateway | 192.168.1.1 | 80, 443 | http, https |
-| fileserver | 192.168.1.50 | 21, 22 | ftp, ssh |
-| webserver | 192.168.1.75 | 22, 80, 3306, 4444 | ssh, http, mysql, elite (backdoor) |
-| darknet | 203.0.113.42 | 22, 8080, 31337 | ssh, http-alt, elite (backdoor) |
+| Machine    | IP           | Open Ports         | Services                           |
+| ---------- | ------------ | ------------------ | ---------------------------------- |
+| gateway    | 192.168.1.1  | 80, 443            | http, https                        |
+| fileserver | 192.168.1.50 | 21, 22             | ftp, ssh                           |
+| webserver  | 192.168.1.75 | 22, 80, 3306, 4444 | ssh, http, mysql, elite (backdoor) |
+| darknet    | 203.0.113.42 | 22, 8080, 31337    | ssh, http-alt, elite (backdoor)    |
 
 ## DNS Records
 
-| Domain | IP | Type |
-|--------|-----|------|
-| gateway.local | 192.168.1.1 | A |
-| fileserver.local | 192.168.1.50 | A |
-| webserver.local | 192.168.1.75 | A |
-| darknet.ctf | 203.0.113.42 | A |
-| www.darknet.ctf | 203.0.113.42 | A |
+| Domain           | IP           | Type |
+| ---------------- | ------------ | ---- |
+| gateway.local    | 192.168.1.1  | A    |
+| fileserver.local | 192.168.1.50 | A    |
+| webserver.local  | 192.168.1.75 | A    |
+| darknet.ctf      | 203.0.113.42 | A    |
+| www.darknet.ctf  | 203.0.113.42 | A    |
 
 ## Key Types
 

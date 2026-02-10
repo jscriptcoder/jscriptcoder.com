@@ -24,7 +24,11 @@ export const createIfconfigCommand = (context: IfconfigContext): Command => ({
     description:
       'Display information about network interfaces. If no interface is specified, shows all active interfaces. Shows IP address, netmask, gateway, and MAC address for each interface.',
     arguments: [
-      { name: 'interface', description: 'Name of the interface to display (e.g., "eth0")', required: false },
+      {
+        name: 'interface',
+        description: 'Name of the interface to display (e.g., "eth0")',
+        required: false,
+      },
     ],
     examples: [
       { command: 'ifconfig()', description: 'Show all network interfaces' },

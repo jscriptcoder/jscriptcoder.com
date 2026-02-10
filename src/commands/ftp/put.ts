@@ -12,9 +12,26 @@ type FtpPutContext = {
   readonly getOriginUserType: () => UserType;
   readonly resolvePathForMachine: (path: string, cwd: string) => string;
   readonly getNodeFromMachine: (machineId: MachineId, path: string, cwd: string) => FileNode | null;
-  readonly readFileFromMachine: (machineId: MachineId, path: string, cwd: string, userType: UserType) => string | null;
-  readonly createFileOnMachine: (machineId: MachineId, path: string, cwd: string, content: string, userType: UserType) => PermissionResult;
-  readonly writeFileToMachine: (machineId: MachineId, path: string, cwd: string, content: string, userType: UserType) => PermissionResult;
+  readonly readFileFromMachine: (
+    machineId: MachineId,
+    path: string,
+    cwd: string,
+    userType: UserType,
+  ) => string | null;
+  readonly createFileOnMachine: (
+    machineId: MachineId,
+    path: string,
+    cwd: string,
+    content: string,
+    userType: UserType,
+  ) => PermissionResult;
+  readonly writeFileToMachine: (
+    machineId: MachineId,
+    path: string,
+    cwd: string,
+    content: string,
+    userType: UserType,
+  ) => PermissionResult;
 };
 
 export const createFtpPutCommand = (context: FtpPutContext): Command => ({
@@ -27,11 +44,21 @@ export const createFtpPutCommand = (context: FtpPutContext): Command => ({
       'If remotePath is not specified, the file is saved in the current remote directory with the same name.',
     arguments: [
       { name: 'localFile', description: 'Path to the file on the local machine', required: true },
-      { name: 'remotePath', description: 'Destination path on remote server (optional)', required: false },
+      {
+        name: 'remotePath',
+        description: 'Destination path on remote server (optional)',
+        required: false,
+      },
     ],
     examples: [
-      { command: 'put("/home/jshacker/payload.sh")', description: 'Upload to current remote directory' },
-      { command: 'put("/tmp/data.txt", "/srv/ftp/uploads/data.txt")', description: 'Upload to specific remote path' },
+      {
+        command: 'put("/home/jshacker/payload.sh")',
+        description: 'Upload to current remote directory',
+      },
+      {
+        command: 'put("/tmp/data.txt", "/srv/ftp/uploads/data.txt")',
+        description: 'Upload to specific remote path',
+      },
     ],
   },
   fn: (localFile?: unknown, remotePath?: unknown): string => {
@@ -60,16 +87,24 @@ export const createFtpPutCommand = (context: FtpPutContext): Command => ({
     }
 
     // Read local file content
-    const content = context.readFileFromMachine(originMachine, resolvedLocalPath, '/', originUserType);
+    const content = context.readFileFromMachine(
+      originMachine,
+      resolvedLocalPath,
+      '/',
+      originUserType,
+    );
     if (content === null) {
       throw new Error(`put: ${localFile}: Permission denied`);
     }
 
     // Determine remote destination
     const fileName = resolvedLocalPath.split('/').pop() ?? localFile;
-    const remoteDestination = typeof remotePath === 'string'
-      ? remotePath
-      : (remoteCwd === '/' ? `/${fileName}` : `${remoteCwd}/${fileName}`);
+    const remoteDestination =
+      typeof remotePath === 'string'
+        ? remotePath
+        : remoteCwd === '/'
+          ? `/${fileName}`
+          : `${remoteCwd}/${fileName}`;
     const resolvedRemotePath = context.resolvePathForMachine(remoteDestination, remoteCwd);
 
     // Check if remote file already exists
@@ -80,13 +115,25 @@ export const createFtpPutCommand = (context: FtpPutContext): Command => ({
       if (remoteNode.type !== 'file') {
         throw new Error(`put: remote path ${remoteDestination}: Is a directory`);
       }
-      const writeResult = context.writeFileToMachine(remoteMachine, resolvedRemotePath, '/', content, remoteUserType);
+      const writeResult = context.writeFileToMachine(
+        remoteMachine,
+        resolvedRemotePath,
+        '/',
+        content,
+        remoteUserType,
+      );
       if (!writeResult.allowed) {
         throw new Error(`put: remote path ${remoteDestination}: ${writeResult.error}`);
       }
     } else {
       // File doesn't exist - create it
-      const createResult = context.createFileOnMachine(remoteMachine, resolvedRemotePath, '/', content, remoteUserType);
+      const createResult = context.createFileOnMachine(
+        remoteMachine,
+        resolvedRemotePath,
+        '/',
+        content,
+        remoteUserType,
+      );
       if (!createResult.allowed) {
         throw new Error(`put: remote path ${remoteDestination}: ${createResult.error}`);
       }

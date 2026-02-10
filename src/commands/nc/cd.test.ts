@@ -6,10 +6,7 @@ import { createNcCdCommand } from './cd';
 
 // --- Factory Functions ---
 
-const createMockDirectory = (
-  name: string,
-  overrides?: Partial<FileNode>
-): FileNode => ({
+const createMockDirectory = (name: string, overrides?: Partial<FileNode>): FileNode => ({
   name,
   type: 'directory',
   owner: 'root',
@@ -76,8 +73,7 @@ const createMockNcCdContext = (config: NcCdContextConfig = {}) => {
     getUserType: () => userType,
     setCwd,
     resolvePath,
-    getNodeFromMachine: (_machineId: MachineId, path: string, _cwd: string) =>
-      nodes[path] ?? null,
+    getNodeFromMachine: (_machineId: MachineId, path: string, _cwd: string) => nodes[path] ?? null,
   };
 };
 
@@ -184,9 +180,7 @@ describe('nc cd command', () => {
 
       const cd = createNcCdCommand(context);
 
-      expect(() => cd.fn('nonexistent')).toThrow(
-        'cd: nonexistent: No such file or directory'
-      );
+      expect(() => cd.fn('nonexistent')).toThrow('cd: nonexistent: No such file or directory');
       expect(context.setCwd).not.toHaveBeenCalled();
     });
 
@@ -199,9 +193,7 @@ describe('nc cd command', () => {
 
       const cd = createNcCdCommand(context);
 
-      expect(() => cd.fn('readme.txt')).toThrow(
-        'cd: readme.txt: Not a directory'
-      );
+      expect(() => cd.fn('readme.txt')).toThrow('cd: readme.txt: Not a directory');
       expect(context.setCwd).not.toHaveBeenCalled();
     });
 
@@ -220,9 +212,7 @@ describe('nc cd command', () => {
 
       const cd = createNcCdCommand(context);
 
-      expect(() => cd.fn('/root/secret')).toThrow(
-        'cd: /root/secret: Permission denied'
-      );
+      expect(() => cd.fn('/root/secret')).toThrow('cd: /root/secret: Permission denied');
       expect(context.setCwd).not.toHaveBeenCalled();
     });
   });

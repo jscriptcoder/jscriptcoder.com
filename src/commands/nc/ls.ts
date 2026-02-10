@@ -9,7 +9,12 @@ type NcLsContext = {
   readonly getUserType: () => UserType;
   readonly resolvePath: (path: string, cwd: string) => string;
   readonly getNodeFromMachine: (machineId: MachineId, path: string, cwd: string) => FileNode | null;
-  readonly listDirectoryFromMachine: (machineId: MachineId, path: string, cwd: string, userType: UserType) => readonly string[] | null;
+  readonly listDirectoryFromMachine: (
+    machineId: MachineId,
+    path: string,
+    cwd: string,
+    userType: UserType,
+  ) => readonly string[] | null;
 };
 
 export const createNcLsCommand = (context: NcLsContext): Command => ({
@@ -64,7 +69,7 @@ export const createNcLsCommand = (context: NcLsContext): Command => ({
     }
 
     // Add trailing slash to directories
-    const formatted = visibleEntries.map(name => {
+    const formatted = visibleEntries.map((name) => {
       const childPath = targetPath === '/' ? `/${name}` : `${targetPath}/${name}`;
       const childNode = getNodeFromMachine(machine, childPath, cwd);
       return childNode?.type === 'directory' ? `${name}/` : name;

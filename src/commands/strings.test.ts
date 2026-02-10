@@ -8,7 +8,7 @@ import { createStringsCommand } from './strings';
 const createMockFile = (
   name: string,
   content: string,
-  overrides?: Partial<FileNode>
+  overrides?: Partial<FileNode>,
 ): FileNode => ({
   name,
   type: 'file',
@@ -70,7 +70,7 @@ describe('strings command', () => {
       const strings = createStringsCommand(context);
 
       expect(() => strings.fn('test.bin', 0)).toThrow(
-        'strings: minimum length must be between 1 and 100'
+        'strings: minimum length must be between 1 and 100',
       );
     });
 
@@ -82,7 +82,7 @@ describe('strings command', () => {
       const strings = createStringsCommand(context);
 
       expect(() => strings.fn('test.bin', 101)).toThrow(
-        'strings: minimum length must be between 1 and 100'
+        'strings: minimum length must be between 1 and 100',
       );
     });
   });
@@ -95,7 +95,7 @@ describe('strings command', () => {
       const strings = createStringsCommand(context);
 
       expect(() => strings.fn('nonexistent.bin')).toThrow(
-        'strings: nonexistent.bin: No such file or directory'
+        'strings: nonexistent.bin: No such file or directory',
       );
     });
 
@@ -106,9 +106,7 @@ describe('strings command', () => {
       });
       const strings = createStringsCommand(context);
 
-      expect(() => strings.fn('/mydir')).toThrow(
-        'strings: /mydir: Is a directory'
-      );
+      expect(() => strings.fn('/mydir')).toThrow('strings: /mydir: Is a directory');
     });
 
     it('should throw error when permission denied', () => {
@@ -121,9 +119,7 @@ describe('strings command', () => {
       });
       const strings = createStringsCommand(context);
 
-      expect(() => strings.fn('/secret.bin')).toThrow(
-        'strings: /secret.bin: Permission denied'
-      );
+      expect(() => strings.fn('/secret.bin')).toThrow('strings: /secret.bin: Permission denied');
     });
 
     it('should allow root to read any file', () => {
@@ -144,8 +140,7 @@ describe('strings command', () => {
 
   describe('string extraction', () => {
     it('should extract printable strings from binary content', () => {
-      const binaryContent =
-        '\x7fELF\x00\x00\x00HELLO\x00\x00\x00WORLD\x00\x00';
+      const binaryContent = '\x7fELF\x00\x00\x00HELLO\x00\x00\x00WORLD\x00\x00';
       const file = createMockFile('test.bin', binaryContent);
       const context = createMockStringsContext({
         files: { '/test.bin': file },
@@ -190,8 +185,7 @@ describe('strings command', () => {
     });
 
     it('should extract FLAG from binary', () => {
-      const binaryContent =
-        '\x7fELF\x00\x00FLAG{hidden_in_binary}\x00\x00\x89\xe5';
+      const binaryContent = '\x7fELF\x00\x00FLAG{hidden_in_binary}\x00\x00\x89\xe5';
       const file = createMockFile('backdoor.bin', binaryContent);
       const context = createMockStringsContext({
         files: { '/backdoor.bin': file },

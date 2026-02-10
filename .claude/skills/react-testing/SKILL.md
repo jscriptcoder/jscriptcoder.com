@@ -35,6 +35,7 @@ it('should add command to history', () => {
 ```
 
 **Pattern:**
+
 - `result.current` - Current return value of hook
 - `act()` - Wrap state updates that trigger re-renders
 - Each state-changing call needs its own `act()` block
@@ -63,9 +64,7 @@ it('should declare a const variable', () => {
 import { useAutoComplete } from './useAutoComplete';
 
 it('should match commands with () suffix', () => {
-  const { result } = renderHook(() =>
-    useAutoComplete(['help', 'echo'], ['myVar'])
-  );
+  const { result } = renderHook(() => useAutoComplete(['help', 'echo'], ['myVar']));
 
   const completions = result.current.getCompletions('hel');
 
@@ -309,7 +308,7 @@ const setupHistory = (commands: string[] = []) => {
   const { result } = renderHook(() => useCommandHistory());
 
   act(() => {
-    commands.forEach(cmd => result.current.addCommand(cmd));
+    commands.forEach((cmd) => result.current.addCommand(cmd));
   });
 
   return result;
@@ -389,8 +388,12 @@ afterEach(() => {
 });
 
 // ✅ CORRECT - Just write tests
-it('test 1', () => { /* ... */ });
-it('test 2', () => { /* ... */ });
+it('test 1', () => {
+  /* ... */
+});
+it('test 2', () => {
+  /* ... */
+});
 ```
 
 ---

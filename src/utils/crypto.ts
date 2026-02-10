@@ -26,10 +26,7 @@ export const generateKey = (): string => {
 
 // Encrypt content using AES-256-GCM
 // Returns base64 encoded string (IV + ciphertext)
-export const encryptContent = async (
-  plaintext: string,
-  keyHex: string
-): Promise<string> => {
+export const encryptContent = async (plaintext: string, keyHex: string): Promise<string> => {
   const encoder = new TextEncoder();
   const data = encoder.encode(plaintext);
 
@@ -38,20 +35,12 @@ export const encryptContent = async (
 
   // Import the key
   const keyBytes = hexToBytes(keyHex);
-  const cryptoKey = await crypto.subtle.importKey(
-    'raw',
-    keyBytes,
-    { name: 'AES-GCM' },
-    false,
-    ['encrypt']
-  );
+  const cryptoKey = await crypto.subtle.importKey('raw', keyBytes, { name: 'AES-GCM' }, false, [
+    'encrypt',
+  ]);
 
   // Encrypt
-  const ciphertext = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv },
-    cryptoKey,
-    data
-  );
+  const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKey, data);
 
   // Combine IV + ciphertext and encode as base64
   const combined = new Uint8Array(iv.length + ciphertext.byteLength);
@@ -62,14 +51,9 @@ export const encryptContent = async (
 };
 
 // Decrypt content using AES-256-GCM
-export const decryptContent = async (
-  encryptedBase64: string,
-  keyHex: string
-): Promise<string> => {
+export const decryptContent = async (encryptedBase64: string, keyHex: string): Promise<string> => {
   // Decode base64 to get IV + ciphertext
-  const encryptedData = Uint8Array.from(atob(encryptedBase64), (c) =>
-    c.charCodeAt(0)
-  );
+  const encryptedData = Uint8Array.from(atob(encryptedBase64), (c) => c.charCodeAt(0));
 
   // First 12 bytes are the IV
   const iv = encryptedData.slice(0, 12);
@@ -77,19 +61,15 @@ export const decryptContent = async (
 
   // Import the key
   const keyBytes = hexToBytes(keyHex);
-  const cryptoKey = await crypto.subtle.importKey(
-    'raw',
-    keyBytes,
-    { name: 'AES-GCM' },
-    false,
-    ['decrypt']
-  );
+  const cryptoKey = await crypto.subtle.importKey('raw', keyBytes, { name: 'AES-GCM' }, false, [
+    'decrypt',
+  ]);
 
   // Decrypt
   const decryptedBuffer = await crypto.subtle.decrypt(
     { name: 'AES-GCM', iv },
     cryptoKey,
-    ciphertext
+    ciphertext,
   );
 
   // Convert to string

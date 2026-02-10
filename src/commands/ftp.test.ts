@@ -72,27 +72,21 @@ describe('ftp command', () => {
       const context = createMockFtpContext({ dnsRecords: [] });
       const ftp = createFtpCommand(context);
 
-      expect(() => ftp.fn('unknown.host')).toThrow(
-        'ftp: unknown.host: Name or service not known'
-      );
+      expect(() => ftp.fn('unknown.host')).toThrow('ftp: unknown.host: Name or service not known');
     });
 
     it('should throw error when connecting to localhost IP', () => {
       const context = createMockFtpContext({ localIP: '192.168.1.100' });
       const ftp = createFtpCommand(context);
 
-      expect(() => ftp.fn('192.168.1.100')).toThrow(
-        'ftp: cannot connect to localhost via FTP'
-      );
+      expect(() => ftp.fn('192.168.1.100')).toThrow('ftp: cannot connect to localhost via FTP');
     });
 
     it('should throw error when connecting to 127.0.0.1', () => {
       const context = createMockFtpContext();
       const ftp = createFtpCommand(context);
 
-      expect(() => ftp.fn('127.0.0.1')).toThrow(
-        'ftp: cannot connect to localhost via FTP'
-      );
+      expect(() => ftp.fn('127.0.0.1')).toThrow('ftp: cannot connect to localhost via FTP');
     });
 
     it('should throw error when connecting to localhost hostname', () => {
@@ -101,9 +95,7 @@ describe('ftp command', () => {
       const context = createMockFtpContext();
       const ftp = createFtpCommand(context);
 
-      expect(() => ftp.fn('localhost')).toThrow(
-        'ftp: localhost: Name or service not known'
-      );
+      expect(() => ftp.fn('localhost')).toThrow('ftp: localhost: Name or service not known');
     });
 
     it('should throw error when machine does not exist', () => {
@@ -111,7 +103,7 @@ describe('ftp command', () => {
       const ftp = createFtpCommand(context);
 
       expect(() => ftp.fn('10.0.0.1')).toThrow(
-        'ftp: connect to 10.0.0.1 port 21: Connection refused'
+        'ftp: connect to 10.0.0.1 port 21: Connection refused',
       );
     });
 
@@ -127,7 +119,7 @@ describe('ftp command', () => {
       const ftp = createFtpCommand(context);
 
       expect(() => ftp.fn('192.168.1.50')).toThrow(
-        'ftp: connect to 192.168.1.50 port 21: Connection refused'
+        'ftp: connect to 192.168.1.50 port 21: Connection refused',
       );
     });
 
@@ -143,7 +135,7 @@ describe('ftp command', () => {
       const ftp = createFtpCommand(context);
 
       expect(() => ftp.fn('192.168.1.50')).toThrow(
-        'ftp: connect to 192.168.1.50 port 21: Connection refused'
+        'ftp: connect to 192.168.1.50 port 21: Connection refused',
       );
     });
   });
@@ -185,7 +177,7 @@ describe('ftp command', () => {
       if (isAsyncOutput(result)) {
         result.start(
           (line) => lines.push(line),
-          () => {}
+          () => {},
         );
       }
 
@@ -281,7 +273,7 @@ describe('ftp command', () => {
       if (isAsyncOutput(result)) {
         result.start(
           (line) => lines.push(line),
-          () => {}
+          () => {},
         );
       }
 
@@ -304,7 +296,7 @@ describe('ftp command', () => {
       if (isAsyncOutput(result)) {
         result.start(
           (line) => lines.push(line),
-          () => {}
+          () => {},
         );
       }
 
@@ -331,7 +323,7 @@ describe('ftp command', () => {
       if (isAsyncOutput(result)) {
         result.start(
           (line) => lines.push(line),
-          () => {}
+          () => {},
         );
       }
 
@@ -359,7 +351,7 @@ describe('ftp command', () => {
           () => {},
           (data) => {
             followUp = data;
-          }
+          },
         );
       }
 
@@ -392,7 +384,7 @@ describe('ftp command', () => {
           () => {},
           (data) => {
             followUp = data;
-          }
+          },
         );
       }
 
@@ -421,7 +413,7 @@ describe('ftp command', () => {
       if (isAsyncOutput(result)) {
         result.start(
           (line) => lines.push(line),
-          () => {}
+          () => {},
         );
 
         // Cancel before first delay completes
@@ -455,7 +447,7 @@ describe('ftp command', () => {
           (line) => lines.push(line),
           () => {
             completed = true;
-          }
+          },
         );
 
         // Advance past first delay, then cancel

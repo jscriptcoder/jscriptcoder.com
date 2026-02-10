@@ -4,9 +4,7 @@ import { createIfconfigCommand } from './ifconfig';
 
 // --- Factory Functions ---
 
-const getMockNetworkInterface = (
-  overrides?: Partial<NetworkInterface>
-): NetworkInterface => ({
+const getMockNetworkInterface = (overrides?: Partial<NetworkInterface>): NetworkInterface => ({
   name: 'eth0',
   flags: ['UP', 'BROADCAST', 'RUNNING', 'MULTICAST'],
   inet: '192.168.1.100',
@@ -87,9 +85,7 @@ describe('ifconfig command', () => {
 
       const ifconfig = createIfconfigCommand(context);
 
-      expect(() => ifconfig.fn('eth99')).toThrow(
-        "ifconfig: interface 'eth99' not found"
-      );
+      expect(() => ifconfig.fn('eth99')).toThrow("ifconfig: interface 'eth99' not found");
     });
   });
 

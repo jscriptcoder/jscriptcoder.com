@@ -34,51 +34,69 @@ export const useFileSystemCommands = (): Map<string, Command> => {
     commands.set('whoami', createWhoamiCommand(getUsername));
 
     // ls command
-    commands.set('ls', createLsCommand({
-      getCurrentPath,
-      resolvePath,
-      getNode,
-      getUserType,
-    }));
+    commands.set(
+      'ls',
+      createLsCommand({
+        getCurrentPath,
+        resolvePath,
+        getNode,
+        getUserType,
+      }),
+    );
 
     // cd command
-    commands.set('cd', createCdCommand({
-      resolvePath,
-      getNode,
-      setCurrentPath,
-      getUserType,
-      getHomePath,
-    }));
+    commands.set(
+      'cd',
+      createCdCommand({
+        resolvePath,
+        getNode,
+        setCurrentPath,
+        getUserType,
+        getHomePath,
+      }),
+    );
 
     // cat command
-    commands.set('cat', createCatCommand({
-      resolvePath,
-      getNode,
-      getUserType,
-    }));
+    commands.set(
+      'cat',
+      createCatCommand({
+        resolvePath,
+        getNode,
+        getUserType,
+      }),
+    );
 
     // decrypt command
-    commands.set('decrypt', createDecryptCommand({
-      resolvePath,
-      getNode,
-      getUserType,
-    }));
+    commands.set(
+      'decrypt',
+      createDecryptCommand({
+        resolvePath,
+        getNode,
+        getUserType,
+      }),
+    );
 
     // output command
-    commands.set('output', createOutputCommand({
-      resolvePath,
-      getNode,
-      getUserType,
-      createFile,
-      writeFile,
-    }));
+    commands.set(
+      'output',
+      createOutputCommand({
+        resolvePath,
+        getNode,
+        getUserType,
+        createFile,
+        writeFile,
+      }),
+    );
 
     // strings command
-    commands.set('strings', createStringsCommand({
-      resolvePath,
-      getNode,
-      getUserType,
-    }));
+    commands.set(
+      'strings',
+      createStringsCommand({
+        resolvePath,
+        getNode,
+        getUserType,
+      }),
+    );
 
     return commands;
   }, [setCurrentPath, resolvePath, getNode, createFile, writeFile, session]);

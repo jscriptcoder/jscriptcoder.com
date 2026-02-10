@@ -68,14 +68,9 @@ const createMockNcCatContext = (config: NcCatContextConfig = {}) => {
     getCwd: () => cwd,
     getUserType: () => userType,
     resolvePath,
-    getNodeFromMachine: (_machineId: MachineId, path: string, _cwd: string) =>
-      nodes[path] ?? null,
-    readFileFromMachine: (
-      _machineId: MachineId,
-      path: string,
-      _cwd: string,
-      _userType: UserType
-    ) => fileContents[path] ?? null,
+    getNodeFromMachine: (_machineId: MachineId, path: string, _cwd: string) => nodes[path] ?? null,
+    readFileFromMachine: (_machineId: MachineId, path: string, _cwd: string, _userType: UserType) =>
+      fileContents[path] ?? null,
   };
 };
 
@@ -187,7 +182,7 @@ describe('nc cat command', () => {
       const cat = createNcCatCommand(context);
 
       expect(() => cat.fn('nonexistent.txt')).toThrow(
-        'cat: nonexistent.txt: No such file or directory'
+        'cat: nonexistent.txt: No such file or directory',
       );
     });
 
@@ -216,9 +211,7 @@ describe('nc cat command', () => {
 
       const cat = createNcCatCommand(context);
 
-      expect(() => cat.fn('/root/secret.txt')).toThrow(
-        'cat: /root/secret.txt: Permission denied'
-      );
+      expect(() => cat.fn('/root/secret.txt')).toThrow('cat: /root/secret.txt: Permission denied');
     });
   });
 

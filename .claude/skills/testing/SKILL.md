@@ -18,6 +18,7 @@ description: Testing patterns for behavior-driven tests. Use when writing tests 
 Never test implementation details. Test behavior through public APIs.
 
 **Why this matters:**
+
 - Tests remain valid when refactoring
 - Tests document intended behavior
 - Tests catch real bugs, not implementation changes
@@ -25,6 +26,7 @@ Never test implementation details. Test behavior through public APIs.
 ### Examples
 
 ❌ **WRONG - Testing implementation:**
+
 ```typescript
 // ❌ Testing HOW (implementation detail)
 it('should call checkPermissions', () => {
@@ -47,6 +49,7 @@ it('should set currentPath', () => {
 ```
 
 ✅ **CORRECT - Testing behavior through public API:**
+
 ```typescript
 it('should deny access to restricted files for guest users', () => {
   const result = cat('/root/secret.txt', 'guest');
@@ -157,6 +160,7 @@ const getMockMachine = (overrides?: Partial<RemoteMachine>): RemoteMachine => ({
 ```
 
 **Why use factory functions?**
+
 - Ensures test data is complete and valid
 - Catches breaking changes early (type errors on missing fields)
 - Single source of truth (consistent test data)
@@ -183,8 +187,8 @@ const getMockUser = (overrides?: Partial<RemoteUser>): RemoteUser => ({
 const getMockMachine = (overrides?: Partial<RemoteMachine>): RemoteMachine => ({
   ip: '192.168.1.50',
   hostname: 'testserver',
-  ports: [getMockPort()],      // ✅ Compose factories
-  users: [getMockUser()],      // ✅ Compose factories
+  ports: [getMockPort()], // ✅ Compose factories
+  users: [getMockUser()], // ✅ Compose factories
   ...overrides,
 });
 
@@ -196,7 +200,7 @@ it('detects machines with multiple open ports', () => {
       getMockPort({ port: 80, service: 'http', open: true }),
     ],
   });
-  const openPorts = machine.ports.filter(p => p.open);
+  const openPorts = machine.ports.filter((p) => p.open);
   expect(openPorts.length).toBe(2);
 });
 ```
@@ -204,6 +208,7 @@ it('detects machines with multiple open ports', () => {
 ### Anti-Patterns
 
 ❌ **WRONG: Using `let` and `beforeEach`**
+
 ```typescript
 let machine: RemoteMachine;
 beforeEach(() => {
@@ -220,37 +225,41 @@ it('test 2', () => {
 ```
 
 ✅ **CORRECT: Factory per test**
+
 ```typescript
 it('test 1', () => {
-  const machine = getMockMachine({ hostname: 'modified' });  // Fresh state
+  const machine = getMockMachine({ hostname: 'modified' }); // Fresh state
   // ...
 });
 
 it('test 2', () => {
-  const machine = getMockMachine();  // Fresh state, not affected by test 1
-  expect(machine.hostname).toBe('testserver');  // ✅ Passes
+  const machine = getMockMachine(); // Fresh state, not affected by test 1
+  expect(machine.hostname).toBe('testserver'); // ✅ Passes
 });
 ```
 
 ❌ **WRONG: Incomplete objects**
+
 ```typescript
 const getMockMachine = () => ({
-  ip: '192.168.1.50',  // Missing hostname, ports, users!
+  ip: '192.168.1.50', // Missing hostname, ports, users!
 });
 ```
 
 ✅ **CORRECT: Complete objects**
+
 ```typescript
 const getMockMachine = (overrides?: Partial<RemoteMachine>): RemoteMachine => ({
   ip: '192.168.1.50',
   hostname: 'testserver',
   ports: [{ port: 22, service: 'ssh', open: true }],
   users: [{ username: 'root', passwordHash: '...', userType: 'root' }],
-  ...overrides,  // All required fields present
+  ...overrides, // All required fields present
 });
 ```
 
 ❌ **WRONG: Redefining types in tests**
+
 ```typescript
 // ❌ Type already defined in src/network/types.ts!
 type RemoteMachine = { ip: string; hostname: string; };
@@ -258,6 +267,7 @@ const getMockMachine = (): RemoteMachine => ({ ... });
 ```
 
 ✅ **CORRECT: Import real types**
+
 ```typescript
 import type { RemoteMachine } from '../network/types';
 
@@ -279,6 +289,7 @@ Watch for these patterns that give fake 100% coverage:
 ### Pattern 1: Mock the function being tested
 
 ❌ **WRONG** - Gives 100% coverage but tests nothing:
+
 ```typescript
 it('calls permission check', () => {
   const spy = vi.spyOn(fs, 'checkPermissions');
@@ -288,6 +299,7 @@ it('calls permission check', () => {
 ```
 
 ✅ **CORRECT** - Test actual behavior:
+
 ```typescript
 it('should deny guest access to passwd file', () => {
   const result = cat('/etc/passwd', 'guest');
@@ -298,6 +310,7 @@ it('should deny guest access to passwd file', () => {
 ### Pattern 2: Test only that function was called
 
 ❌ **WRONG** - No behavior validation:
+
 ```typescript
 it('validates SSH connection', () => {
   const spy = vi.spyOn(network, 'getMachine');
@@ -307,6 +320,7 @@ it('validates SSH connection', () => {
 ```
 
 ✅ **CORRECT** - Verify the outcome:
+
 ```typescript
 it('should reject SSH to machine without SSH port open', () => {
   const result = ssh('root', '192.168.1.1'); // gateway has SSH closed
@@ -317,6 +331,7 @@ it('should reject SSH to machine without SSH port open', () => {
 ### Pattern 3: Test trivial getters/setters
 
 ❌ **WRONG** - Testing implementation, not behavior:
+
 ```typescript
 it('sets current path', () => {
   setCurrentPath('/home');
@@ -325,6 +340,7 @@ it('sets current path', () => {
 ```
 
 ✅ **CORRECT** - Test meaningful behavior:
+
 ```typescript
 it('should resolve relative paths from current directory', () => {
   cd('/home/jshacker');
@@ -336,6 +352,7 @@ it('should resolve relative paths from current directory', () => {
 ### Pattern 4: 100% line coverage, 0% branch coverage
 
 ❌ **WRONG** - Missing edge cases:
+
 ```typescript
 it('lists directory', () => {
   const result = ls('/home');
@@ -345,6 +362,7 @@ it('lists directory', () => {
 ```
 
 ✅ **CORRECT** - Test all branches:
+
 ```typescript
 describe('ls command', () => {
   it('should return error for non-existent path', () => {
@@ -376,6 +394,7 @@ describe('ls command', () => {
 Place test files next to their implementation files.
 
 ✅ **CORRECT:**
+
 ```
 src/
   commands/
@@ -391,6 +410,7 @@ src/
 ```
 
 ❌ **WRONG:**
+
 ```
 src/
   commands/
@@ -402,12 +422,13 @@ tests/
 ```
 
 **Why colocated tests:**
+
 - **Discoverable**: `ssh.ts` → `ssh.test.ts` right next to it
 - **Manageable**: Small, focused test files instead of large monoliths
 - **Encourages testing**: Tests are visible when working on a file
 - **Clear coverage**: Obvious which files have tests
 
-**Important:** This is about *file organization*, not test content. Tests should still focus on behavior through public APIs, not implementation details. A colocated `ssh.test.ts` tests what `ssh()` does, not how it's implemented internally.
+**Important:** This is about _file organization_, not test content. Tests should still focus on behavior through public APIs, not implementation details. A colocated `ssh.test.ts` tests what `ssh()` does, not how it's implemented internally.
 
 ---
 

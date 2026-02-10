@@ -5,7 +5,9 @@ import type { OutputLine, AuthorData } from './types';
 
 // --- Factory Functions ---
 
-const createOutputLine = (overrides: Partial<OutputLine> & Pick<OutputLine, 'type'>): OutputLine => ({
+const createOutputLine = (
+  overrides: Partial<OutputLine> & Pick<OutputLine, 'type'>,
+): OutputLine => ({
   id: 1,
   content: 'test content',
   ...overrides,
@@ -48,11 +50,13 @@ describe('TerminalOutput', () => {
 
   describe('command lines', () => {
     it('should render command with prompt', () => {
-      const lines = [createOutputLine({
-        type: 'command',
-        content: 'ls()',
-        prompt: 'jshacker@localhost>',
-      })];
+      const lines = [
+        createOutputLine({
+          type: 'command',
+          content: 'ls()',
+          prompt: 'jshacker@localhost>',
+        }),
+      ];
 
       render(<TerminalOutput lines={lines} />);
 
@@ -61,11 +65,13 @@ describe('TerminalOutput', () => {
     });
 
     it('should render prompt in different color than command', () => {
-      const lines = [createOutputLine({
-        type: 'command',
-        content: 'pwd()',
-        prompt: 'root@localhost>',
-      })];
+      const lines = [
+        createOutputLine({
+          type: 'command',
+          content: 'pwd()',
+          prompt: 'root@localhost>',
+        }),
+      ];
 
       render(<TerminalOutput lines={lines} />);
 

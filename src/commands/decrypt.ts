@@ -21,14 +21,9 @@ const hexToBytes = (hex: string): Uint8Array => {
 };
 
 // Decrypt content using AES-GCM with Web Crypto API
-const decryptContent = async (
-  encryptedBase64: string,
-  keyHex: string
-): Promise<string> => {
+const decryptContent = async (encryptedBase64: string, keyHex: string): Promise<string> => {
   // Decode base64 to get IV + ciphertext
-  const encryptedData = Uint8Array.from(atob(encryptedBase64), (c) =>
-    c.charCodeAt(0)
-  );
+  const encryptedData = Uint8Array.from(atob(encryptedBase64), (c) => c.charCodeAt(0));
 
   // First 12 bytes are the IV (standard for AES-GCM)
   const iv = encryptedData.slice(0, 12);
@@ -36,19 +31,15 @@ const decryptContent = async (
 
   // Import the key
   const keyBytes = hexToBytes(keyHex);
-  const cryptoKey = await crypto.subtle.importKey(
-    'raw',
-    keyBytes,
-    { name: 'AES-GCM' },
-    false,
-    ['decrypt']
-  );
+  const cryptoKey = await crypto.subtle.importKey('raw', keyBytes, { name: 'AES-GCM' }, false, [
+    'decrypt',
+  ]);
 
   // Decrypt
   const decryptedBuffer = await crypto.subtle.decrypt(
     { name: 'AES-GCM', iv },
     cryptoKey,
-    ciphertext
+    ciphertext,
   );
 
   // Convert to string
@@ -106,7 +97,7 @@ export const createDecryptCommand = (context: DecryptContext): Command => ({
     const cleanKey = key.replace(/\s/g, '');
     if (!/^[0-9a-fA-F]{64}$/.test(cleanKey)) {
       throw new Error(
-        'decrypt: invalid key format\nKey must be 64 hexadecimal characters (256 bits)'
+        'decrypt: invalid key format\nKey must be 64 hexadecimal characters (256 bits)',
       );
     }
 

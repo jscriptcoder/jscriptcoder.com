@@ -25,8 +25,7 @@ const SERVICE_BANNERS: Readonly<Record<string, string | null>> = {
 import type { Port } from '../network/types';
 
 // Check if port is interactive (has an owner)
-const isInteractivePort = (port: Port): boolean =>
-  port.owner !== undefined;
+const isInteractivePort = (port: Port): boolean => port.owner !== undefined;
 
 export const createNcCommand = (context: NcContext): Command => ({
   name: 'nc',
@@ -88,7 +87,7 @@ export const createNcCommand = (context: NcContext): Command => ({
     }
 
     // Check if port is open
-    const targetPort = machine.ports.find(p => p.port === port);
+    const targetPort = machine.ports.find((p) => p.port === port);
     if (!targetPort || !targetPort.open) {
       throw new Error(`nc: connect to ${targetIP} port ${port}: Connection refused`);
     }
@@ -148,7 +147,7 @@ export const createNcCommand = (context: NcContext): Command => ({
       },
       cancel: () => {
         cancelled = true;
-        timeoutIds.forEach(id => clearTimeout(id));
+        timeoutIds.forEach((id) => clearTimeout(id));
       },
     };
   },

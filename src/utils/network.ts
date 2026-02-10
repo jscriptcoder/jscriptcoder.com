@@ -9,7 +9,9 @@ export const isValidIP = (ip: string): boolean => {
  * Parse an IP range string like "192.168.1.1-254"
  * Returns the base IP and start/end of the range
  */
-export const parseIPRange = (rangeStr: string): { baseIP: string; start: number; end: number } | null => {
+export const parseIPRange = (
+  rangeStr: string,
+): { baseIP: string; start: number; end: number } | null => {
   const match = rangeStr.match(/^(\d{1,3}\.\d{1,3}\.\d{1,3})\.(\d{1,3})-(\d{1,3})$/);
   if (!match) return null;
 

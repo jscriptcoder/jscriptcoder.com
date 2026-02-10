@@ -27,7 +27,11 @@ export const createCatCommand = (context: CatContext): Command => ({
     synopsis: 'cat(path: string)',
     description: 'Display the contents of a file. The file must be readable by the current user.',
     arguments: [
-      { name: 'path', description: 'Path to the file to display (absolute or relative)', required: true },
+      {
+        name: 'path',
+        description: 'Path to the file to display (absolute or relative)',
+        required: true,
+      },
     ],
     examples: [
       { command: 'cat("/etc/passwd")', description: 'Display the passwd file' },

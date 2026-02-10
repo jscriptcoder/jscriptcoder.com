@@ -6,9 +6,14 @@ export const echoCommand: Command = {
   description: 'Output the given value as a string',
   manual: {
     synopsis: 'echo(value: any)',
-    description: 'Output the given value as a string. Objects and arrays are pretty-printed as JSON.',
+    description:
+      'Output the given value as a string. Objects and arrays are pretty-printed as JSON.',
     arguments: [
-      { name: 'value', description: 'The value to output (string, number, boolean, object, or array)', required: true },
+      {
+        name: 'value',
+        description: 'The value to output (string, number, boolean, object, or array)',
+        required: true,
+      },
     ],
     examples: [
       { command: 'echo("Hello World")', description: 'Output a string' },

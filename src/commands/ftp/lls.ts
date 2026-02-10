@@ -9,7 +9,12 @@ type FtpLlsContext = {
   readonly getOriginUserType: () => UserType;
   readonly resolvePathForMachine: (path: string, cwd: string) => string;
   readonly getNodeFromMachine: (machineId: MachineId, path: string, cwd: string) => FileNode | null;
-  readonly listDirectoryFromMachine: (machineId: MachineId, path: string, cwd: string, userType: UserType) => string[] | null;
+  readonly listDirectoryFromMachine: (
+    machineId: MachineId,
+    path: string,
+    cwd: string,
+    userType: UserType,
+  ) => string[] | null;
 };
 
 export const createFtpLlsCommand = (context: FtpLlsContext): Command => ({
@@ -17,9 +22,14 @@ export const createFtpLlsCommand = (context: FtpLlsContext): Command => ({
   description: 'List local directory contents',
   manual: {
     synopsis: 'lls([path], [flags])',
-    description: 'List the contents of a directory on the local machine (where the FTP connection was initiated from). Hidden files (starting with .) are not shown by default. If no path is given, lists the current local directory.',
+    description:
+      'List the contents of a directory on the local machine (where the FTP connection was initiated from). Hidden files (starting with .) are not shown by default. If no path is given, lists the current local directory.',
     arguments: [
-      { name: 'path', description: 'Directory to list (optional, defaults to current local directory)', required: false },
+      {
+        name: 'path',
+        description: 'Directory to list (optional, defaults to current local directory)',
+        required: false,
+      },
       { name: 'flags', description: 'Options: "-a" to show hidden files', required: false },
     ],
     examples: [

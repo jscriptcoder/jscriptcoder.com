@@ -27,7 +27,7 @@ const getMockFile = (overrides?: Partial<FileNode>): FileNode =>
 const getMockDirectory = (
   name: string,
   children: Record<string, FileNode>,
-  overrides?: Partial<FileNode>
+  overrides?: Partial<FileNode>,
 ): FileNode =>
   getMockFileNode({
     name,
@@ -161,7 +161,7 @@ describe('cat command', () => {
       const cat = createCatCommand(context);
 
       expect(() => cat.fn('/nonexistent.txt')).toThrow(
-        'cat: /nonexistent.txt: No such file or directory'
+        'cat: /nonexistent.txt: No such file or directory',
       );
     });
 
@@ -194,9 +194,7 @@ describe('cat command', () => {
 
       const cat = createCatCommand(context);
 
-      expect(() => cat.fn('/secret.txt')).toThrow(
-        'cat: /secret.txt: Permission denied'
-      );
+      expect(() => cat.fn('/secret.txt')).toThrow('cat: /secret.txt: Permission denied');
     });
 
     it('should allow root to read any file', () => {

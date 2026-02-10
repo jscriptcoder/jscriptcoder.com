@@ -20,7 +20,11 @@ export const createNmapCommand = (context: NmapContext): Command => ({
     description:
       'Nmap ("Network Mapper") is a utility for network exploration and security auditing. It can discover hosts on a network and determine what services they are running. Use a single IP to scan ports on that host, or use a range (e.g., "192.168.1.1-254") to discover live hosts.',
     arguments: [
-      { name: 'target', description: 'IP address or range to scan (e.g., "192.168.1.1" or "192.168.1.1-254")', required: true },
+      {
+        name: 'target',
+        description: 'IP address or range to scan (e.g., "192.168.1.1" or "192.168.1.1-254")',
+        required: true,
+      },
     ],
     examples: [
       { command: 'nmap("192.168.1.1")', description: 'Scan ports on a single host' },
@@ -74,10 +78,10 @@ export const createNmapCommand = (context: NmapContext): Command => ({
                 onLine(`Host discovered: ${ip} (localhost)`);
               } else {
                 // Check if it's a known machine
-                const machine = machines.find(m => m.ip === ip);
+                const machine = machines.find((m) => m.ip === ip);
                 if (machine) {
-                  const openPorts = machine.ports.filter(p => p.open);
-                  const services = openPorts.map(p => p.service).join(', ');
+                  const openPorts = machine.ports.filter((p) => p.open);
+                  const services = openPorts.map((p) => p.service).join(', ');
                   foundHosts.push(`${ip} - ${machine.hostname} (${services || 'no open ports'})`);
                   onLine(`Host discovered: ${ip} (${machine.hostname})`);
                 }
@@ -93,10 +97,12 @@ export const createNmapCommand = (context: NmapContext): Command => ({
                     onLine('No hosts found in range.');
                   } else {
                     onLine('Scan complete. Summary:');
-                    foundHosts.forEach(host => onLine(`  ${host}`));
+                    foundHosts.forEach((host) => onLine(`  ${host}`));
                   }
                   onLine('');
-                  onLine(`Nmap done: ${totalIPs} IP addresses scanned, ${foundHosts.length} hosts up`);
+                  onLine(
+                    `Nmap done: ${totalIPs} IP addresses scanned, ${foundHosts.length} hosts up`,
+                  );
                   onComplete();
                 }, 300);
                 timeoutIds.push(summaryTimeoutId);
@@ -107,7 +113,7 @@ export const createNmapCommand = (context: NmapContext): Command => ({
         },
         cancel: () => {
           cancelled = true;
-          timeoutIds.forEach(id => clearTimeout(id));
+          timeoutIds.forEach((id) => clearTimeout(id));
         },
       };
     }
@@ -160,7 +166,7 @@ export const createNmapCommand = (context: NmapContext): Command => ({
         }
 
         // Port scan with delays
-        const openPorts = machine.ports.filter(p => p.open);
+        const openPorts = machine.ports.filter((p) => p.open);
 
         onLine(`Starting Nmap scan on ${target}`);
         onLine('Scanning ports...');
@@ -186,27 +192,30 @@ export const createNmapCommand = (context: NmapContext): Command => ({
         } else {
           // Show each port with delay
           openPorts.forEach((port, index) => {
-            const portTimeoutId = setTimeout(() => {
-              if (cancelled) return;
-              const portStr = `${port.port}/tcp`.padEnd(10);
-              onLine(`${portStr}open   ${port.service}`);
+            const portTimeoutId = setTimeout(
+              () => {
+                if (cancelled) return;
+                const portStr = `${port.port}/tcp`.padEnd(10);
+                onLine(`${portStr}open   ${port.service}`);
 
-              // After last port, complete
-              if (index === openPorts.length - 1) {
-                const completeTimeoutId = setTimeout(() => {
-                  if (cancelled) return;
-                  onComplete();
-                }, 200);
-                timeoutIds.push(completeTimeoutId);
-              }
-            }, 500 + (index + 1) * PORT_SCAN_DELAY_MS);
+                // After last port, complete
+                if (index === openPorts.length - 1) {
+                  const completeTimeoutId = setTimeout(() => {
+                    if (cancelled) return;
+                    onComplete();
+                  }, 200);
+                  timeoutIds.push(completeTimeoutId);
+                }
+              },
+              500 + (index + 1) * PORT_SCAN_DELAY_MS,
+            );
             timeoutIds.push(portTimeoutId);
           });
         }
       },
       cancel: () => {
         cancelled = true;
-        timeoutIds.forEach(id => clearTimeout(id));
+        timeoutIds.forEach((id) => clearTimeout(id));
       },
     };
   },

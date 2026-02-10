@@ -15,7 +15,7 @@ const collectAsyncOutput = (asyncOutput: AsyncOutput): Promise<readonly string[]
     const lines: string[] = [];
     asyncOutput.start(
       (line) => lines.push(line),
-      () => resolve(lines)
+      () => resolve(lines),
     );
   });
 
@@ -95,7 +95,7 @@ describe('resolve command', () => {
       if (isAsyncOutput(result)) {
         result.start(
           (line) => lines.push(line),
-          () => {}
+          () => {},
         );
       }
 
@@ -114,7 +114,9 @@ describe('resolve command', () => {
       if (isAsyncOutput(result)) {
         result.start(
           (line) => lines.push(line),
-          () => { completed = true; }
+          () => {
+            completed = true;
+          },
         );
       }
 
@@ -139,7 +141,9 @@ describe('resolve command', () => {
       if (isAsyncOutput(result)) {
         result.start(
           (line) => lines.push(line),
-          () => { completed = true; }
+          () => {
+            completed = true;
+          },
         );
       }
 
@@ -162,7 +166,7 @@ describe('resolve command', () => {
       if (isAsyncOutput(result)) {
         result.start(
           (line) => lines.push(line),
-          () => {}
+          () => {},
         );
       }
 
@@ -194,7 +198,9 @@ describe('resolve command', () => {
       if (isAsyncOutput(result)) {
         result.start(
           () => {},
-          () => { completed = true; }
+          () => {
+            completed = true;
+          },
         );
         result.cancel?.();
       }

@@ -13,7 +13,18 @@ import { useFileSystem } from '../../filesystem/FileSystemContext';
 import { useNetwork } from '../../network';
 import { md5 } from '../../utils/md5';
 import type { OutputLine, AuthorData } from './types';
-import { isAuthorData, isPasswordPrompt, isClearOutput, isExitOutput, isAsyncOutput, isSshPrompt, isFtpPrompt, isFtpQuit, isNcPrompt, isNcQuit } from './types';
+import {
+  isAuthorData,
+  isPasswordPrompt,
+  isClearOutput,
+  isExitOutput,
+  isAsyncOutput,
+  isSshPrompt,
+  isFtpPrompt,
+  isFtpQuit,
+  isNcPrompt,
+  isNcQuit,
+} from './types';
 import type { AsyncFollowUp } from './types';
 import type { UserType } from '../../session/SessionContext';
 
@@ -48,7 +59,22 @@ export const Terminal = () => {
 
   const { addCommand, navigateUp, navigateDown, resetNavigation } = useCommandHistory();
   const { getVariables, getVariableNames, handleVariableOperation } = useVariables();
-  const { getPrompt, setUsername, setMachine, setCurrentPath, pushSession, popSession, canReturn, session, enterFtpMode, exitFtpMode, isInFtpMode, enterNcMode, exitNcMode, isInNcMode } = useSession();
+  const {
+    getPrompt,
+    setUsername,
+    setMachine,
+    setCurrentPath,
+    pushSession,
+    popSession,
+    canReturn,
+    session,
+    enterFtpMode,
+    exitFtpMode,
+    isInFtpMode,
+    enterNcMode,
+    exitNcMode,
+    isInNcMode,
+  } = useSession();
   const { executionContext, commandNames } = useCommands();
   const ftpCommands = useFtpCommands();
   const ncCommands = useNcCommands();
@@ -56,11 +82,12 @@ export const Terminal = () => {
   const { getMachine } = useNetwork();
 
   // Use special commands for autocomplete when in FTP or NC mode
-  const activeCommandNames = isInFtpMode() && ftpCommands
-    ? Array.from(ftpCommands.keys())
-    : isInNcMode() && ncCommands
-      ? Array.from(ncCommands.keys())
-      : commandNames;
+  const activeCommandNames =
+    isInFtpMode() && ftpCommands
+      ? Array.from(ftpCommands.keys())
+      : isInNcMode() && ncCommands
+        ? Array.from(ncCommands.keys())
+        : commandNames;
   const { getCompletions } = useAutoComplete(activeCommandNames, getVariableNames());
 
   // Auto-scroll to bottom when new output is added
@@ -70,206 +97,231 @@ export const Terminal = () => {
     }
   }, [lines]);
 
-  const addLine = useCallback((type: OutputLine['type'], content: string | AuthorData, prompt?: string) => {
-    setLines((prev) => [
-      ...prev,
-      { id: lineIdRef.current++, type, content, prompt },
-    ]);
-  }, []);
+  const addLine = useCallback(
+    (type: OutputLine['type'], content: string | AuthorData, prompt?: string) => {
+      setLines((prev) => [...prev, { id: lineIdRef.current++, type, content, prompt }]);
+    },
+    [],
+  );
 
   const clearLines = useCallback(() => {
     setLines([]);
   }, []);
 
-  const executeCommand = useCallback((command: string) => {
-    const trimmedCommand = command.trim();
-    if (!trimmedCommand) return;
+  const executeCommand = useCallback(
+    (command: string) => {
+      const trimmedCommand = command.trim();
+      if (!trimmedCommand) return;
 
-    // Add command to output with current prompt
-    addLine('command', trimmedCommand, getPrompt());
+      // Add command to output with current prompt
+      addLine('command', trimmedCommand, getPrompt());
 
-    // Add to history
-    addCommand(trimmedCommand);
+      // Add to history
+      addCommand(trimmedCommand);
 
-    try {
-      // Check if this is a variable operation (declaration or assignment)
-      const variableResult = handleVariableOperation(trimmedCommand, executionContext);
+      try {
+        // Check if this is a variable operation (declaration or assignment)
+        const variableResult = handleVariableOperation(trimmedCommand, executionContext);
 
-      if (variableResult !== null) {
-        // This was a variable operation
-        if (!variableResult.success) {
-          addLine('error', `Error: ${variableResult.error}`);
-        } else if (variableResult.value !== undefined) {
-          const resultStr = typeof variableResult.value === 'string'
-            ? variableResult.value
-            : JSON.stringify(variableResult.value, null, 2);
-          addLine('result', resultStr);
-        }
-        return;
-      }
-
-      // Not a variable operation, execute as normal command
-      // Use special commands when in FTP/NC mode, otherwise use normal commands
-      const activeContext = isInFtpMode() && ftpCommands
-        ? Object.fromEntries(Array.from(ftpCommands.entries()).map(([k, v]) => [k, v.fn]))
-        : isInNcMode() && ncCommands
-          ? Object.fromEntries(Array.from(ncCommands.entries()).map(([k, v]) => [k, v.fn]))
-          : executionContext;
-
-      // Combine commands and variables into execution context
-      const variables = getVariables();
-      const context = { ...activeContext, ...variables };
-
-      // Build function with context variables
-      const contextKeys = Object.keys(context);
-      const contextValues = Object.values(context);
-
-      // Create a function that has access to all commands and variables
-      const fn = new Function(...contextKeys, `return ${trimmedCommand}`);
-
-      // Execute and get result
-      const result = fn(...contextValues);
-
-      // Display result if not undefined
-      if (result !== undefined) {
-        // Check for special result types using type guards
-        if (isClearOutput(result)) {
-          clearLines();
+        if (variableResult !== null) {
+          // This was a variable operation
+          if (!variableResult.success) {
+            addLine('error', `Error: ${variableResult.error}`);
+          } else if (variableResult.value !== undefined) {
+            const resultStr =
+              typeof variableResult.value === 'string'
+                ? variableResult.value
+                : JSON.stringify(variableResult.value, null, 2);
+            addLine('result', resultStr);
+          }
           return;
         }
-        if (isExitOutput(result)) {
-          if (!canReturn()) {
-            addLine('error', 'exit: not connected to a remote machine');
+
+        // Not a variable operation, execute as normal command
+        // Use special commands when in FTP/NC mode, otherwise use normal commands
+        const activeContext =
+          isInFtpMode() && ftpCommands
+            ? Object.fromEntries(Array.from(ftpCommands.entries()).map(([k, v]) => [k, v.fn]))
+            : isInNcMode() && ncCommands
+              ? Object.fromEntries(Array.from(ncCommands.entries()).map(([k, v]) => [k, v.fn]))
+              : executionContext;
+
+        // Combine commands and variables into execution context
+        const variables = getVariables();
+        const context = { ...activeContext, ...variables };
+
+        // Build function with context variables
+        const contextKeys = Object.keys(context);
+        const contextValues = Object.values(context);
+
+        // Create a function that has access to all commands and variables
+        const fn = new Function(...contextKeys, `return ${trimmedCommand}`);
+
+        // Execute and get result
+        const result = fn(...contextValues);
+
+        // Display result if not undefined
+        if (result !== undefined) {
+          // Check for special result types using type guards
+          if (isClearOutput(result)) {
+            clearLines();
             return;
           }
-          const snapshot = popSession();
-          if (snapshot) {
-            // popSession already restores machine, username, userType, and currentPath
-            addLine('result', 'Connection closed.');
-          }
-          return;
-        }
-        if (isFtpQuit(result)) {
-          const ftpSession = exitFtpMode();
-          if (ftpSession) {
-            addLine('result', '221 Goodbye.');
-          }
-          return;
-        }
-        if (isNcQuit(result)) {
-          const ncSession = exitNcMode();
-          if (ncSession) {
-            addLine('result', 'Connection closed.');
-          }
-          return;
-        }
-        if (isAuthorData(result)) {
-          addLine('author', result);
-          return;
-        }
-        if (isPasswordPrompt(result)) {
-          setTargetUser(result.targetUser);
-          setPasswordMode(true);
-          addLine('result', 'Password:');
-          return;
-        }
-        if (isAsyncOutput(result)) {
-          setAsyncRunning(true);
-          asyncCancelRef.current = result.cancel ?? null;
-
-          result.start(
-            // onLine callback
-            (line: string) => {
-              addLine('result', line);
-            },
-            // onComplete callback with optional follow-up
-            (followUp?: AsyncFollowUp) => {
-              setAsyncRunning(false);
-              asyncCancelRef.current = null;
-
-              // Handle SSH prompt follow-up
-              if (isSshPrompt(followUp)) {
-                setTargetUser(followUp.targetUser);
-                setSshTargetIP(followUp.targetIP);
-                setPasswordMode(true);
-                addLine('result', `${followUp.targetUser}@${followUp.targetIP}'s password:`);
-              }
-
-              // Handle FTP prompt follow-up
-              if (isFtpPrompt(followUp)) {
-                setFtpTargetIP(followUp.targetIP);
-                setFtpUsernameMode(true);
-                addLine('result', `Name (${followUp.targetIP}:anonymous):`);
-              }
-
-              // Handle NC prompt follow-up (interactive service)
-              if (isNcPrompt(followUp)) {
-                const newNcSession: NcSession = {
-                  targetIP: followUp.targetIP,
-                  targetPort: followUp.targetPort,
-                  service: followUp.service,
-                  username: followUp.username,
-                  userType: followUp.userType,
-                  currentPath: followUp.homePath,
-                };
-                enterNcMode(newNcSession);
-              }
+          if (isExitOutput(result)) {
+            if (!canReturn()) {
+              addLine('error', 'exit: not connected to a remote machine');
+              return;
             }
-          );
-          return;
+            const snapshot = popSession();
+            if (snapshot) {
+              // popSession already restores machine, username, userType, and currentPath
+              addLine('result', 'Connection closed.');
+            }
+            return;
+          }
+          if (isFtpQuit(result)) {
+            const ftpSession = exitFtpMode();
+            if (ftpSession) {
+              addLine('result', '221 Goodbye.');
+            }
+            return;
+          }
+          if (isNcQuit(result)) {
+            const ncSession = exitNcMode();
+            if (ncSession) {
+              addLine('result', 'Connection closed.');
+            }
+            return;
+          }
+          if (isAuthorData(result)) {
+            addLine('author', result);
+            return;
+          }
+          if (isPasswordPrompt(result)) {
+            setTargetUser(result.targetUser);
+            setPasswordMode(true);
+            addLine('result', 'Password:');
+            return;
+          }
+          if (isAsyncOutput(result)) {
+            setAsyncRunning(true);
+            asyncCancelRef.current = result.cancel ?? null;
+
+            result.start(
+              // onLine callback
+              (line: string) => {
+                addLine('result', line);
+              },
+              // onComplete callback with optional follow-up
+              (followUp?: AsyncFollowUp) => {
+                setAsyncRunning(false);
+                asyncCancelRef.current = null;
+
+                // Handle SSH prompt follow-up
+                if (isSshPrompt(followUp)) {
+                  setTargetUser(followUp.targetUser);
+                  setSshTargetIP(followUp.targetIP);
+                  setPasswordMode(true);
+                  addLine('result', `${followUp.targetUser}@${followUp.targetIP}'s password:`);
+                }
+
+                // Handle FTP prompt follow-up
+                if (isFtpPrompt(followUp)) {
+                  setFtpTargetIP(followUp.targetIP);
+                  setFtpUsernameMode(true);
+                  addLine('result', `Name (${followUp.targetIP}:anonymous):`);
+                }
+
+                // Handle NC prompt follow-up (interactive service)
+                if (isNcPrompt(followUp)) {
+                  const newNcSession: NcSession = {
+                    targetIP: followUp.targetIP,
+                    targetPort: followUp.targetPort,
+                    service: followUp.service,
+                    username: followUp.username,
+                    userType: followUp.userType,
+                    currentPath: followUp.homePath,
+                  };
+                  enterNcMode(newNcSession);
+                }
+              },
+            );
+            return;
+          }
+          const resultStr = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
+          addLine('result', resultStr);
         }
-        const resultStr = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
-        addLine('result', resultStr);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        addLine('error', `Error: ${errorMessage}`);
       }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      addLine('error', `Error: ${errorMessage}`);
-    }
-  }, [addCommand, addLine, clearLines, handleVariableOperation, getVariables, getPrompt, executionContext, canReturn, popSession, isInFtpMode, ftpCommands, exitFtpMode, isInNcMode, ncCommands, exitNcMode, enterNcMode]);
+    },
+    [
+      addCommand,
+      addLine,
+      clearLines,
+      handleVariableOperation,
+      getVariables,
+      getPrompt,
+      executionContext,
+      canReturn,
+      popSession,
+      isInFtpMode,
+      ftpCommands,
+      exitFtpMode,
+      isInNcMode,
+      ncCommands,
+      exitNcMode,
+      enterNcMode,
+    ],
+  );
 
-  const validatePassword = useCallback((password: string): boolean => {
-    if (!targetUser) return false;
+  const validatePassword = useCallback(
+    (password: string): boolean => {
+      if (!targetUser) return false;
 
-    // SSH mode: validate against remote machine's users
-    if (sshTargetIP) {
-      const machine = getMachine(sshTargetIP);
-      if (!machine) return false;
+      // SSH mode: validate against remote machine's users
+      if (sshTargetIP) {
+        const machine = getMachine(sshTargetIP);
+        if (!machine) return false;
 
-      const remoteUser = machine.users.find(u => u.username === targetUser);
-      if (!remoteUser) return false;
+        const remoteUser = machine.users.find((u) => u.username === targetUser);
+        if (!remoteUser) return false;
 
-      const inputHash = md5(password);
-      return remoteUser.passwordHash === inputHash;
-    }
-
-    // FTP mode: validate against remote machine's users
-    if (ftpTargetIP) {
-      const machine = getMachine(ftpTargetIP);
-      if (!machine) return false;
-
-      const remoteUser = machine.users.find(u => u.username === targetUser);
-      if (!remoteUser) return false;
-
-      const inputHash = md5(password);
-      return remoteUser.passwordHash === inputHash;
-    }
-
-    // Local su mode: Read passwd file as root to get hashes
-    const passwdContent = readFile('/etc/passwd', 'root');
-    if (!passwdContent) return false;
-
-    // Parse passwd file to find user's hash
-    const lines = passwdContent.split('\n');
-    for (const line of lines) {
-      const parts = line.split(':');
-      if (parts[0] === targetUser && parts[1]) {
-        const storedHash = parts[1];
         const inputHash = md5(password);
-        return storedHash === inputHash;
+        return remoteUser.passwordHash === inputHash;
       }
-    }
-    return false;
-  }, [targetUser, sshTargetIP, ftpTargetIP, readFile, getMachine]);
+
+      // FTP mode: validate against remote machine's users
+      if (ftpTargetIP) {
+        const machine = getMachine(ftpTargetIP);
+        if (!machine) return false;
+
+        const remoteUser = machine.users.find((u) => u.username === targetUser);
+        if (!remoteUser) return false;
+
+        const inputHash = md5(password);
+        return remoteUser.passwordHash === inputHash;
+      }
+
+      // Local su mode: Read passwd file as root to get hashes
+      const passwdContent = readFile('/etc/passwd', 'root');
+      if (!passwdContent) return false;
+
+      // Parse passwd file to find user's hash
+      const lines = passwdContent.split('\n');
+      for (const line of lines) {
+        const parts = line.split(':');
+        if (parts[0] === targetUser && parts[1]) {
+          const storedHash = parts[1];
+          const inputHash = md5(password);
+          return storedHash === inputHash;
+        }
+      }
+      return false;
+    },
+    [targetUser, sshTargetIP, ftpTargetIP, readFile, getMachine],
+  );
 
   const handleFtpUsernameSubmit = useCallback(() => {
     if (!ftpTargetIP) return;
@@ -287,7 +339,7 @@ export const Terminal = () => {
       return;
     }
 
-    const remoteUser = machine.users.find(u => u.username === username);
+    const remoteUser = machine.users.find((u) => u.username === username);
     if (!remoteUser) {
       addLine('error', '530 Login incorrect.');
       setFtpTargetIP(null);
@@ -318,7 +370,7 @@ export const Terminal = () => {
       if (ftpTargetIP) {
         // FTP mode: enter FTP session
         const machine = getMachine(ftpTargetIP);
-        const remoteUser = machine?.users.find(u => u.username === targetUser);
+        const remoteUser = machine?.users.find((u) => u.username === targetUser);
         const userType: UserType = remoteUser?.userType ?? 'user';
         const remoteHomePath = targetUser === 'root' ? '/root' : `/home/${targetUser}`;
 
@@ -340,7 +392,7 @@ export const Terminal = () => {
         pushSession();
 
         const machine = getMachine(sshTargetIP);
-        const remoteUser = machine?.users.find(u => u.username === targetUser);
+        const remoteUser = machine?.users.find((u) => u.username === targetUser);
         const userType: UserType = remoteUser?.userType ?? 'user';
         const homePath = getDefaultHomePath(sshTargetIP, targetUser!);
 
@@ -381,7 +433,22 @@ export const Terminal = () => {
     setSshTargetIP(null);
     setFtpTargetIP(null);
     setInput('');
-  }, [input, targetUser, sshTargetIP, ftpTargetIP, validatePassword, setUsername, setMachine, setCurrentPath, pushSession, session, getMachine, enterFtpMode, addLine, getDefaultHomePath]);
+  }, [
+    input,
+    targetUser,
+    sshTargetIP,
+    ftpTargetIP,
+    validatePassword,
+    setUsername,
+    setMachine,
+    setCurrentPath,
+    pushSession,
+    session,
+    getMachine,
+    enterFtpMode,
+    addLine,
+    getDefaultHomePath,
+  ]);
 
   const handleSubmit = useCallback(() => {
     if (ftpUsernameMode) {
@@ -393,7 +460,15 @@ export const Terminal = () => {
       setInput('');
     }
     resetNavigation();
-  }, [input, passwordMode, ftpUsernameMode, executeCommand, handlePasswordSubmit, handleFtpUsernameSubmit, resetNavigation]);
+  }, [
+    input,
+    passwordMode,
+    ftpUsernameMode,
+    executeCommand,
+    handlePasswordSubmit,
+    handleFtpUsernameSubmit,
+    resetNavigation,
+  ]);
 
   const handleHistoryUp = useCallback(() => {
     const cmd = navigateUp();

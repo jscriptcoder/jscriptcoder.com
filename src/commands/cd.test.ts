@@ -27,7 +27,7 @@ const getMockFile = (overrides?: Partial<FileNode>): FileNode =>
 const getMockDirectory = (
   name: string,
   children: Record<string, FileNode>,
-  overrides?: Partial<FileNode>
+  overrides?: Partial<FileNode>,
 ): FileNode =>
   getMockFileNode({
     name,
@@ -155,9 +155,7 @@ describe('cd command', () => {
 
       const cd = createCdCommand(context);
 
-      expect(() => cd.fn('/nonexistent')).toThrow(
-        'cd: /nonexistent: No such file or directory'
-      );
+      expect(() => cd.fn('/nonexistent')).toThrow('cd: /nonexistent: No such file or directory');
     });
 
     it('should throw error when path is a file', () => {
@@ -169,18 +167,20 @@ describe('cd command', () => {
 
       const cd = createCdCommand(context);
 
-      expect(() => cd.fn('/file.txt')).toThrow(
-        'cd: /file.txt: Not a directory'
-      );
+      expect(() => cd.fn('/file.txt')).toThrow('cd: /file.txt: Not a directory');
     });
 
     it('should throw error when permission denied', () => {
-      const restrictedDir = getMockDirectory('root', {}, {
-        permissions: {
-          read: ['root'],
-          write: ['root'],
+      const restrictedDir = getMockDirectory(
+        'root',
+        {},
+        {
+          permissions: {
+            read: ['root'],
+            write: ['root'],
+          },
         },
-      });
+      );
 
       const context = createMockFileSystemContext({
         userType: 'guest',
@@ -193,12 +193,16 @@ describe('cd command', () => {
     });
 
     it('should allow root to access any directory', () => {
-      const restrictedDir = getMockDirectory('secret', {}, {
-        permissions: {
-          read: ['root'],
-          write: ['root'],
+      const restrictedDir = getMockDirectory(
+        'secret',
+        {},
+        {
+          permissions: {
+            read: ['root'],
+            write: ['root'],
+          },
         },
-      });
+      );
 
       const context = createMockFileSystemContext({
         userType: 'root',

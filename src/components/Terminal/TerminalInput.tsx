@@ -132,7 +132,9 @@ export const TerminalInput = ({
         />
         {/* Visible display with cursor at correct position */}
         <span className="text-amber-400">{beforeCursor}</span>
-        {isFocused && !disabled && <span className="animate-pulse inline-block w-2 h-4 bg-amber-400 align-middle" />}
+        {isFocused && !disabled && (
+          <span className="animate-pulse inline-block w-2 h-4 bg-amber-400 align-middle" />
+        )}
         <span className="text-amber-400">{afterCursor}</span>
       </div>
     </div>

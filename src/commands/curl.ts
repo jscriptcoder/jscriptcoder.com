@@ -11,7 +11,7 @@ type CurlContext = {
     machineId: MachineId,
     path: string,
     cwd: string,
-    userType: UserType
+    userType: UserType,
   ) => string | null;
 };
 
@@ -86,7 +86,7 @@ const getContentType = (path: string): string => {
 const buildHeaders = (
   ip: string,
   contentType: string,
-  contentLength: number
+  contentLength: number,
 ): readonly (readonly [string, string])[] => {
   const config = SERVER_CONFIGS[ip];
   const base: readonly (readonly [string, string])[] = [
@@ -102,11 +102,7 @@ const buildHeaders = (
   return [...base, ...extra];
 };
 
-const handleGet = (
-  context: CurlContext,
-  machineId: MachineId,
-  path: string
-): HttpResponse => {
+const handleGet = (context: CurlContext, machineId: MachineId, path: string): HttpResponse => {
   const webPath = path === '/' ? '/var/www/html/index.html' : `/var/www/html${path}`;
   const content = context.readFileFromMachine(machineId, webPath, '/', 'root');
 
@@ -129,11 +125,7 @@ const handleGet = (
   };
 };
 
-const handlePost = (
-  context: CurlContext,
-  machineId: MachineId,
-  path: string
-): HttpResponse => {
+const handlePost = (context: CurlContext, machineId: MachineId, path: string): HttpResponse => {
   const endpointMatch = path.match(/^\/api\/(.+)$/);
   if (!endpointMatch) {
     const body = '{"error": "Invalid API endpoint"}';
@@ -170,9 +162,7 @@ const handlePost = (
 const formatResponse = (response: HttpResponse, includeHeaders: boolean): string => {
   if (!includeHeaders) return response.body;
 
-  const headerLines = response.headers
-    .map(([key, value]) => `${key}: ${value}`)
-    .join('\n');
+  const headerLines = response.headers.map(([key, value]) => `${key}: ${value}`).join('\n');
 
   return `HTTP/1.1 ${response.statusCode} ${response.statusText}\n${headerLines}\n\n${response.body}`;
 };
@@ -185,15 +175,35 @@ export const createCurlCommand = (context: CurlContext): Command => ({
     description:
       'Transfer data from or to a server using HTTP protocol. Supports GET and POST requests. Use -i flag to include HTTP response headers in output. Use -X POST to make POST requests to /api/* endpoints.',
     arguments: [
-      { name: 'url', description: 'URL to fetch (e.g., "http://webserver.local/index.html")', required: true },
-      { name: 'flags', description: 'Optional flags: -i (include headers), -X POST (POST request)', required: false },
+      {
+        name: 'url',
+        description: 'URL to fetch (e.g., "http://webserver.local/index.html")',
+        required: true,
+      },
+      {
+        name: 'flags',
+        description: 'Optional flags: -i (include headers), -X POST (POST request)',
+        required: false,
+      },
     ],
     examples: [
       { command: 'curl("http://webserver.local/")', description: 'Fetch a web page' },
-      { command: 'curl("webserver.local/config.php")', description: 'Fetch without protocol (defaults to http)' },
-      { command: 'curl("http://webserver.local/", "-i")', description: 'Include HTTP response headers' },
-      { command: 'curl("http://webserver.local/api/users", "-X POST")', description: 'POST request to API' },
-      { command: 'curl("http://darknet.ctf:8080/", "-i")', description: 'Fetch from non-standard port' },
+      {
+        command: 'curl("webserver.local/config.php")',
+        description: 'Fetch without protocol (defaults to http)',
+      },
+      {
+        command: 'curl("http://webserver.local/", "-i")',
+        description: 'Include HTTP response headers',
+      },
+      {
+        command: 'curl("http://webserver.local/api/users", "-X POST")',
+        description: 'POST request to API',
+      },
+      {
+        command: 'curl("http://darknet.ctf:8080/", "-i")',
+        description: 'Fetch from non-standard port',
+      },
     ],
   },
   fn: (...args: unknown[]): AsyncOutput => {
@@ -224,14 +234,18 @@ export const createCurlCommand = (context: CurlContext): Command => ({
     const machine = getMachine(targetIP);
     if (!machine) {
       throw new Error(
-        `curl: Failed to connect to ${parsed.host} port ${parsed.port}: Connection refused`
+        `curl: Failed to connect to ${parsed.host} port ${parsed.port}: Connection refused`,
       );
     }
 
     const port = machine.ports.find((p) => p.port === parsed.port);
-    if (!port || !port.open || !HTTP_SERVICES.includes(port.service as typeof HTTP_SERVICES[number])) {
+    if (
+      !port ||
+      !port.open ||
+      !HTTP_SERVICES.includes(port.service as (typeof HTTP_SERVICES)[number])
+    ) {
       throw new Error(
-        `curl: Failed to connect to ${parsed.host} port ${parsed.port}: Connection refused`
+        `curl: Failed to connect to ${parsed.host} port ${parsed.port}: Connection refused`,
       );
     }
 

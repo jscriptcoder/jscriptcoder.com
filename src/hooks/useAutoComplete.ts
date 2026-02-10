@@ -12,36 +12,39 @@ export type CompletionResult = {
 
 export const useAutoComplete = (
   commandNames: readonly string[],
-  variableNames: readonly string[] = []
+  variableNames: readonly string[] = [],
 ) => {
-  const getCompletions = useCallback((input: string): CompletionResult => {
-    const trimmed = input.trim();
+  const getCompletions = useCallback(
+    (input: string): CompletionResult => {
+      const trimmed = input.trim();
 
-    if (!trimmed) {
-      return { matches: [], displayText: '' };
-    }
+      if (!trimmed) {
+        return { matches: [], displayText: '' };
+      }
 
-    // Build completion items: commands get (), variables don't
-    const commandItems = commandNames.map((name) => ({
-      name,
-      display: name + '()',
-    }));
-    const variableItems = variableNames.map((name) => ({
-      name,
-      display: name,
-    }));
+      // Build completion items: commands get (), variables don't
+      const commandItems = commandNames.map((name) => ({
+        name,
+        display: name + '()',
+      }));
+      const variableItems = variableNames.map((name) => ({
+        name,
+        display: name,
+      }));
 
-    const allItems = [...commandItems, ...variableItems];
+      const allItems = [...commandItems, ...variableItems];
 
-    // Find matches that start with the input, sorted alphabetically
-    const matches = allItems
-      .filter((item) => item.name.toLowerCase().startsWith(trimmed.toLowerCase()))
-      .sort((a, b) => a.name.localeCompare(b.name));
+      // Find matches that start with the input, sorted alphabetically
+      const matches = allItems
+        .filter((item) => item.name.toLowerCase().startsWith(trimmed.toLowerCase()))
+        .sort((a, b) => a.name.localeCompare(b.name));
 
-    const displayText = matches.map((m) => m.display).join(', ');
+      const displayText = matches.map((m) => m.display).join(', ');
 
-    return { matches, displayText };
-  }, [commandNames, variableNames]);
+      return { matches, displayText };
+    },
+    [commandNames, variableNames],
+  );
 
   return {
     getCompletions,

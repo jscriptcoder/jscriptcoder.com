@@ -69,8 +69,8 @@ describe('nmap command', () => {
         expect(() =>
           result.start(
             () => {},
-            () => {}
-          )
+            () => {},
+          ),
         ).toThrow('nmap: failed to resolve "10.0.0.1"');
       }
     });
@@ -118,7 +118,7 @@ describe('nmap command', () => {
       if (isAsyncOutput(result)) {
         result.start(
           (line) => lines.push(line),
-          () => {}
+          () => {},
         );
       }
 
@@ -135,7 +135,7 @@ describe('nmap command', () => {
       if (isAsyncOutput(result)) {
         result.start(
           (line) => lines.push(line),
-          () => {}
+          () => {},
         );
       }
 
@@ -162,7 +162,7 @@ describe('nmap command', () => {
       if (isAsyncOutput(result)) {
         result.start(
           (line) => lines.push(line),
-          () => {}
+          () => {},
         );
       }
 
@@ -186,7 +186,7 @@ describe('nmap command', () => {
           (line) => lines.push(line),
           () => {
             completed = true;
-          }
+          },
         );
       }
 
@@ -207,7 +207,7 @@ describe('nmap command', () => {
       if (isAsyncOutput(result)) {
         result.start(
           (line) => lines.push(line),
-          () => {}
+          () => {},
         );
       }
 
@@ -230,7 +230,7 @@ describe('nmap command', () => {
       if (isAsyncOutput(result)) {
         result.start(
           (line) => lines.push(line),
-          () => {}
+          () => {},
         );
 
         // Cancel after first host
@@ -257,7 +257,7 @@ describe('nmap command', () => {
           (line) => lines.push(line),
           () => {
             completed = true;
-          }
+          },
         );
       }
 
@@ -276,7 +276,7 @@ describe('nmap command', () => {
       if (isAsyncOutput(result)) {
         result.start(
           (line) => lines.push(line),
-          () => {}
+          () => {},
         );
       }
 
@@ -305,7 +305,7 @@ describe('nmap command', () => {
       if (isAsyncOutput(result)) {
         result.start(
           (line) => lines.push(line),
-          () => {}
+          () => {},
         );
       }
 
@@ -314,8 +314,12 @@ describe('nmap command', () => {
 
       expect(lines.some((l) => l.includes('fileserver (192.168.1.50)'))).toBe(true);
       expect(lines.some((l) => l.includes('PORT      STATE  SERVICE'))).toBe(true);
-      expect(lines.some((l) => l.includes('22/tcp') && l.includes('open') && l.includes('ssh'))).toBe(true);
-      expect(lines.some((l) => l.includes('80/tcp') && l.includes('open') && l.includes('http'))).toBe(true);
+      expect(
+        lines.some((l) => l.includes('22/tcp') && l.includes('open') && l.includes('ssh')),
+      ).toBe(true);
+      expect(
+        lines.some((l) => l.includes('80/tcp') && l.includes('open') && l.includes('http')),
+      ).toBe(true);
     });
 
     it('should only show open ports', () => {
@@ -338,7 +342,7 @@ describe('nmap command', () => {
       if (isAsyncOutput(result)) {
         result.start(
           (line) => lines.push(line),
-          () => {}
+          () => {},
         );
       }
 
@@ -365,7 +369,7 @@ describe('nmap command', () => {
       if (isAsyncOutput(result)) {
         result.start(
           (line) => lines.push(line),
-          () => {}
+          () => {},
         );
       }
 
@@ -398,7 +402,7 @@ describe('nmap command', () => {
           (line) => lines.push(line),
           () => {
             completed = true;
-          }
+          },
         );
 
         // Cancel before all ports scanned

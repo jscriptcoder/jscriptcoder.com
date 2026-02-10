@@ -91,14 +91,11 @@ export const initializeStorage = async (): Promise<void> => {
   }
 };
 
-export const getCachedSessionState = (): PersistedState | null =>
-  cache.sessionState;
+export const getCachedSessionState = (): PersistedState | null => cache.sessionState;
 
-export const getCachedFilesystemPatches = (): readonly FileSystemPatch[] =>
-  cache.filesystemPatches;
+export const getCachedFilesystemPatches = (): readonly FileSystemPatch[] => cache.filesystemPatches;
 
-export const getDatabase = (): IDBDatabase | null =>
-  cache.db;
+export const getDatabase = (): IDBDatabase | null => cache.db;
 
 // Exposed for testing only
 export const resetCache = (): void => {

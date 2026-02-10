@@ -16,14 +16,7 @@ export const createNcCdCommand = (context: NcCdContext): Command => ({
   name: 'cd',
   description: 'Change directory',
   fn: (...args: unknown[]): string => {
-    const {
-      getMachine,
-      getCwd,
-      getUserType,
-      setCwd,
-      resolvePath,
-      getNodeFromMachine,
-    } = context;
+    const { getMachine, getCwd, getUserType, setCwd, resolvePath, getNodeFromMachine } = context;
 
     const path = (args[0] as string | undefined) ?? '/';
     const machine = getMachine();

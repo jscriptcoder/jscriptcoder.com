@@ -93,7 +93,7 @@ describe('nslookup command', () => {
       if (isAsyncOutput(result)) {
         result.start(
           (line) => lines.push(line),
-          () => {}
+          () => {},
         );
       }
 
@@ -115,7 +115,7 @@ describe('nslookup command', () => {
           (line) => lines.push(line),
           () => {
             completed = true;
-          }
+          },
         );
       }
 
@@ -139,7 +139,7 @@ describe('nslookup command', () => {
       if (isAsyncOutput(result)) {
         result.start(
           (line) => lines.push(line),
-          () => {}
+          () => {},
         );
       }
 
@@ -159,7 +159,7 @@ describe('nslookup command', () => {
       if (isAsyncOutput(result)) {
         result.start(
           (line) => lines.push(line),
-          () => {}
+          () => {},
         );
       }
 
@@ -180,7 +180,7 @@ describe('nslookup command', () => {
           (line) => lines.push(line),
           () => {
             completed = true;
-          }
+          },
         );
 
         // Cancel before lookup completes

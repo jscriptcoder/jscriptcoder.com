@@ -15,7 +15,10 @@ const isPrintable = (charCode: number): boolean =>
   (charCode >= 32 && charCode <= 126) || charCode === 10 || charCode === 9;
 
 // Extract printable ASCII strings from content (like Unix strings command)
-const extractStrings = (content: string, minLength: number = MIN_STRING_LENGTH): readonly string[] => {
+const extractStrings = (
+  content: string,
+  minLength: number = MIN_STRING_LENGTH,
+): readonly string[] => {
   const results: string[] = [];
   let current = '';
 

@@ -1,17 +1,17 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.tsx'
-import { initializeStorage } from './utils/storageCache'
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import './index.css';
+import App from './App.tsx';
+import { initializeStorage } from './utils/storageCache';
 
 const startApp = async (): Promise<void> => {
-  await initializeStorage()
+  await initializeStorage();
 
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <App />
     </StrictMode>,
-  )
-}
+  );
+};
 
-startApp()
+startApp();

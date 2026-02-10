@@ -45,11 +45,20 @@ const createMockContext = (config: MockContextConfig = {}) => {
     return cwd === '/' ? `/${path}` : `${cwd}/${path}`;
   };
 
-  const getNodeFromMachine = (_machineId: MachineId, path: string, _cwd: string): FileNode | null => {
+  const getNodeFromMachine = (
+    _machineId: MachineId,
+    path: string,
+    _cwd: string,
+  ): FileNode | null => {
     return nodes[path] ?? null;
   };
 
-  const listDirectoryFromMachine = (_machineId: MachineId, path: string, _cwd: string, _userType: UserType): string[] | null => {
+  const listDirectoryFromMachine = (
+    _machineId: MachineId,
+    path: string,
+    _cwd: string,
+    _userType: UserType,
+  ): string[] | null => {
     return directoryEntries[path] ?? null;
   };
 

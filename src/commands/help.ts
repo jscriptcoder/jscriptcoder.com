@@ -5,10 +5,9 @@ export const createHelpCommand = (getCommands: () => Command[]): Command => ({
   description: 'Display list of available commands',
   manual: {
     synopsis: 'help()',
-    description: 'Display a list of all available commands with their short descriptions. For detailed information about a specific command, use man(command).',
-    examples: [
-      { command: 'help()', description: 'List all available commands' },
-    ],
+    description:
+      'Display a list of all available commands with their short descriptions. For detailed information about a specific command, use man(command).',
+    examples: [{ command: 'help()', description: 'List all available commands' }],
   },
   fn: () => {
     const commands = getCommands();

@@ -120,7 +120,7 @@ describe('ping command', () => {
       if (isAsyncOutput(result)) {
         result.start(
           (line) => lines.push(line),
-          () => {}
+          () => {},
         );
       }
 
@@ -138,7 +138,7 @@ describe('ping command', () => {
       if (isAsyncOutput(result)) {
         result.start(
           (line) => lines.push(line),
-          () => {}
+          () => {},
         );
       }
 
@@ -154,7 +154,7 @@ describe('ping command', () => {
       if (isAsyncOutput(result)) {
         result.start(
           (line) => lines.push(line),
-          () => {}
+          () => {},
         );
       }
 
@@ -179,7 +179,7 @@ describe('ping command', () => {
           (line) => lines.push(line),
           () => {
             completed = true;
-          }
+          },
         );
       }
 
@@ -200,7 +200,7 @@ describe('ping command', () => {
       if (isAsyncOutput(result)) {
         result.start(
           (line) => lines.push(line),
-          () => {}
+          () => {},
         );
       }
 
@@ -219,7 +219,7 @@ describe('ping command', () => {
       if (isAsyncOutput(result)) {
         result.start(
           (line) => lines.push(line),
-          () => {}
+          () => {},
         );
       }
 
@@ -236,7 +236,7 @@ describe('ping command', () => {
       if (isAsyncOutput(result)) {
         result.start(
           (line) => lines.push(line),
-          () => {}
+          () => {},
         );
 
         // Cancel after first ping
@@ -263,7 +263,9 @@ describe('ping command', () => {
       if (isAsyncOutput(result)) {
         result.start(
           (line) => lines.push(line),
-          () => { completed = true; }
+          () => {
+            completed = true;
+          },
         );
       }
 
@@ -271,7 +273,9 @@ describe('ping command', () => {
       vi.advanceTimersByTime(2000);
 
       expect(completed).toBe(true);
-      expect(lines.some((l) => l.includes('2 packets transmitted, 0 received, 100% packet loss'))).toBe(true);
+      expect(
+        lines.some((l) => l.includes('2 packets transmitted, 0 received, 100% packet loss')),
+      ).toBe(true);
       // Should not have any successful ping responses
       expect(lines.some((l) => l.includes('icmp_seq'))).toBe(false);
     });
@@ -288,7 +292,7 @@ describe('ping command', () => {
       if (isAsyncOutput(result)) {
         result.start(
           (line) => lines.push(line),
-          () => {}
+          () => {},
         );
       }
 

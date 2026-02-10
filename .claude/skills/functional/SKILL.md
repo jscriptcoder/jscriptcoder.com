@@ -27,6 +27,7 @@ Immutable data is the foundation of functional programming. Understanding WHY he
 - **Concurrency-safe**: No race conditions when data can't change
 
 **Example of the problem:**
+
 ```typescript
 // ❌ WRONG - Mutation creates unpredictable behavior
 const session = { username: 'jshacker', machine: 'localhost' };
@@ -49,12 +50,14 @@ console.log(newSession.machine); // '192.168.1.50' - new version
 We follow "Functional Light" principles - practical functional patterns without heavy abstractions:
 
 **What we DO:**
+
 - Pure functions and immutable data
 - Composition and declarative code
 - Array methods over loops
 - Type safety and readonly
 
 **What we DON'T do:**
+
 - Category theory or monads
 - Heavy FP libraries (fp-ts, Ramda)
 - Over-engineering with abstractions
@@ -63,17 +66,20 @@ We follow "Functional Light" principles - practical functional patterns without 
 **Why:** The goal is **maintainable, testable code** - not academic purity. If a functional pattern makes code harder to understand, don't use it.
 
 **Example - Keep it simple:**
+
 ```typescript
 // ✅ GOOD - Simple, clear, functional
-const openPorts = machine.ports.filter(p => p.open);
-const serviceNames = openPorts.map(p => p.service);
+const openPorts = machine.ports.filter((p) => p.open);
+const serviceNames = openPorts.map((p) => p.service);
 
 // ❌ OVER-ENGINEERED - Unnecessary abstraction
-const compose = <T>(...fns: Array<(arg: T) => T>) => (x: T) =>
-  fns.reduceRight((v, f) => f(v), x);
+const compose =
+  <T>(...fns: Array<(arg: T) => T>) =>
+  (x: T) =>
+    fns.reduceRight((v, f) => f(v), x);
 const openPorts = compose(
   filter((p: Port) => p.open),
-  map((p: Port) => p.service)
+  map((p: Port) => p.service),
 )(machine.ports);
 ```
 
@@ -88,6 +94,7 @@ Code should be clear through naming and structure. Comments indicate unclear cod
 ### Examples
 
 ❌ **WRONG - Comments explaining unclear code**
+
 ```typescript
 // Check if user can read the file
 function check(f: any, u: any) {
@@ -106,6 +113,7 @@ function check(f: any, u: any) {
 ```
 
 ✅ **CORRECT - Self-documenting code**
+
 ```typescript
 function canUserReadFile(file: FileNode | undefined, userType: UserType): boolean {
   if (!file) return false;
@@ -129,6 +137,7 @@ If code requires comments to understand, refactor instead:
 - Use type aliases for domain concepts
 
 ✅ **Acceptable JSDoc for public APIs**
+
 ```typescript
 /**
  * Registers a scenario for runtime switching.
@@ -149,6 +158,7 @@ Prefer `map`, `filter`, `reduce` for transformations. They're declarative (what,
 ### Map - Transform Each Element
 
 ❌ **WRONG - Imperative loop**
+
 ```typescript
 const commandNames = [];
 for (const command of commands) {
@@ -157,13 +167,15 @@ for (const command of commands) {
 ```
 
 ✅ **CORRECT - Functional map**
+
 ```typescript
-const commandNames = commands.map(cmd => cmd.name);
+const commandNames = commands.map((cmd) => cmd.name);
 ```
 
 ### Filter - Select Subset
 
 ❌ **WRONG - Imperative loop**
+
 ```typescript
 const openPorts = [];
 for (const port of machine.ports) {
@@ -174,43 +186,49 @@ for (const port of machine.ports) {
 ```
 
 ✅ **CORRECT - Functional filter**
+
 ```typescript
-const openPorts = machine.ports.filter(p => p.open);
+const openPorts = machine.ports.filter((p) => p.open);
 ```
 
 ### Reduce - Aggregate Values
 
 ❌ **WRONG - Imperative loop**
+
 ```typescript
 let totalOpen = 0;
 for (const machine of machines) {
-  totalOpen += machine.ports.filter(p => p.open).length;
+  totalOpen += machine.ports.filter((p) => p.open).length;
 }
 ```
 
 ✅ **CORRECT - Functional reduce**
+
 ```typescript
-const totalOpen = machines.reduce((sum, m) => sum + m.ports.filter(p => p.open).length, 0);
+const totalOpen = machines.reduce((sum, m) => sum + m.ports.filter((p) => p.open).length, 0);
 ```
 
 ### Chaining Multiple Operations
 
 ✅ **CORRECT - Compose array methods**
+
 ```typescript
 const sshServices = machines
-  .filter(m => m.ports.some(p => p.port === 22 && p.open))
-  .map(m => m.hostname)
+  .filter((m) => m.ports.some((p) => p.port === 22 && p.open))
+  .map((m) => m.hostname)
   .join(', ');
 ```
 
 ### When Loops Are Acceptable
 
 Imperative loops are fine when:
+
 - Early termination is essential (use `for...of` with `break`)
 - Performance critical (measure first!)
 - Side effects are necessary (logging, DOM manipulation)
 
 But even then, consider:
+
 - `Array.find()` for early termination
 - `Array.some()` / `Array.every()` for boolean checks
 
@@ -223,6 +241,7 @@ Default to options objects for function parameters. This improves readability an
 ### Why Options Objects?
 
 **Benefits:**
+
 - Named parameters (clear what each argument means)
 - No ordering dependencies
 - Easy to add optional parameters
@@ -232,6 +251,7 @@ Default to options objects for function parameters. This improves readability an
 ### Examples
 
 ❌ **WRONG - Positional parameters**
+
 ```typescript
 function createRemoteMachine(
   ip: string,
@@ -239,7 +259,7 @@ function createRemoteMachine(
   sshOpen: boolean,
   httpOpen: boolean,
   rootPassword: string,
-  userPassword: string
+  userPassword: string,
 ): RemoteMachine {
   // ...
 }
@@ -249,6 +269,7 @@ createRemoteMachine('192.168.1.50', 'fileserver', true, false, 'root123', 'passw
 ```
 
 ✅ **CORRECT - Options object**
+
 ```typescript
 type CreateMachineOptions = {
   ip: string;
@@ -274,6 +295,7 @@ createRemoteMachine({
 ### When Positional Parameters Are OK
 
 Use positional parameters when:
+
 - 1-2 parameters max
 - Order is obvious (e.g., `add(a, b)`)
 - High-frequency utility functions
@@ -312,6 +334,7 @@ Pure functions have no side effects and always return the same output for the sa
 ### Examples
 
 ❌ **WRONG - Impure function (mutations)**
+
 ```typescript
 function addOutputLine(lines: OutputLine[], newLine: OutputLine): void {
   lines.push(newLine); // ❌ Mutates input
@@ -325,6 +348,7 @@ function getNextLineId(): number {
 ```
 
 ✅ **CORRECT - Pure functions**
+
 ```typescript
 function addOutputLine(
   lines: ReadonlyArray<OutputLine>,
@@ -358,7 +382,7 @@ function validatePassword(inputHash: string, storedHash: string): boolean {
 }
 
 function findUserInMachine(machine: RemoteMachine, username: string): RemoteUser | undefined {
-  return machine.users.find(u => u.username === username);
+  return machine.users.find((u) => u.username === username);
 }
 
 // Impure shell (isolated) - uses React state
@@ -389,6 +413,7 @@ Compose small functions into larger ones. Each function does one thing well.
 ### Examples
 
 ❌ **WRONG - Complex monolithic function**
+
 ```typescript
 function executeCommand(input: string, context: ExecutionContext) {
   if (!input || typeof input !== 'string') {
@@ -405,13 +430,13 @@ function executeCommand(input: string, context: ExecutionContext) {
 ```
 
 ✅ **CORRECT - Composed functions**
+
 ```typescript
 // Small, focused functions
 const isVariableDeclaration = (input: string) =>
   input.startsWith('const ') || input.startsWith('let ');
 
-const parseVariableDeclaration = (input: string) =>
-  VariableSchema.parse(input);
+const parseVariableDeclaration = (input: string) => VariableSchema.parse(input);
 
 const executeAsCommand = (input: string, context: ExecutionContext) =>
   new Function(...Object.keys(context), `return ${input}`)(...Object.values(context));
@@ -450,18 +475,15 @@ const resetToDefault = (session: Session): Session => ({
 
 // Compose them for SSH login
 const loginToRemote = (session: Session, user: string, userType: UserType, ip: string): Session => {
-  return setMachine(
-    setUsername(session, user, userType),
-    ip
-  );
+  return setMachine(setUsername(session, user, userType), ip);
 };
 
 // Or use pipe for left-to-right reading
 const loginToRemote = (session: Session, user: string, userType: UserType, ip: string): Session =>
   pipe(
     session,
-    s => setUsername(s, user, userType),
-    s => setMachine(s, ip),
+    (s) => setUsername(s, user, userType),
+    (s) => setMachine(s, ip),
   );
 ```
 
@@ -541,13 +563,14 @@ type FileNode = {
 ### Examples
 
 ❌ **WRONG - Deep nesting (4+ levels)**
+
 ```typescript
 function handleSshConnection(user: string, host: string, password: string) {
   const machine = getMachine(host);
   if (machine) {
-    const sshPort = machine.ports.find(p => p.port === 22);
+    const sshPort = machine.ports.find((p) => p.port === 22);
     if (sshPort && sshPort.open) {
-      const remoteUser = machine.users.find(u => u.username === user);
+      const remoteUser = machine.users.find((u) => u.username === user);
       if (remoteUser) {
         if (md5(password) === remoteUser.passwordHash) {
           // ... deeply nested login logic
@@ -559,15 +582,16 @@ function handleSshConnection(user: string, host: string, password: string) {
 ```
 
 ✅ **CORRECT - Flat with early returns**
+
 ```typescript
 function handleSshConnection(user: string, host: string, password: string) {
   const machine = getMachine(host);
   if (!machine) throw new Error('Connection refused');
 
-  const sshPort = machine.ports.find(p => p.port === 22);
+  const sshPort = machine.ports.find((p) => p.port === 22);
   if (!sshPort?.open) throw new Error('Connection refused');
 
-  const remoteUser = machine.users.find(u => u.username === user);
+  const remoteUser = machine.users.find((u) => u.username === user);
   if (!remoteUser) throw new Error('Permission denied');
 
   if (md5(password) !== remoteUser.passwordHash) throw new Error('Permission denied');
@@ -577,6 +601,7 @@ function handleSshConnection(user: string, host: string, password: string) {
 ```
 
 ✅ **CORRECT - Extract to functions**
+
 ```typescript
 function handleSshConnection(user: string, host: string, password: string) {
   const machine = validateMachineAccess(host);
@@ -587,7 +612,7 @@ function handleSshConnection(user: string, host: string, password: string) {
 function validateMachineAccess(host: string): RemoteMachine {
   const machine = getMachine(host);
   if (!machine) throw new Error('Connection refused');
-  if (!machine.ports.some(p => p.port === 22 && p.open)) throw new Error('Connection refused');
+  if (!machine.ports.some((p) => p.port === 22 && p.open)) throw new Error('Connection refused');
   return machine;
 }
 ```
@@ -600,26 +625,31 @@ function validateMachineAccess(host: string): RemoteMachine {
 
 ```typescript
 // ❌ WRONG - Mutations
-items.push(newItem);        // Add to end
-items.pop();                // Remove last
-items.unshift(newItem);     // Add to start
-items.shift();              // Remove first
-items.splice(index, 1);     // Remove at index
-items.reverse();            // Reverse order
-items.sort();               // Sort
-items[i] = newValue;        // Update at index
+items.push(newItem); // Add to end
+items.pop(); // Remove last
+items.unshift(newItem); // Add to start
+items.shift(); // Remove first
+items.splice(index, 1); // Remove at index
+items.reverse(); // Reverse order
+items.sort(); // Sort
+items[i] = newValue; // Update at index
 
 // ✅ CORRECT - Immutable alternatives
-const withNew = [...items, newItem];           // Add to end
-const withoutLast = items.slice(0, -1);        // Remove last
-const withFirst = [newItem, ...items];         // Add to start
-const withoutFirst = items.slice(1);           // Remove first
-const removed = [...items.slice(0, index),     // Remove at index
-                 ...items.slice(index + 1)];
-const reversed = [...items].reverse();         // Reverse (copy first!)
-const sorted = [...items].sort();              // Sort (copy first!)
-const updated = items.map((item, idx) =>       // Update at index
-  idx === i ? newValue : item
+const withNew = [...items, newItem]; // Add to end
+const withoutLast = items.slice(0, -1); // Remove last
+const withFirst = [newItem, ...items]; // Add to start
+const withoutFirst = items.slice(1); // Remove first
+const removed = [
+  ...items.slice(0, index), // Remove at index
+  ...items.slice(index + 1),
+];
+const reversed = [...items].reverse(); // Reverse (copy first!)
+const sorted = [...items].sort(); // Sort (copy first!)
+const updated = items.map(
+  (
+    item,
+    idx, // Update at index
+  ) => (idx === i ? newValue : item),
 );
 ```
 
@@ -627,19 +657,13 @@ const updated = items.map((item, idx) =>       // Update at index
 
 ```typescript
 // Filter out specific item
-const withoutItem = items.filter(item => item.id !== targetId);
+const withoutItem = items.filter((item) => item.id !== targetId);
 
 // Replace specific item
-const replaced = items.map(item =>
-  item.id === targetId ? newItem : item
-);
+const replaced = items.map((item) => (item.id === targetId ? newItem : item));
 
 // Insert at specific position
-const inserted = [
-  ...items.slice(0, index),
-  newItem,
-  ...items.slice(index)
-];
+const inserted = [...items.slice(0, index), newItem, ...items.slice(index)];
 ```
 
 ---
@@ -648,11 +672,11 @@ const inserted = [
 
 ```typescript
 // ❌ WRONG
-session.machine = "192.168.1.50";
-Object.assign(session, { machine: "192.168.1.50" });
+session.machine = '192.168.1.50';
+Object.assign(session, { machine: '192.168.1.50' });
 
 // ✅ CORRECT
-const updated = { ...session, machine: "192.168.1.50" };
+const updated = { ...session, machine: '192.168.1.50' };
 ```
 
 ---
@@ -663,9 +687,7 @@ const updated = { ...session, machine: "192.168.1.50" };
 // ✅ CORRECT - Immutable nested update
 const updatedMachine = {
   ...machine,
-  ports: machine.ports.map(port =>
-    port.port === 22 ? { ...port, open: false } : port
-  ),
+  ports: machine.ports.map((port) => (port.port === 22 ? { ...port, open: false } : port)),
 };
 
 // ✅ CORRECT - Immutable nested array update

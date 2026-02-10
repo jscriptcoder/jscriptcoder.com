@@ -13,11 +13,11 @@ description: Planning work in small, known-good increments. Use when starting si
 
 For significant work, maintain three documents:
 
-| Document | Purpose | Lifecycle |
-|----------|---------|-----------|
-| **PLAN.md** | What we're doing | Created at start, changes need approval |
-| **WIP.md** | Where we are now | Updated constantly, always accurate |
-| **LEARNINGS.md** | What we discovered | Temporary, merged at end then deleted |
+| Document         | Purpose            | Lifecycle                               |
+| ---------------- | ------------------ | --------------------------------------- |
+| **PLAN.md**      | What we're doing   | Created at start, changes need approval |
+| **WIP.md**       | Where we are now   | Updated constantly, always accurate     |
+| **LEARNINGS.md** | What we discovered | Temporary, merged at end then deleted   |
 
 ### Document Relationships
 
@@ -47,6 +47,7 @@ PLAN.md (static)          WIP.md (living)           LEARNINGS.md (temporary)
 ## What Makes a "Known-Good Increment"
 
 Each step MUST:
+
 - Leave all tests passing
 - Be independently deployable
 - Have clear done criteria
@@ -58,6 +59,7 @@ Each step MUST:
 ## Step Size Heuristics
 
 **Too big if:**
+
 - Takes more than one session
 - Requires multiple commits to complete
 - Has multiple "and"s in description
@@ -65,6 +67,7 @@ Each step MUST:
 - Involves more than 3 files
 
 **Right size if:**
+
 - One clear test case
 - One logical change
 - Can explain to someone in 30 seconds
@@ -192,6 +195,7 @@ Step N of M: [Description]
 ### WIP Must Always Be Accurate
 
 Update WIP.md:
+
 - When starting a new step
 - When status changes (RED → GREEN → REFACTOR)
 - When blockers appear or resolve
@@ -208,6 +212,7 @@ Update WIP.md:
 ## Gotchas
 
 ### [Title]
+
 - **Context**: When this occurs
 - **Issue**: What goes wrong
 - **Solution**: How to handle it
@@ -215,6 +220,7 @@ Update WIP.md:
 ## Patterns That Worked
 
 ### [Title]
+
 - **What**: Description
 - **Why it works**: Rationale
 - **Example**: Brief code example
@@ -222,6 +228,7 @@ Update WIP.md:
 ## Decisions Made
 
 ### [Title]
+
 - **Options considered**: What we evaluated
 - **Decision**: What we chose
 - **Rationale**: Why
@@ -255,12 +262,12 @@ When all steps are complete:
 
 Review LEARNINGS.md and determine destination:
 
-| Learning Type | Destination | Method |
-|---------------|-------------|--------|
-| Gotchas | CLAUDE.md | Use `learn` agent |
-| Patterns | CLAUDE.md | Use `learn` agent |
-| Architectural decisions | ADR | Use `adr` agent |
-| Domain knowledge | Project docs | Direct update |
+| Learning Type           | Destination  | Method            |
+| ----------------------- | ------------ | ----------------- |
+| Gotchas                 | CLAUDE.md    | Use `learn` agent |
+| Patterns                | CLAUDE.md    | Use `learn` agent |
+| Architectural decisions | ADR          | Use `adr` agent   |
+| Domain knowledge        | Project docs | Direct update     |
 
 ### 3. Delete Documents
 
@@ -273,6 +280,7 @@ git commit -m "chore: complete [feature], remove planning docs"
 ```
 
 **The knowledge lives on in:**
+
 - CLAUDE.md (gotchas, patterns)
 - ADRs (architectural decisions)
 - Git history (what was done)
@@ -281,24 +289,31 @@ git commit -m "chore: complete [feature], remove planning docs"
 ## Anti-Patterns
 
 ❌ **Committing without approval**
+
 - Always wait for explicit "yes" before committing
 
 ❌ **Steps that span multiple commits**
+
 - Break down further until one step = one commit
 
 ❌ **Writing code before tests**
+
 - RED comes first, always
 
 ❌ **Letting WIP.md become stale**
+
 - Update immediately when reality changes
 
 ❌ **Waiting until end to capture learnings**
+
 - Add to LEARNINGS.md as discoveries occur
 
 ❌ **Plans that change silently**
+
 - All plan changes require discussion and approval
 
 ❌ **Keeping planning docs after feature complete**
+
 - Delete them; knowledge is now in permanent locations
 
 ## Quick Reference

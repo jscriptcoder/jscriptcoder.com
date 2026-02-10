@@ -59,7 +59,7 @@ describe('useAutoComplete', () => {
       const completions = result.current.getCompletions('he');
 
       expect(completions.matches).toHaveLength(2);
-      expect(completions.matches.map(m => m.name)).toEqual(['hello', 'help']);
+      expect(completions.matches.map((m) => m.name)).toEqual(['hello', 'help']);
     });
 
     it('should add () suffix to command display', () => {
@@ -76,8 +76,8 @@ describe('useAutoComplete', () => {
       const completions = result.current.getCompletions('ls');
 
       expect(completions.matches).toHaveLength(2);
-      expect(completions.matches.map(m => m.name)).toContain('ls');
-      expect(completions.matches.map(m => m.name)).toContain('lsof');
+      expect(completions.matches.map((m) => m.name)).toContain('ls');
+      expect(completions.matches.map((m) => m.name)).toContain('lsof');
     });
   });
 
@@ -97,7 +97,7 @@ describe('useAutoComplete', () => {
       const completions = result.current.getCompletions('na');
 
       expect(completions.matches).toHaveLength(2);
-      expect(completions.matches.map(m => m.name)).toEqual(['name', 'namespace']);
+      expect(completions.matches.map((m) => m.name)).toEqual(['name', 'namespace']);
     });
 
     it('should not add () suffix to variable display', () => {
@@ -111,25 +111,21 @@ describe('useAutoComplete', () => {
 
   describe('mixed commands and variables', () => {
     it('should match both commands and variables', () => {
-      const { result } = renderHook(() =>
-        useAutoComplete(['help', 'hello'], ['helper', 'helm'])
-      );
+      const { result } = renderHook(() => useAutoComplete(['help', 'hello'], ['helper', 'helm']));
 
       const completions = result.current.getCompletions('hel');
 
       expect(completions.matches).toHaveLength(4);
-      expect(completions.matches.map(m => m.name)).toEqual(['hello', 'helm', 'help', 'helper']);
+      expect(completions.matches.map((m) => m.name)).toEqual(['hello', 'helm', 'help', 'helper']);
     });
 
     it('should distinguish commands and variables in display', () => {
-      const { result } = renderHook(() =>
-        useAutoComplete(['test'], ['testing'])
-      );
+      const { result } = renderHook(() => useAutoComplete(['test'], ['testing']));
 
       const completions = result.current.getCompletions('test');
 
-      const testCmd = completions.matches.find(m => m.name === 'test');
-      const testingVar = completions.matches.find(m => m.name === 'testing');
+      const testCmd = completions.matches.find((m) => m.name === 'test');
+      const testingVar = completions.matches.find((m) => m.name === 'testing');
 
       expect(testCmd?.display).toBe('test()');
       expect(testingVar?.display).toBe('testing');
@@ -167,23 +163,19 @@ describe('useAutoComplete', () => {
 
   describe('sorting', () => {
     it('should sort matches alphabetically', () => {
-      const { result } = renderHook(() =>
-        useAutoComplete(['zebra', 'alpha', 'beta'])
-      );
+      const { result } = renderHook(() => useAutoComplete(['zebra', 'alpha', 'beta']));
 
       const completions = result.current.getCompletions('a');
 
-      expect(completions.matches.map(m => m.name)).toEqual(['alpha']);
+      expect(completions.matches.map((m) => m.name)).toEqual(['alpha']);
     });
 
     it('should sort mixed commands and variables alphabetically', () => {
-      const { result } = renderHook(() =>
-        useAutoComplete(['cat', 'cd'], ['count', 'config'])
-      );
+      const { result } = renderHook(() => useAutoComplete(['cat', 'cd'], ['count', 'config']));
 
       const completions = result.current.getCompletions('c');
 
-      expect(completions.matches.map(m => m.name)).toEqual(['cat', 'cd', 'config', 'count']);
+      expect(completions.matches.map((m) => m.name)).toEqual(['cat', 'cd', 'config', 'count']);
     });
   });
 
@@ -197,9 +189,7 @@ describe('useAutoComplete', () => {
     });
 
     it('should include both commands and variables in display text', () => {
-      const { result } = renderHook(() =>
-        useAutoComplete(['echo'], ['error'])
-      );
+      const { result } = renderHook(() => useAutoComplete(['echo'], ['error']));
 
       const completions = result.current.getCompletions('e');
 

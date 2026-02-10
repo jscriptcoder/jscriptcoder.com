@@ -109,7 +109,7 @@ describe('nc command', () => {
       const nc = createNcCommand(context);
 
       expect(() => nc.fn('unknown.host', 80)).toThrow(
-        'nc: unknown.host: Name or service not known'
+        'nc: unknown.host: Name or service not known',
       );
     });
   });
@@ -120,7 +120,7 @@ describe('nc command', () => {
       const nc = createNcCommand(context);
 
       expect(() => nc.fn('192.168.1.100', 80)).toThrow(
-        'nc: connect to localhost: Connection refused'
+        'nc: connect to localhost: Connection refused',
       );
     });
 
@@ -128,9 +128,7 @@ describe('nc command', () => {
       const context = createMockNcContext();
       const nc = createNcCommand(context);
 
-      expect(() => nc.fn('127.0.0.1', 80)).toThrow(
-        'nc: connect to localhost: Connection refused'
-      );
+      expect(() => nc.fn('127.0.0.1', 80)).toThrow('nc: connect to localhost: Connection refused');
     });
 
     it('should throw error when connecting to localhost hostname', () => {
@@ -138,9 +136,7 @@ describe('nc command', () => {
       const nc = createNcCommand(context);
 
       // localhost hostname fails DNS resolution before reaching localhost check
-      expect(() => nc.fn('localhost', 80)).toThrow(
-        'nc: localhost: Name or service not known'
-      );
+      expect(() => nc.fn('localhost', 80)).toThrow('nc: localhost: Name or service not known');
     });
 
     it('should throw error when machine does not exist', () => {
@@ -148,7 +144,7 @@ describe('nc command', () => {
       const nc = createNcCommand(context);
 
       expect(() => nc.fn('10.0.0.1', 80)).toThrow(
-        'nc: connect to 10.0.0.1 port 80: Connection timed out'
+        'nc: connect to 10.0.0.1 port 80: Connection timed out',
       );
     });
 
@@ -164,7 +160,7 @@ describe('nc command', () => {
       const nc = createNcCommand(context);
 
       expect(() => nc.fn('192.168.1.50', 21)).toThrow(
-        'nc: connect to 192.168.1.50 port 21: Connection refused'
+        'nc: connect to 192.168.1.50 port 21: Connection refused',
       );
     });
 
@@ -180,7 +176,7 @@ describe('nc command', () => {
       const nc = createNcCommand(context);
 
       expect(() => nc.fn('192.168.1.50', 8080)).toThrow(
-        'nc: connect to 192.168.1.50 port 8080: Connection refused'
+        'nc: connect to 192.168.1.50 port 8080: Connection refused',
       );
     });
   });
@@ -236,7 +232,7 @@ describe('nc command', () => {
       if (isAsyncOutput(result)) {
         result.start(
           (line) => lines.push(line),
-          () => {}
+          () => {},
         );
       }
 
@@ -254,7 +250,7 @@ describe('nc command', () => {
       if (isAsyncOutput(result)) {
         result.start(
           (line) => lines.push(line),
-          () => {}
+          () => {},
         );
       }
 
@@ -279,7 +275,7 @@ describe('nc command', () => {
       if (isAsyncOutput(result)) {
         result.start(
           (line) => lines.push(line),
-          () => {}
+          () => {},
         );
       }
 
@@ -305,7 +301,7 @@ describe('nc command', () => {
       if (isAsyncOutput(result)) {
         result.start(
           (line) => lines.push(line),
-          () => {}
+          () => {},
         );
       }
 
@@ -329,7 +325,7 @@ describe('nc command', () => {
       if (isAsyncOutput(result)) {
         result.start(
           (line) => lines.push(line),
-          () => {}
+          () => {},
         );
       }
 
@@ -353,7 +349,7 @@ describe('nc command', () => {
       if (isAsyncOutput(result)) {
         result.start(
           (line) => lines.push(line),
-          () => {}
+          () => {},
         );
       }
 
@@ -389,7 +385,7 @@ describe('nc command', () => {
           () => {},
           (data) => {
             followUp = data;
-          }
+          },
         );
       }
 
@@ -429,7 +425,7 @@ describe('nc command', () => {
       if (isAsyncOutput(result)) {
         result.start(
           (line) => lines.push(line),
-          () => {}
+          () => {},
         );
       }
 
@@ -451,7 +447,7 @@ describe('nc command', () => {
       if (isAsyncOutput(result)) {
         result.start(
           (line) => lines.push(line),
-          () => {}
+          () => {},
         );
 
         // Cancel before first delay completes

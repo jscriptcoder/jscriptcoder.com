@@ -57,7 +57,11 @@ export const createInitialNetwork = (): NetworkConfig => ({
       ],
       users: [
         { username: 'root', passwordHash: 'a6f6c10dc3602b020c56ff49fb043ca9', userType: 'root' }, // r00tW3b!
-        { username: 'www-data', passwordHash: 'd2d8d0cdf38ea5a54439ffadf7597722', userType: 'user' }, // d3v0ps2024
+        {
+          username: 'www-data',
+          passwordHash: 'd2d8d0cdf38ea5a54439ffadf7597722',
+          userType: 'user',
+        }, // d3v0ps2024
         { username: 'guest', passwordHash: 'b2ce03aefab9060e1a42bd1aa1c571f6', userType: 'guest' }, // w3lcome
       ],
     },

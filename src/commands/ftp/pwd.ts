@@ -10,9 +10,7 @@ export const createFtpPwdCommand = (context: FtpPwdContext): Command => ({
   manual: {
     synopsis: 'pwd()',
     description: 'Display the current working directory on the remote FTP server.',
-    examples: [
-      { command: 'pwd()', description: 'Show current remote directory' },
-    ],
+    examples: [{ command: 'pwd()', description: 'Show current remote directory' }],
   },
   fn: (): string => context.getRemoteCwd(),
 });

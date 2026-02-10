@@ -2,7 +2,10 @@
 // Based on public domain implementation
 
 const md5cycle = (x: number[], k: number[]) => {
-  let a = x[0], b = x[1], c = x[2], d = x[3];
+  let a = x[0],
+    b = x[1],
+    c = x[2],
+    d = x[3];
 
   a = ff(a, b, c, d, k[0], 7, -680876936);
   d = ff(d, a, b, c, k[1], 12, -389564586);
@@ -127,9 +130,9 @@ const md5core = (s: string) => {
   s = s.substring(i - 64);
   const tail = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
   for (i = 0; i < s.length; i++) {
-    tail[i >> 2] |= s.charCodeAt(i) << (i % 4 << 3);
+    tail[i >> 2] |= s.charCodeAt(i) << ((i % 4) << 3);
   }
-  tail[i >> 2] |= 0x80 << (i % 4 << 3);
+  tail[i >> 2] |= 0x80 << ((i % 4) << 3);
   if (i > 55) {
     md5cycle(state, tail);
     for (i = 0; i < 16; i++) tail[i] = 0;

@@ -22,7 +22,7 @@ const generatePasswdContent = (users: readonly UserConfig[]): string =>
   users
     .map(
       (u) =>
-        `${u.username}:${u.passwordHash}:${u.uid}:${u.uid}:${u.username}:${u.userType === 'root' ? '/root' : `/home/${u.username}`}:/bin/bash`
+        `${u.username}:${u.passwordHash}:${u.uid}:${u.uid}:${u.username}:${u.userType === 'root' ? '/root' : `/home/${u.username}`}:/bin/bash`,
     )
     .join('\n');
 
@@ -38,12 +38,10 @@ const createHomeDirectory = (user: UserConfig): FileNode => ({
 });
 
 const createHomeDirectories = (
-  users: readonly UserConfig[]
+  users: readonly UserConfig[],
 ): Readonly<Record<string, FileNode>> => {
   const regularUsers = users.filter((u) => u.userType !== 'root');
-  return Object.fromEntries(
-    regularUsers.map((user) => [user.username, createHomeDirectory(user)])
-  );
+  return Object.fromEntries(regularUsers.map((user) => [user.username, createHomeDirectory(user)]));
 };
 
 export const createFileSystem = (config: MachineFileSystemConfig): FileNode => ({

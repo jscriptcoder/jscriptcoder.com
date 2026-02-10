@@ -17,15 +17,11 @@ const collectAsyncOutput = (asyncOutput: AsyncOutput): Promise<string> =>
     const lines: string[] = [];
     asyncOutput.start(
       (line) => lines.push(line),
-      () => resolve(lines.join('\n'))
+      () => resolve(lines.join('\n')),
     );
   });
 
-const writeToFile = (
-  context: OutputContext,
-  filePath: string,
-  content: string
-): void => {
+const writeToFile = (context: OutputContext, filePath: string, content: string): void => {
   const { resolvePath, getNode, getUserType, createFile, writeFile } = context;
   const userType = getUserType();
   const resolvedPath = resolvePath(filePath);

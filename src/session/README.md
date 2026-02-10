@@ -4,18 +4,18 @@ Single source of truth for all terminal session state. Manages the current user,
 
 ## Files
 
-| File | Description |
-|------|-------------|
+| File                 | Description                                                                       |
+| -------------------- | --------------------------------------------------------------------------------- |
 | `SessionContext.tsx` | React context with session state, connection stacks, persistence, and type guards |
 
 ## Session State
 
 ```typescript
 type Session = {
-  readonly username: string;      // Current user (e.g., "jshacker")
-  readonly userType: UserType;    // 'root' | 'user' | 'guest'
-  readonly machine: string;       // Current machine (e.g., "localhost", "192.168.1.75")
-  readonly currentPath: string;   // Working directory (e.g., "/home/jshacker")
+  readonly username: string; // Current user (e.g., "jshacker")
+  readonly userType: UserType; // 'root' | 'user' | 'guest'
+  readonly machine: string; // Current machine (e.g., "localhost", "192.168.1.75")
+  readonly currentPath: string; // Working directory (e.g., "/home/jshacker")
 };
 ```
 
@@ -87,17 +87,17 @@ Validated with type guards on restore. Falls back to defaults if invalid or corr
 
 `useSession()` provides:
 
-| Method | Description |
-|--------|-------------|
-| `session` | Current session state |
-| `setUsername(name, type)` | Change current user |
-| `setMachine(name)` | Change current machine |
-| `setCurrentPath(path)` | Change working directory |
-| `getPrompt()` | Formatted prompt string (`user@machine>`, `ftp>`, or `$`) |
-| `pushSession()` | Save session to stack (before SSH) |
-| `popSession()` | Restore previous session (on exit) |
-| `canReturn()` | Check if session stack has entries |
-| `enterFtpMode(session)` | Enter FTP mode |
-| `exitFtpMode()` | Exit FTP mode |
-| `enterNcMode(session)` | Enter NC mode |
-| `exitNcMode()` | Exit NC mode |
+| Method                    | Description                                               |
+| ------------------------- | --------------------------------------------------------- |
+| `session`                 | Current session state                                     |
+| `setUsername(name, type)` | Change current user                                       |
+| `setMachine(name)`        | Change current machine                                    |
+| `setCurrentPath(path)`    | Change working directory                                  |
+| `getPrompt()`             | Formatted prompt string (`user@machine>`, `ftp>`, or `$`) |
+| `pushSession()`           | Save session to stack (before SSH)                        |
+| `popSession()`            | Restore previous session (on exit)                        |
+| `canReturn()`             | Check if session stack has entries                        |
+| `enterFtpMode(session)`   | Enter FTP mode                                            |
+| `exitFtpMode()`           | Exit FTP mode                                             |
+| `enterNcMode(session)`    | Enter NC mode                                             |
+| `exitNcMode()`            | Exit NC mode                                              |

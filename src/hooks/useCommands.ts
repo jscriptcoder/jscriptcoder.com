@@ -57,10 +57,7 @@ export const useCommands = (): UseCommandsResult => {
 
     // Create help with filtered commands (only shows accessible ones)
     const getAccessibleCommands = () => {
-      const accessible = getAccessibleCommandNames(
-        Array.from(commands.keys()),
-        session.userType
-      );
+      const accessible = getAccessibleCommandNames(Array.from(commands.keys()), session.userType);
       return accessible
         .map((name) => commands.get(name))
         .filter((cmd): cmd is Command => cmd !== undefined);
@@ -79,16 +76,12 @@ export const useCommands = (): UseCommandsResult => {
     const restrictedCommands = applyCommandRestrictions(commands, session.userType);
 
     // Build execution context from restricted commands
-    const executionContext: Record<string, (...args: unknown[]) => unknown> =
-      Object.fromEntries(
-        Array.from(restrictedCommands.entries()).map(([name, cmd]) => [name, cmd.fn])
-      );
+    const executionContext: Record<string, (...args: unknown[]) => unknown> = Object.fromEntries(
+      Array.from(restrictedCommands.entries()).map(([name, cmd]) => [name, cmd.fn]),
+    );
 
     // Only show accessible commands in autocomplete
-    const commandNames = getAccessibleCommandNames(
-      Array.from(commands.keys()),
-      session.userType
-    );
+    const commandNames = getAccessibleCommandNames(Array.from(commands.keys()), session.userType);
 
     return { executionContext, commandNames };
   }, [fileSystemCommands, networkCommands, getUsers, session.userType]);

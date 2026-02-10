@@ -9,7 +9,7 @@ import { createDecryptCommand } from './decrypt';
 const createMockFile = (
   name: string,
   content: string,
-  overrides?: Partial<FileNode>
+  overrides?: Partial<FileNode>,
 ): FileNode => ({
   name,
   type: 'file',
@@ -88,9 +88,7 @@ describe('decrypt command', () => {
       const context = createMockDecryptContext();
       const decrypt = createDecryptCommand(context);
 
-      expect(() => decrypt.fn('secret.enc', 'abc123')).toThrow(
-        'decrypt: invalid key format'
-      );
+      expect(() => decrypt.fn('secret.enc', 'abc123')).toThrow('decrypt: invalid key format');
     });
 
     it('should throw error when key contains non-hex characters', () => {
@@ -99,9 +97,7 @@ describe('decrypt command', () => {
 
       const invalidKey = 'g'.repeat(64); // 'g' is not valid hex
 
-      expect(() => decrypt.fn('secret.enc', invalidKey)).toThrow(
-        'decrypt: invalid key format'
-      );
+      expect(() => decrypt.fn('secret.enc', invalidKey)).toThrow('decrypt: invalid key format');
     });
 
     it('should accept valid 64-character hex key', () => {
@@ -128,7 +124,7 @@ describe('decrypt command', () => {
       const validKey = 'a'.repeat(64);
 
       expect(() => decrypt.fn('nonexistent.enc', validKey)).toThrow(
-        'decrypt: nonexistent.enc: No such file or directory'
+        'decrypt: nonexistent.enc: No such file or directory',
       );
     });
 
@@ -141,9 +137,7 @@ describe('decrypt command', () => {
       const decrypt = createDecryptCommand(context);
       const validKey = 'a'.repeat(64);
 
-      expect(() => decrypt.fn('/secrets', validKey)).toThrow(
-        'decrypt: /secrets: Is a directory'
-      );
+      expect(() => decrypt.fn('/secrets', validKey)).toThrow('decrypt: /secrets: Is a directory');
     });
 
     it('should throw error when permission denied', () => {
@@ -159,7 +153,7 @@ describe('decrypt command', () => {
       const validKey = 'a'.repeat(64);
 
       expect(() => decrypt.fn('/secret.enc', validKey)).toThrow(
-        'decrypt: /secret.enc: Permission denied'
+        'decrypt: /secret.enc: Permission denied',
       );
     });
 
@@ -173,7 +167,7 @@ describe('decrypt command', () => {
       const validKey = 'a'.repeat(64);
 
       expect(() => decrypt.fn('/empty.enc', validKey)).toThrow(
-        'decrypt: /empty.enc: File is empty'
+        'decrypt: /empty.enc: File is empty',
       );
     });
 
@@ -257,7 +251,7 @@ describe('decrypt command', () => {
       if (isAsyncOutput(result)) {
         result.start(
           (line) => lines.push(line),
-          () => {}
+          () => {},
         );
       }
 

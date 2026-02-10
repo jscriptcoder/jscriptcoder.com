@@ -6,9 +6,7 @@ export const createPwdCommand = (getCurrentPath: () => string): Command => ({
   manual: {
     synopsis: 'pwd()',
     description: 'Print the absolute path of the current working directory.',
-    examples: [
-      { command: 'pwd()', description: 'Show current directory path' },
-    ],
+    examples: [{ command: 'pwd()', description: 'Show current directory path' }],
   },
   fn: (): string => getCurrentPath(),
 });

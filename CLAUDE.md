@@ -15,6 +15,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Max 2 levels nesting**: Extract functions if deeper.
 
 Example of correct immutable update:
+
 ```typescript
 // ✅ Correct
 const updated = { ...session, machine: newMachine };
@@ -37,6 +38,7 @@ items.pop();
 - **Explicit return types**: All exported functions must have explicit return types.
 
 Example of correct type definition:
+
 ```typescript
 // ✅ Correct - type with readonly
 type Session = {
@@ -69,6 +71,8 @@ const data = result as AuthorData;
 npm run dev           # Start Vite dev server (http://localhost:5173)
 npm run build         # TypeScript compile + Vite production build
 npm run lint          # Run ESLint
+npm run format        # Format all files with Prettier
+npm run format:check  # Check formatting without modifying (CI-friendly)
 npm run preview       # Preview production build
 npm test              # Run tests in watch mode
 npm run test:run      # Run tests once
@@ -80,6 +84,7 @@ npm run test:coverage # Run tests with coverage
 - **React 19** + **TypeScript** - UI framework
 - **Vite** - Build tool and dev server
 - **Tailwind CSS v4** - Styling (via `@tailwindcss/vite` plugin)
+- **Prettier** - Code formatting (single quotes, semicolons, trailing commas, 100 char width)
 - **Vitest** + **React Testing Library** - Testing
 
 ## Project Structure
@@ -207,6 +212,7 @@ public/
 ### Command Execution Flow
 
 User input flows through `Terminal.tsx`:
+
 1. Input is first checked for variable operations (`const`/`let` declarations or reassignments) via `useVariables` hook
 2. If not a variable operation, the input is executed as a command using dynamic `new Function()` evaluation
 3. Commands and variables are injected into the execution context, making them callable (e.g., `echo("hello")`)
@@ -215,11 +221,11 @@ User input flows through `Terminal.tsx`:
 
 Commands are tiered by user type (`src/commands/permissions.ts`). Restricted commands show a `permission denied` error and are hidden from `help()` and tab autocomplete. `man()` can still look up any command.
 
-| Tier | User Type | Commands |
-|------|-----------|----------|
-| Basic | `guest` | help, man, echo, whoami, pwd, ls, cd, cat, su, clear, author |
-| Standard | `user` | All basic + ifconfig, ping, nmap, nslookup, ssh, ftp, nc, curl, strings, output, resolve, exit |
-| Full | `root` | All standard + decrypt |
+| Tier     | User Type | Commands                                                                                       |
+| -------- | --------- | ---------------------------------------------------------------------------------------------- |
+| Basic    | `guest`   | help, man, echo, whoami, pwd, ls, cd, cat, su, clear, author                                   |
+| Standard | `user`    | All basic + ifconfig, ping, nmap, nslookup, ssh, ftp, nc, curl, strings, output, resolve, exit |
+| Full     | `root`    | All standard + decrypt                                                                         |
 
 FTP and NC modes are not restricted (they have their own separate command sets).
 
@@ -244,64 +250,65 @@ type Command = {
 ```
 
 To add a command:
+
 1. Create a new file in `src/commands/` (e.g., `myCommand.ts`)
 2. Export a `Command` object with `manual` field for documentation
 3. Import and register it in `src/hooks/useCommands.ts` using `commands.set('name', myCommand)`
 
 ### Available Commands
 
-| Command | Description |
-|---------|-------------|
-| `help()` | Lists all available commands |
-| `man(cmd)` | Display detailed manual for a command |
-| `echo(value)` | Outputs the stringified value |
-| `author()` | Displays author profile card with avatar and links |
-| `clear()` | Clears the terminal screen |
-| `pwd()` | Print current working directory |
-| `ls([path])` | List directory contents |
-| `cd([path])` | Change current directory |
-| `cat(path)` | Display file contents |
-| `decrypt(file, key)` | Decrypt file using AES-256-GCM (async, key is 64-char hex) |
-| `output(cmd, [file])` | Capture command output to variable or file (sync/Promise) |
-| `resolve(promise)` | Unwrap a Promise and display its resolved value (async) |
-| `strings(file, [min])` | Extract printable strings from binary files |
-| `su(user)` | Switch user (prompts for password) |
-| `whoami()` | Display current username |
-| `ifconfig([iface])` | Display network interface configuration |
-| `ping(host, [count])` | Send ICMP echo request to network host (async, streams output) |
-| `nmap(target)` | Network exploration and port scanning (async, streams output) |
-| `nslookup(domain)` | Query DNS to resolve domain name to IP address (async) |
-| `ssh(user, host)` | Connect to remote machine via SSH (async, prompts for password) |
-| `exit()` | Close SSH connection and return to previous machine |
-| `ftp(host)` | Connect to remote machine via FTP (async, prompts for username/password) |
-| `curl(url, [flags])` | HTTP client - fetch web content with GET/POST (async, supports -i and -X POST) |
-| `nc(host, port)` | Netcat - connect to arbitrary port (async, interactive for special services) |
+| Command                | Description                                                                    |
+| ---------------------- | ------------------------------------------------------------------------------ |
+| `help()`               | Lists all available commands                                                   |
+| `man(cmd)`             | Display detailed manual for a command                                          |
+| `echo(value)`          | Outputs the stringified value                                                  |
+| `author()`             | Displays author profile card with avatar and links                             |
+| `clear()`              | Clears the terminal screen                                                     |
+| `pwd()`                | Print current working directory                                                |
+| `ls([path])`           | List directory contents                                                        |
+| `cd([path])`           | Change current directory                                                       |
+| `cat(path)`            | Display file contents                                                          |
+| `decrypt(file, key)`   | Decrypt file using AES-256-GCM (async, key is 64-char hex)                     |
+| `output(cmd, [file])`  | Capture command output to variable or file (sync/Promise)                      |
+| `resolve(promise)`     | Unwrap a Promise and display its resolved value (async)                        |
+| `strings(file, [min])` | Extract printable strings from binary files                                    |
+| `su(user)`             | Switch user (prompts for password)                                             |
+| `whoami()`             | Display current username                                                       |
+| `ifconfig([iface])`    | Display network interface configuration                                        |
+| `ping(host, [count])`  | Send ICMP echo request to network host (async, streams output)                 |
+| `nmap(target)`         | Network exploration and port scanning (async, streams output)                  |
+| `nslookup(domain)`     | Query DNS to resolve domain name to IP address (async)                         |
+| `ssh(user, host)`      | Connect to remote machine via SSH (async, prompts for password)                |
+| `exit()`               | Close SSH connection and return to previous machine                            |
+| `ftp(host)`            | Connect to remote machine via FTP (async, prompts for username/password)       |
+| `curl(url, [flags])`   | HTTP client - fetch web content with GET/POST (async, supports -i and -X POST) |
+| `nc(host, port)`       | Netcat - connect to arbitrary port (async, interactive for special services)   |
 
 **FTP Mode Commands** (available only when connected via FTP):
 
-| Command | Description |
-|---------|-------------|
-| `pwd()` | Print remote working directory |
-| `lpwd()` | Print local working directory |
-| `cd(path)` | Change remote directory |
-| `lcd(path)` | Change local directory |
-| `ls([path], [flags])` | List remote directory contents (-a for hidden files) |
-| `lls([path], [flags])` | List local directory contents (-a for hidden files) |
-| `get(remoteFile, [localPath])` | Download file from remote to local |
-| `put(localFile, [remotePath])` | Upload file from local to remote |
-| `quit()` / `bye()` | Close FTP connection |
+| Command                        | Description                                          |
+| ------------------------------ | ---------------------------------------------------- |
+| `pwd()`                        | Print remote working directory                       |
+| `lpwd()`                       | Print local working directory                        |
+| `cd(path)`                     | Change remote directory                              |
+| `lcd(path)`                    | Change local directory                               |
+| `ls([path], [flags])`          | List remote directory contents (-a for hidden files) |
+| `lls([path], [flags])`         | List local directory contents (-a for hidden files)  |
+| `get(remoteFile, [localPath])` | Download file from remote to local                   |
+| `put(localFile, [remotePath])` | Upload file from local to remote                     |
+| `quit()` / `bye()`             | Close FTP connection                                 |
 
 **NC Mode Commands** (available when connected to interactive services via nc):
 
-| Command | Description |
-|---------|-------------|
-| `pwd()` | Print working directory |
-| `cd(path)` | Change directory |
+| Command               | Description                                   |
+| --------------------- | --------------------------------------------- |
+| `pwd()`               | Print working directory                       |
+| `cd(path)`            | Change directory                              |
 | `ls([path], [flags])` | List directory contents (-a for hidden files) |
-| `cat(path)` | Display file contents |
-| `whoami()` | Display current user |
-| `help()` | List available commands |
-| `exit()` | Close connection |
+| `cat(path)`           | Display file contents                         |
+| `whoami()`            | Display current user                          |
+| `help()`              | List available commands                       |
+| `exit()`              | Close connection                              |
 
 NC mode provides read-only shell access to the remote machine's filesystem. The user and permissions depend on who installed the service (e.g., `ghost` for the elite service on darknet port 31337).
 
@@ -310,6 +317,7 @@ NC mode provides read-only shell access to the remote machine's filesystem. The 
 The terminal includes a virtual Unix-like file system (`src/filesystem/`). Each machine (localhost and remote) has its own filesystem with unique content and users.
 
 **Per-Machine Filesystems** (`machineFileSystems.ts`):
+
 - `localhost` (192.168.1.100): jshacker, guest, root - starting machine
 - `gateway` (192.168.1.1): admin - router with config backups
 - `fileserver` (192.168.1.50): ftpuser, root - FTP server with /srv/ftp
@@ -317,6 +325,7 @@ The terminal includes a virtual Unix-like file system (`src/filesystem/`). Each 
 - `darknet` (203.0.113.42): ghost, root - mysterious server with final flag
 
 **Common Directory Structure:**
+
 ```
 /
 ├── root/           # Root user home (root only)
@@ -335,6 +344,7 @@ The terminal includes a virtual Unix-like file system (`src/filesystem/`). Each 
 Each machine also includes noise files (dotfiles, configs, logs, web assets, red herrings) alongside CTF flag/hint files to create a realistic Linux environment. Noise files never contain `FLAG{` patterns.
 
 **Filesystem Factory** (`fileSystemFactory.ts`):
+
 ```typescript
 const config: MachineFileSystemConfig = {
   users: [...],           // Users with password hashes
@@ -347,6 +357,7 @@ const fs = createFileSystem(config);
 ```
 
 **Permission System:**
+
 - Each file/directory has read/write/execute permissions per user type
 - User types: `root`, `user`, `guest`
 - Root has access to everything
@@ -354,6 +365,7 @@ const fs = createFileSystem(config);
 - Guests have limited access
 
 **FileNode Structure:**
+
 ```typescript
 type FileNode = {
   readonly name: string;
@@ -375,13 +387,14 @@ User-created and modified files are persisted to IndexedDB (`jshack-db` database
 ```typescript
 type FileSystemPatch = {
   readonly machineId: string;
-  readonly path: string;       // absolute resolved path
+  readonly path: string; // absolute resolved path
   readonly content: string;
   readonly owner: UserType;
 };
 ```
 
 **How it works:**
+
 - On every `writeFileToMachine` or `createFileOnMachine` call, a patch is recorded (upserted by machineId + path)
 - Patches are saved to IndexedDB via `useEffect` whenever they change (fire-and-forget async)
 - On initialization, `applyPatches()` replays patches on top of the base filesystem from `machineFileSystems`
@@ -390,6 +403,7 @@ type FileSystemPatch = {
 - Clearing the IndexedDB `jshack-db` database resets to factory state
 
 **Write operations that trigger patches:**
+
 - `output(cmd, filePath)` — captures command output to a file
 - FTP `get(file)` — downloads file from remote to local machine
 - FTP `put(file)` — uploads file from local to remote machine
@@ -399,6 +413,7 @@ type FileSystemPatch = {
 The terminal simulates a network environment for CTF puzzles (`src/network/`):
 
 **Network Topology:**
+
 ```
 192.168.1.0/24 Network (Local)
 ├── 192.168.1.1   (gateway)    - Router, HTTP/HTTPS open
@@ -411,6 +426,7 @@ External Network
 ```
 
 **DNS Records:**
+
 ```
 gateway.local    -> 192.168.1.1
 fileserver.local -> 192.168.1.50
@@ -420,6 +436,7 @@ www.darknet.ctf  -> 203.0.113.42
 ```
 
 **NetworkInterface Structure:**
+
 ```typescript
 type NetworkInterface = {
   readonly name: string;
@@ -432,6 +449,7 @@ type NetworkInterface = {
 ```
 
 **RemoteMachine Structure:**
+
 ```typescript
 type Port = {
   readonly port: number;
@@ -454,6 +472,7 @@ type RemoteMachine = {
 ```
 
 **DnsRecord Structure:**
+
 ```typescript
 type DnsRecord = {
   readonly domain: string;
@@ -463,6 +482,7 @@ type DnsRecord = {
 ```
 
 **Usage in commands:**
+
 ```typescript
 const { getInterfaces, getMachines, getGateway, resolveDomain } = useNetwork();
 const eth0 = getInterface('eth0');
@@ -503,7 +523,7 @@ type AsyncOutput = {
   readonly __type: 'async';
   readonly start: (
     onLine: (line: string) => void,
-    onComplete: (followUp?: SshPromptData) => void
+    onComplete: (followUp?: SshPromptData) => void,
   ) => void;
   readonly cancel?: () => void;
 };
@@ -512,6 +532,7 @@ type AsyncOutput = {
 The `onComplete` callback can optionally return a `SshPromptData` to trigger password prompt mode after the async phase (used by `ssh` command).
 
 **How it works:**
+
 1. Command returns `AsyncOutput` instead of a string
 2. Terminal detects `__type: 'async'` and calls `start()`
 3. Command uses `setTimeout` to emit lines via `onLine()` callback
@@ -519,6 +540,7 @@ The `onComplete` callback can optionally return a `SshPromptData` to trigger pas
 5. Command calls `onComplete()` when finished
 
 **Example implementation:**
+
 ```typescript
 fn: (...args: unknown[]): AsyncOutput => {
   let cancelled = false;
@@ -538,13 +560,14 @@ fn: (...args: unknown[]): AsyncOutput => {
     },
     cancel: () => {
       cancelled = true;
-      timeoutIds.forEach(id => clearTimeout(id));
+      timeoutIds.forEach((id) => clearTimeout(id));
     },
   };
-}
+};
 ```
 
 **Commands using AsyncOutput:**
+
 - `ping(host, [count])` - ~800ms delay between each ICMP response
 - `nmap(target)` - Progressive scanning with ~150ms per IP (range) or ~300ms per port (single host)
 - `nslookup(domain)` - ~600ms delay for DNS lookup
@@ -564,6 +587,7 @@ type Session = {
 ```
 
 **Available methods:**
+
 - `getPrompt()` - Returns formatted prompt (e.g., `jshacker@localhost>`)
 - `setUsername(name, type)` - Change current user
 - `setMachine(name)` - Change current machine
@@ -577,6 +601,7 @@ When SSH-ing to a remote machine, the current session is saved to a stack. The `
 
 **Session Persistence:**
 Session state is automatically persisted to IndexedDB (`jshack-db` database, `session` store, `state` key):
+
 - Persisted on every state change (fire-and-forget async write)
 - Pre-loaded from IndexedDB before React mounts via `storageCache.ts`
 - Validates data with type guards before restoring
@@ -584,6 +609,7 @@ Session state is automatically persisted to IndexedDB (`jshack-db` database, `se
 - One-time auto-migration from localStorage on first run after upgrade
 
 Persisted data includes:
+
 - `session`: machine, username, userType, currentPath
 - `sessionStack`: SSH history for `exit()` to work across page reloads
 - `ftpSession`: FTP mode state (if active)
@@ -612,9 +638,10 @@ useEffect:         saveFilesystemPatches(db, patches)    (async write)
 ```
 
 **Usage in commands:**
+
 ```typescript
 const { setUsername, setMachine, setCurrentPath, pushSession, popSession } = useSession();
-pushSession();  // Save before SSH (reads current state automatically)
+pushSession(); // Save before SSH (reads current state automatically)
 setUsername('admin', 'user');
 setMachine('192.168.1.1');
 setCurrentPath('/home/admin');
@@ -633,6 +660,7 @@ setCurrentPath('/home/admin');
 The site includes full SEO and social sharing optimization:
 
 **Static assets** (`public/`):
+
 - `robots.txt` — Allows all crawlers, references sitemap
 - `sitemap.xml` — Single URL entry for the SPA
 - `og-image.png` — 1200x630 social preview image (CRT terminal aesthetic)
@@ -641,15 +669,33 @@ The site includes full SEO and social sharing optimization:
 - `apple-touch-icon.png` — 180x180 iOS home screen icon
 
 **Meta tags** (`index.html`):
+
 - SEO: description, keywords, author, theme-color, canonical URL
 - Open Graph: og:title, og:description, og:image (1200x630), og:url, og:type, og:site_name
 - Twitter Card: summary_large_image with title, description, image
 - Icons: SVG favicon + Apple touch icon
 
 **Regenerating the OG image:**
+
 1. Edit `public/og-image.html` to change the design
 2. Open in a browser at 1200x630 viewport
 3. Screenshot to `public/og-image.png` (or use Playwright: `npx playwright screenshot --viewport-size="1200,630" --full-page "file:///path/to/og-image.html" "og-image.png"`)
+
+## Code Formatting
+
+The project uses **Prettier** for consistent code formatting. Configuration is in `.prettierrc`:
+
+- Single quotes, semicolons, trailing commas (`all`)
+- 2-space indentation, 100 character print width
+- LF line endings, arrow function parens always
+- `.prettierignore` excludes `dist/`, `coverage/`, `node_modules/`, and binary files
+
+**ESLint integration**: `eslint-config-prettier` is included as the last config entry in `eslint.config.js` to disable any ESLint rules that conflict with Prettier. ESLint handles code quality, Prettier handles formatting.
+
+```bash
+npm run format        # Format all files in place
+npm run format:check  # Check formatting without modifying (useful for CI)
+```
 
 ## Deployment
 

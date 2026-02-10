@@ -53,13 +53,13 @@ export const createSshCommand = (context: SshContext): Command => ({
     }
 
     // Check if SSH port is open
-    const sshPort = machine.ports.find(p => p.port === 22 && p.service === 'ssh');
+    const sshPort = machine.ports.find((p) => p.port === 22 && p.service === 'ssh');
     if (!sshPort || !sshPort.open) {
       throw new Error(`ssh: connect to host ${host} port 22: Connection refused`);
     }
 
     // Check if user exists on remote machine
-    const remoteUser = machine.users.find(u => u.username === user);
+    const remoteUser = machine.users.find((u) => u.username === user);
     if (!remoteUser) {
       throw new Error(`ssh: ${user}@${host}: Permission denied (publickey,password)`);
     }
@@ -100,7 +100,7 @@ export const createSshCommand = (context: SshContext): Command => ({
       },
       cancel: () => {
         cancelled = true;
-        timeoutIds.forEach(id => clearTimeout(id));
+        timeoutIds.forEach((id) => clearTimeout(id));
       },
     };
   },

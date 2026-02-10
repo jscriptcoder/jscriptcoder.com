@@ -16,9 +16,7 @@ export const createNslookupCommand = (context: NslookupContext): Command => ({
     synopsis: 'nslookup(domain: string)',
     description:
       'Query the DNS server to resolve a domain name to its IP address. Returns the IP address associated with the given domain name if found.',
-    arguments: [
-      { name: 'domain', description: 'The domain name to look up', required: true },
-    ],
+    arguments: [{ name: 'domain', description: 'The domain name to look up', required: true }],
     examples: [
       { command: 'nslookup("gateway.local")', description: 'Resolve a local domain' },
       { command: 'nslookup("darknet.ctf")', description: 'Resolve an external domain' },
@@ -71,7 +69,7 @@ export const createNslookupCommand = (context: NslookupContext): Command => ({
       },
       cancel: () => {
         cancelled = true;
-        timeoutIds.forEach(id => clearTimeout(id));
+        timeoutIds.forEach((id) => clearTimeout(id));
       },
     };
   },

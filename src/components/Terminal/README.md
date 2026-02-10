@@ -4,13 +4,13 @@ The main UI component — a retro amber-on-black CRT terminal that orchestrates 
 
 ## Files
 
-| File | Description |
-|------|-------------|
-| `Terminal.tsx` | Main orchestrator — manages input state, command execution, async output streaming, password/FTP/NC mode switching, and output line management |
-| `TerminalInput.tsx` | Input line with prompt (`user@machine>`), cursor, key handlers (Enter, ArrowUp/Down, Tab), password masking |
-| `TerminalOutput.tsx` | Renders output lines: banners, commands, results, errors, and the author profile card |
-| `types.ts` | All shared types: `Command`, `OutputLine`, `AsyncOutput`, `SpecialOutput` discriminated union, type guards |
-| `index.ts` | Module export |
+| File                 | Description                                                                                                                                    |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Terminal.tsx`       | Main orchestrator — manages input state, command execution, async output streaming, password/FTP/NC mode switching, and output line management |
+| `TerminalInput.tsx`  | Input line with prompt (`user@machine>`), cursor, key handlers (Enter, ArrowUp/Down, Tab), password masking                                    |
+| `TerminalOutput.tsx` | Renders output lines: banners, commands, results, errors, and the author profile card                                                          |
+| `types.ts`           | All shared types: `Command`, `OutputLine`, `AsyncOutput`, `SpecialOutput` discriminated union, type guards                                     |
+| `index.ts`           | Module export                                                                                                                                  |
 
 ## Command Execution Flow
 
@@ -40,18 +40,18 @@ Terminal.tsx handleSubmit()
 
 ## Special Output Types (`__type` discriminated union)
 
-| Type | Trigger | Behavior |
-|------|---------|----------|
-| `author` | `author()` | Renders profile card with avatar, bio, links |
-| `clear` | `clear()` | Clears all output lines |
-| `password_prompt` | `su(user)` | Hides prompt, masks input with `*` |
-| `ssh_prompt` | `ssh(user, host)` | After async delay, enters password mode for SSH |
-| `ftp_prompt` | `ftp(host)` | After auth, switches to FTP command set |
-| `ftp_quit` | `quit()`/`bye()` | Exits FTP mode, restores normal commands |
-| `nc_prompt` | `nc(host, port)` | Switches to NC command set with `$` prompt |
-| `nc_quit` | `exit()` in NC | Exits NC mode, restores normal commands |
-| `exit` | `exit()` | Pops session stack, returns to previous machine |
-| `async` | ping, nmap, curl, etc. | Streams lines via `onLine()`, disables input until `onComplete()` |
+| Type              | Trigger                | Behavior                                                          |
+| ----------------- | ---------------------- | ----------------------------------------------------------------- |
+| `author`          | `author()`             | Renders profile card with avatar, bio, links                      |
+| `clear`           | `clear()`              | Clears all output lines                                           |
+| `password_prompt` | `su(user)`             | Hides prompt, masks input with `*`                                |
+| `ssh_prompt`      | `ssh(user, host)`      | After async delay, enters password mode for SSH                   |
+| `ftp_prompt`      | `ftp(host)`            | After auth, switches to FTP command set                           |
+| `ftp_quit`        | `quit()`/`bye()`       | Exits FTP mode, restores normal commands                          |
+| `nc_prompt`       | `nc(host, port)`       | Switches to NC command set with `$` prompt                        |
+| `nc_quit`         | `exit()` in NC         | Exits NC mode, restores normal commands                           |
+| `exit`            | `exit()`               | Pops session stack, returns to previous machine                   |
+| `async`           | ping, nmap, curl, etc. | Streams lines via `onLine()`, disables input until `onComplete()` |
 
 ## Components
 

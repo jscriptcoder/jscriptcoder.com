@@ -9,7 +9,12 @@ type NcCatContext = {
   readonly getUserType: () => UserType;
   readonly resolvePath: (path: string, cwd: string) => string;
   readonly getNodeFromMachine: (machineId: MachineId, path: string, cwd: string) => FileNode | null;
-  readonly readFileFromMachine: (machineId: MachineId, path: string, cwd: string, userType: UserType) => string | null;
+  readonly readFileFromMachine: (
+    machineId: MachineId,
+    path: string,
+    cwd: string,
+    userType: UserType,
+  ) => string | null;
 };
 
 export const createNcCatCommand = (context: NcCatContext): Command => ({

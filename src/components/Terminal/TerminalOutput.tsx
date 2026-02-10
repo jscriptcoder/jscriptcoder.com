@@ -39,10 +39,17 @@ export const TerminalOutput = ({ lines }: TerminalOutputProps) => {
   return (
     <div className="flex-1 overflow-y-auto p-4">
       {lines.map((line) => (
-        <div key={line.id} className={line.type === 'banner' ? 'whitespace-pre' : line.type === 'author' ? 'break-words' : 'whitespace-pre-wrap break-all'}>
-          {line.type === 'banner' && (
-            <div className="text-amber-400">{line.content as string}</div>
-          )}
+        <div
+          key={line.id}
+          className={
+            line.type === 'banner'
+              ? 'whitespace-pre'
+              : line.type === 'author'
+                ? 'break-words'
+                : 'whitespace-pre-wrap break-all'
+          }
+        >
+          {line.type === 'banner' && <div className="text-amber-400">{line.content as string}</div>}
           {line.type === 'command' && (
             <div className="text-amber-400">
               <span className="text-amber-300">{line.prompt} </span>
@@ -50,16 +57,12 @@ export const TerminalOutput = ({ lines }: TerminalOutputProps) => {
             </div>
           )}
           {line.type === 'result' && (
-            <div className="text-amber-500 pl-4">
-              {(line.content as string) || '\u00A0'}
-            </div>
+            <div className="text-amber-500 pl-4">{(line.content as string) || '\u00A0'}</div>
           )}
           {line.type === 'error' && (
             <div className="text-red-500 pl-4">{line.content as string}</div>
           )}
-          {line.type === 'author' && (
-            <AuthorCard data={line.content as AuthorData} />
-          )}
+          {line.type === 'author' && <AuthorCard data={line.content as AuthorData} />}
         </div>
       ))}
     </div>

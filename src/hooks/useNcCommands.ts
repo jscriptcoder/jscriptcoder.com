@@ -38,34 +38,43 @@ export const useNcCommands = (): Map<string, Command> | null => {
     commands.set('pwd', createNcPwdCommand({ getCwd }));
 
     // cd - change directory
-    commands.set('cd', createNcCdCommand({
-      getMachine,
-      getCwd,
-      getUserType,
-      setCwd: updateNcCwd,
-      resolvePath: resolvePathForMachine,
-      getNodeFromMachine,
-    }));
+    commands.set(
+      'cd',
+      createNcCdCommand({
+        getMachine,
+        getCwd,
+        getUserType,
+        setCwd: updateNcCwd,
+        resolvePath: resolvePathForMachine,
+        getNodeFromMachine,
+      }),
+    );
 
     // ls - list directory
-    commands.set('ls', createNcLsCommand({
-      getMachine,
-      getCwd,
-      getUserType,
-      resolvePath: resolvePathForMachine,
-      getNodeFromMachine,
-      listDirectoryFromMachine,
-    }));
+    commands.set(
+      'ls',
+      createNcLsCommand({
+        getMachine,
+        getCwd,
+        getUserType,
+        resolvePath: resolvePathForMachine,
+        getNodeFromMachine,
+        listDirectoryFromMachine,
+      }),
+    );
 
     // cat - read file
-    commands.set('cat', createNcCatCommand({
-      getMachine,
-      getCwd,
-      getUserType,
-      resolvePath: resolvePathForMachine,
-      getNodeFromMachine,
-      readFileFromMachine,
-    }));
+    commands.set(
+      'cat',
+      createNcCatCommand({
+        getMachine,
+        getCwd,
+        getUserType,
+        resolvePath: resolvePathForMachine,
+        getNodeFromMachine,
+        readFileFromMachine,
+      }),
+    );
 
     // whoami - show current user
     commands.set('whoami', createNcWhoamiCommand({ getUsername }));

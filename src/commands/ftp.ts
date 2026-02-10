@@ -59,7 +59,7 @@ export const createFtpCommand = (context: FtpContext): Command => ({
     }
 
     // Check if FTP port is open
-    const ftpPort = machine.ports.find(p => p.port === 21 && p.service === 'ftp');
+    const ftpPort = machine.ports.find((p) => p.port === 21 && p.service === 'ftp');
     if (!ftpPort || !ftpPort.open) {
       throw new Error(`ftp: connect to ${targetIP} port 21: Connection refused`);
     }
@@ -98,7 +98,7 @@ export const createFtpCommand = (context: FtpContext): Command => ({
       },
       cancel: () => {
         cancelled = true;
-        timeoutIds.forEach(id => clearTimeout(id));
+        timeoutIds.forEach((id) => clearTimeout(id));
       },
     };
   },

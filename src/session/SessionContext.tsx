@@ -58,8 +58,7 @@ const isValidSession = (value: unknown): value is Session =>
   typeof (value as Session).currentPath === 'string' &&
   isValidUserType((value as Session).userType);
 
-const isValidSessionSnapshot = (value: unknown): value is SessionSnapshot =>
-  isValidSession(value);
+const isValidSessionSnapshot = (value: unknown): value is SessionSnapshot => isValidSession(value);
 
 const isValidFtpSession = (value: unknown): value is FtpSession =>
   typeof value === 'object' &&
@@ -143,7 +142,9 @@ const getInitialState = (): PersistedState => {
 export const SessionProvider = ({ children }: { children: ReactNode }) => {
   const [initialState] = useState(getInitialState);
   const [session, setSession] = useState<Session>(initialState.session);
-  const [sessionStack, setSessionStack] = useState<readonly SessionSnapshot[]>(initialState.sessionStack);
+  const [sessionStack, setSessionStack] = useState<readonly SessionSnapshot[]>(
+    initialState.sessionStack,
+  );
   const [ftpSession, setFtpSession] = useState<FtpSession | null>(initialState.ftpSession);
   const [ncSession, setNcSession] = useState<NcSession | null>(initialState.ncSession);
 
@@ -210,11 +211,11 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
   }, [ftpSession]);
 
   const updateFtpRemoteCwd = useCallback((cwd: string) => {
-    setFtpSession((prev) => prev ? { ...prev, remoteCwd: cwd } : null);
+    setFtpSession((prev) => (prev ? { ...prev, remoteCwd: cwd } : null));
   }, []);
 
   const updateFtpOriginCwd = useCallback((cwd: string) => {
-    setFtpSession((prev) => prev ? { ...prev, originCwd: cwd } : null);
+    setFtpSession((prev) => (prev ? { ...prev, originCwd: cwd } : null));
   }, []);
 
   const isInFtpMode = useCallback(() => ftpSession !== null, [ftpSession]);
@@ -232,7 +233,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
   const isInNcMode = useCallback(() => ncSession !== null, [ncSession]);
 
   const updateNcCwd = useCallback((cwd: string) => {
-    setNcSession((prev) => prev ? { ...prev, currentPath: cwd } : null);
+    setNcSession((prev) => (prev ? { ...prev, currentPath: cwd } : null));
   }, []);
 
   return (

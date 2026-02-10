@@ -17,7 +17,8 @@ export const createFtpCdCommand = (context: FtpCdContext): Command => ({
   description: 'Change remote directory',
   manual: {
     synopsis: 'cd([path])',
-    description: 'Change the current working directory on the remote FTP server. If no path is given, returns to the home directory.',
+    description:
+      'Change the current working directory on the remote FTP server. If no path is given, returns to the home directory.',
     arguments: [
       { name: 'path', description: 'Directory to change to (optional)', required: false },
     ],

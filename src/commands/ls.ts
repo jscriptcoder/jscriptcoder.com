@@ -17,7 +17,11 @@ export const createLsCommand = (context: LsContext): Command => ({
     description:
       'List the contents of a directory. Directories are shown with a trailing slash. Hidden files (starting with .) are not shown by default. If no path is specified, lists the current directory.',
     arguments: [
-      { name: 'path', description: 'Path to the directory to list (absolute or relative)', required: false },
+      {
+        name: 'path',
+        description: 'Path to the directory to list (absolute or relative)',
+        required: false,
+      },
       { name: 'flags', description: 'Options: "-a" to show hidden files', required: false },
     ],
     examples: [

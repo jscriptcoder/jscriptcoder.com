@@ -10,9 +10,7 @@ export const ftpQuitCommand: Command = {
   manual: {
     synopsis: 'quit()',
     description: 'Close the FTP connection and return to the local machine.',
-    examples: [
-      { command: 'quit()', description: 'Exit FTP session' },
-    ],
+    examples: [{ command: 'quit()', description: 'Exit FTP session' }],
   },
   fn: (): FtpQuitOutput => ({
     __type: 'ftp_quit',
@@ -25,9 +23,7 @@ export const ftpByeCommand: Command = {
   manual: {
     synopsis: 'bye()',
     description: 'Close the FTP connection and return to the local machine. Alias for quit().',
-    examples: [
-      { command: 'bye()', description: 'Exit FTP session' },
-    ],
+    examples: [{ command: 'bye()', description: 'Exit FTP session' }],
   },
   fn: (): FtpQuitOutput => ({
     __type: 'ftp_quit',

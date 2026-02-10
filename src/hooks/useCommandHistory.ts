@@ -14,9 +14,7 @@ export const useCommandHistory = () => {
   const navigateUp = useCallback((): string => {
     if (history.length === 0) return '';
 
-    const newIndex = historyIndex === -1
-      ? history.length - 1
-      : Math.max(0, historyIndex - 1);
+    const newIndex = historyIndex === -1 ? history.length - 1 : Math.max(0, historyIndex - 1);
 
     setHistoryIndex(newIndex);
     return history[newIndex] || '';

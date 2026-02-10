@@ -43,23 +43,75 @@ describe('permissions', () => {
 
   describe('getAccessibleCommandNames', () => {
     const allCommands = [
-      'help', 'man', 'echo', 'whoami', 'pwd', 'ls', 'cd', 'cat', 'su', 'clear', 'author',
-      'ifconfig', 'ping', 'nmap', 'nslookup', 'ssh', 'ftp', 'nc', 'curl', 'strings', 'output', 'resolve', 'exit',
+      'help',
+      'man',
+      'echo',
+      'whoami',
+      'pwd',
+      'ls',
+      'cd',
+      'cat',
+      'su',
+      'clear',
+      'author',
+      'ifconfig',
+      'ping',
+      'nmap',
+      'nslookup',
+      'ssh',
+      'ftp',
+      'nc',
+      'curl',
+      'strings',
+      'output',
+      'resolve',
+      'exit',
       'decrypt',
     ];
 
     it('should give guest only basic commands', () => {
       const result = getAccessibleCommandNames(allCommands, 'guest');
       expect(result).toEqual([
-        'help', 'man', 'echo', 'whoami', 'pwd', 'ls', 'cd', 'cat', 'su', 'clear', 'author',
+        'help',
+        'man',
+        'echo',
+        'whoami',
+        'pwd',
+        'ls',
+        'cd',
+        'cat',
+        'su',
+        'clear',
+        'author',
       ]);
     });
 
     it('should give user basic and standard commands', () => {
       const result = getAccessibleCommandNames(allCommands, 'user');
       expect(result).toEqual([
-        'help', 'man', 'echo', 'whoami', 'pwd', 'ls', 'cd', 'cat', 'su', 'clear', 'author',
-        'ifconfig', 'ping', 'nmap', 'nslookup', 'ssh', 'ftp', 'nc', 'curl', 'strings', 'output', 'resolve', 'exit',
+        'help',
+        'man',
+        'echo',
+        'whoami',
+        'pwd',
+        'ls',
+        'cd',
+        'cat',
+        'su',
+        'clear',
+        'author',
+        'ifconfig',
+        'ping',
+        'nmap',
+        'nslookup',
+        'ssh',
+        'ftp',
+        'nc',
+        'curl',
+        'strings',
+        'output',
+        'resolve',
+        'exit',
       ]);
     });
 
@@ -88,27 +140,21 @@ describe('permissions', () => {
       const commands = new Map([['nmap', getMockCommand({ name: 'nmap' })]]);
       const restricted = applyCommandRestrictions(commands, 'guest');
       const nmap = restricted.get('nmap');
-      expect(() => nmap?.fn()).toThrow(
-        "permission denied: 'nmap' requires user privileges"
-      );
+      expect(() => nmap?.fn()).toThrow("permission denied: 'nmap' requires user privileges");
     });
 
     it('should throw permission denied for guest calling root command', () => {
       const commands = new Map([['decrypt', getMockCommand({ name: 'decrypt' })]]);
       const restricted = applyCommandRestrictions(commands, 'guest');
       const decrypt = restricted.get('decrypt');
-      expect(() => decrypt?.fn()).toThrow(
-        "permission denied: 'decrypt' requires root privileges"
-      );
+      expect(() => decrypt?.fn()).toThrow("permission denied: 'decrypt' requires root privileges");
     });
 
     it('should throw permission denied for user calling root command', () => {
       const commands = new Map([['decrypt', getMockCommand({ name: 'decrypt' })]]);
       const restricted = applyCommandRestrictions(commands, 'user');
       const decrypt = restricted.get('decrypt');
-      expect(() => decrypt?.fn()).toThrow(
-        "permission denied: 'decrypt' requires root privileges"
-      );
+      expect(() => decrypt?.fn()).toThrow("permission denied: 'decrypt' requires root privileges");
     });
 
     it('should allow user to call user commands', () => {
@@ -193,7 +239,19 @@ describe('permissions', () => {
     });
 
     it('should not restrict basic commands', () => {
-      const basicCommands = ['help', 'man', 'echo', 'whoami', 'pwd', 'ls', 'cd', 'cat', 'su', 'clear', 'author'];
+      const basicCommands = [
+        'help',
+        'man',
+        'echo',
+        'whoami',
+        'pwd',
+        'ls',
+        'cd',
+        'cat',
+        'su',
+        'clear',
+        'author',
+      ];
       basicCommands.forEach((name) => {
         expect(COMMAND_TIERS[name]).toBeUndefined();
       });

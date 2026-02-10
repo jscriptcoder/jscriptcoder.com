@@ -19,13 +19,14 @@ Complete redesign of the flag system for JSHACK.ME — a cohesive CTF experience
 
 **New feature**: Commands are tiered by user type. When a player connects to a machine as guest, they only have basic navigation. Escalating to user or root unlocks more powerful tools.
 
-| Tier | User Type | Commands |
-|------|-----------|----------|
-| **Basic** | `guest` | help, man, echo, whoami, pwd, ls, cd, cat, su, clear, author |
-| **Standard** | `user` | All basic + ifconfig, ping, nmap, nslookup, ssh, ftp, nc, curl, strings, output, resolve, exit |
-| **Full** | `root` | All standard + decrypt |
+| Tier         | User Type | Commands                                                                                       |
+| ------------ | --------- | ---------------------------------------------------------------------------------------------- |
+| **Basic**    | `guest`   | help, man, echo, whoami, pwd, ls, cd, cat, su, clear, author                                   |
+| **Standard** | `user`    | All basic + ifconfig, ping, nmap, nslookup, ssh, ftp, nc, curl, strings, output, resolve, exit |
+| **Full**     | `root`    | All standard + decrypt                                                                         |
 
 **Rationale**:
+
 - **Guests** can only look around and escalate (su) — they're intruders with minimal tools
 - **Users** have network and analysis tools — they can explore, connect, and inspect
 - **Root** has decrypt — the most powerful tool, requiring full access to use
@@ -38,12 +39,13 @@ Complete redesign of the flag system for JSHACK.ME — a cohesive CTF experience
 
 ## `/etc/passwd` Permissions
 
-| Machine | Readable by | Rationale |
-|---------|------------|-----------|
-| **localhost** | root, user | Player starts as user; can read passwd to learn the mechanic |
-| **All remotes** | root only | Forces players to find credentials through other means (logs, configs, web pages) |
+| Machine         | Readable by | Rationale                                                                         |
+| --------------- | ----------- | --------------------------------------------------------------------------------- |
+| **localhost**   | root, user  | Player starts as user; can read passwd to learn the mechanic                      |
+| **All remotes** | root only   | Forces players to find credentials through other means (logs, configs, web pages) |
 
 On remote machines, players must discover credentials through:
+
 - Log files that leak usernames/passwords
 - Config files with hardcoded credentials
 - Web pages that expose user info
@@ -66,22 +68,22 @@ On remote machines, players must discover credentials through:
 
 ## Machine Users
 
-| Machine | Username | Type | Password | How player discovers password |
-|---------|----------|------|----------|-------------------------------|
-| **localhost** | jshacker | user | h4ckth3pl4n3t | Player starts as this user |
-| **localhost** | root | root | sup3rus3r | Crack from /etc/passwd (readable by user on localhost) |
-| **localhost** | guest | guest | guestpass | Not needed for progression |
-| **gateway** | guest | guest | guest2024 | Hinted in localhost `/var/log/auth.log` |
-| **gateway** | admin | root | n3tgu4rd! | Found in gateway auth.log (readable by guest) |
-| **fileserver** | guest | guest | anonymous | Classic FTP default, hinted on gateway admin page |
-| **fileserver** | ftpuser | user | tr4nsf3r | Hinted on gateway admin page or web content |
-| **fileserver** | root | root | b4ckup2024 | Found in config file after escalating to ftpuser |
-| **webserver** | guest | guest | w3lcome | Hinted in fileserver backup notes |
-| **webserver** | www-data | user | d3v0ps2024 | Found in webserver `/var/log/access.log` (readable by guest) |
-| **webserver** | root | root | r00tW3b! | Found in database backup or web config |
-| **darknet** | guest | guest | sh4d0w | Found via webserver backdoor (nc) output |
-| **darknet** | ghost | user | sp3ctr3 | Found via darknet web page or API response |
-| **darknet** | root | root | d4rkn3tR00t | Requires decrypting a file |
+| Machine        | Username | Type  | Password      | How player discovers password                                |
+| -------------- | -------- | ----- | ------------- | ------------------------------------------------------------ |
+| **localhost**  | jshacker | user  | h4ckth3pl4n3t | Player starts as this user                                   |
+| **localhost**  | root     | root  | sup3rus3r     | Crack from /etc/passwd (readable by user on localhost)       |
+| **localhost**  | guest    | guest | guestpass     | Not needed for progression                                   |
+| **gateway**    | guest    | guest | guest2024     | Hinted in localhost `/var/log/auth.log`                      |
+| **gateway**    | admin    | root  | n3tgu4rd!     | Found in gateway auth.log (readable by guest)                |
+| **fileserver** | guest    | guest | anonymous     | Classic FTP default, hinted on gateway admin page            |
+| **fileserver** | ftpuser  | user  | tr4nsf3r      | Hinted on gateway admin page or web content                  |
+| **fileserver** | root     | root  | b4ckup2024    | Found in config file after escalating to ftpuser             |
+| **webserver**  | guest    | guest | w3lcome       | Hinted in fileserver backup notes                            |
+| **webserver**  | www-data | user  | d3v0ps2024    | Found in webserver `/var/log/access.log` (readable by guest) |
+| **webserver**  | root     | root  | r00tW3b!      | Found in database backup or web config                       |
+| **darknet**    | guest    | guest | sh4d0w        | Found via webserver backdoor (nc) output                     |
+| **darknet**    | ghost    | user  | sp3ctr3       | Found via darknet web page or API response                   |
+| **darknet**    | root     | root  | d4rkn3tR00t   | Requires decrypting a file                                   |
 
 ---
 
@@ -89,35 +91,38 @@ On remote machines, players must discover credentials through:
 
 ### Overview
 
-| # | Flag | Machine | Difficulty | Key Skills |
-|---|------|---------|------------|------------|
-| 1 | FLAG{welcome_hacker} | localhost | Beginner | ls, cat |
-| 2 | FLAG{hidden_in_plain_sight} | localhost | Beginner | ls (with -a flag) |
-| 3 | FLAG{root_access_granted} | localhost | Beginner | cat /etc/passwd, su |
-| 4 | FLAG{network_explorer} | network | Intermediate | ifconfig, ping, nmap, curl |
-| 5 | FLAG{gateway_breach} | gateway | Intermediate | ssh (as guest), su, cat |
-| 6 | FLAG{admin_panel_exposed} | gateway | Intermediate | curl (with -i), cat |
-| 7 | FLAG{file_transfer_pro} | fileserver | Intermediate | ftp, get, ls |
-| 8 | FLAG{binary_secrets_revealed} | webserver | Advanced | ssh, strings, output, variables |
-| 9 | FLAG{decrypted_intel} | cross-machine | Advanced | decrypt, variables (key from #8) |
-| 10 | FLAG{backdoor_found} | webserver | Advanced | nmap, nc |
-| 11 | FLAG{darknet_discovered} | darknet | Expert | nslookup, curl |
-| 12 | FLAG{master_of_the_darknet} | darknet | Expert | ssh/nc, su, decrypt (multi-step) |
+| #   | Flag                          | Machine       | Difficulty   | Key Skills                       |
+| --- | ----------------------------- | ------------- | ------------ | -------------------------------- |
+| 1   | FLAG{welcome_hacker}          | localhost     | Beginner     | ls, cat                          |
+| 2   | FLAG{hidden_in_plain_sight}   | localhost     | Beginner     | ls (with -a flag)                |
+| 3   | FLAG{root_access_granted}     | localhost     | Beginner     | cat /etc/passwd, su              |
+| 4   | FLAG{network_explorer}        | network       | Intermediate | ifconfig, ping, nmap, curl       |
+| 5   | FLAG{gateway_breach}          | gateway       | Intermediate | ssh (as guest), su, cat          |
+| 6   | FLAG{admin_panel_exposed}     | gateway       | Intermediate | curl (with -i), cat              |
+| 7   | FLAG{file_transfer_pro}       | fileserver    | Intermediate | ftp, get, ls                     |
+| 8   | FLAG{binary_secrets_revealed} | webserver     | Advanced     | ssh, strings, output, variables  |
+| 9   | FLAG{decrypted_intel}         | cross-machine | Advanced     | decrypt, variables (key from #8) |
+| 10  | FLAG{backdoor_found}          | webserver     | Advanced     | nmap, nc                         |
+| 11  | FLAG{darknet_discovered}      | darknet       | Expert       | nslookup, curl                   |
+| 12  | FLAG{master_of_the_darknet}   | darknet       | Expert       | ssh/nc, su, decrypt (multi-step) |
 
 ---
 
 ### Detailed Flag Walkthrough
 
 #### FLAG 1: `FLAG{welcome_hacker}` — First Steps
+
 **Machine**: localhost | **Difficulty**: Beginner | **User**: jshacker (user)
 
 **Skills taught**: `ls`, `cat` — basic file navigation
 
 **Setup**:
+
 - File: `/home/jshacker/README.txt`
 - Permissions: readable by user
 
 **Content**:
+
 ```
 === WELCOME TO JSHACK.ME ===
 
@@ -138,15 +143,18 @@ Try ls(".", "-a") to see hidden files.
 ---
 
 #### FLAG 2: `FLAG{hidden_in_plain_sight}` — Hidden Files
+
 **Machine**: localhost | **Difficulty**: Beginner | **User**: jshacker (user)
 
 **Skills taught**: `ls` with `-a` flag — discovering hidden files
 
 **Setup**:
+
 - File: `/home/jshacker/.mission`
 - Permissions: readable by user
 
 **Content**:
+
 ```
 MISSION BRIEFING
 ================
@@ -166,22 +174,26 @@ NEXT STEPS:
 ---
 
 #### FLAG 3: `FLAG{root_access_granted}` — Root Access
+
 **Machine**: localhost | **Difficulty**: Beginner | **User**: jshacker → root
 
 **Skills taught**: Reading `/etc/passwd`, cracking MD5 hashes, `su`
 
 **Setup**:
+
 - `/etc/passwd` is readable by user on localhost (contains MD5 hashes)
 - Root password `toor` has MD5 hash — player must recognize/crack it
 - File: `/root/flag.txt` — readable only by root
 
 **How to solve**:
+
 1. `cat("/etc/passwd")` — see root's MD5 hash
 2. Recognize the hash or crack it (common password "toor")
 3. `su("root")` → enter password "toor"
 4. `cat("/root/flag.txt")`
 
 **Content** of `/root/flag.txt`:
+
 ```
 FLAG{root_access_granted}
 
@@ -197,15 +209,18 @@ Try exploring the network:
 ---
 
 #### FLAG 4: `FLAG{network_explorer}` — Network Recon
+
 **Machine**: network/gateway | **Difficulty**: Intermediate | **User**: jshacker (user) or root
 
 **Skills taught**: `ifconfig`, `ping`, `nmap`, `curl`
 
 **Setup**:
+
 - Gateway web page (`/var/www/html/index.html`) contains the flag
 - Accessible via `curl("192.168.1.1")`
 
 **How to solve**:
+
 1. `ifconfig()` — see IP 192.168.1.100, gateway 192.168.1.1
 2. `ping("192.168.1.1")` — gateway responds
 3. `nmap("192.168.1.0/24")` — discover all machines and open ports
@@ -213,6 +228,7 @@ Try exploring the network:
 5. `curl("192.168.1.1")` — get the web page
 
 **Content** of gateway `/var/www/html/index.html`:
+
 ```html
 <h1>NetGuard Router v3.2.1</h1>
 <p>Administration portal</p>
@@ -225,6 +241,7 @@ Try exploring the network:
 **Leads to**: Flag 5 (gateway SSH) — hint about credentials in logs
 
 **Also needed**: A hint on localhost about the gateway guest password. Add to `/var/log/auth.log` on localhost:
+
 ```
 [info] Auto-configured gateway access: guest/guest (default credentials)
 ```
@@ -232,11 +249,13 @@ Try exploring the network:
 ---
 
 #### FLAG 5: `FLAG{gateway_breach}` — Gateway Breach
+
 **Machine**: gateway | **Difficulty**: Intermediate | **User**: guest → admin (root)
 
 **Skills taught**: `ssh` as guest, navigating with limited commands, `su` escalation
 
 **Setup**:
+
 - SSH into gateway as guest (password: "guest", hinted in localhost logs)
 - As guest: only basic commands (ls, cd, cat, su, etc.)
 - A world-readable config or log file leaks admin credentials
@@ -244,6 +263,7 @@ Try exploring the network:
 - Flag: `/root/flag.txt` — readable only by root
 
 **How to solve**:
+
 1. `ssh("guest", "192.168.1.1")` → password "guest"
 2. As guest, explore: `ls("/var/log")`, `cat("/var/log/auth.log")`
 3. Log contains: `[warning] Failed login attempt for admin with password 'admin' from 192.168.1.100`
@@ -251,6 +271,7 @@ Try exploring the network:
 5. `cat("/root/flag.txt")`
 
 **Content** of gateway `/root/flag.txt`:
+
 ```
 FLAG{gateway_breach}
 
@@ -266,23 +287,38 @@ Credentials might be the defaults: guest/guest
 ---
 
 #### FLAG 6: `FLAG{admin_panel_exposed}` — Admin Panel
+
 **Machine**: gateway | **Difficulty**: Intermediate | **User**: admin (root) on gateway
 
 **Skills taught**: `curl` with `-i` flag, or reading files as root
 
 **Setup**:
+
 - File: `/var/www/html/admin.html` — readable only by root
 - Accessible via `cat` as root on gateway, or `curl("192.168.1.1/admin.html", "-i")` from localhost as root
 
 **Content** of `/var/www/html/admin.html`:
+
 ```html
 <h1>NetGuard Admin Panel</h1>
 <h2>Network Configuration</h2>
 <table>
-  <tr><td>Gateway</td><td>192.168.1.1</td></tr>
-  <tr><td>File Server</td><td>192.168.1.50</td></tr>
-  <tr><td>Web Server</td><td>192.168.1.75</td></tr>
-  <tr><td>External</td><td>203.0.113.42 (darknet.ctf)</td></tr>
+  <tr>
+    <td>Gateway</td>
+    <td>192.168.1.1</td>
+  </tr>
+  <tr>
+    <td>File Server</td>
+    <td>192.168.1.50</td>
+  </tr>
+  <tr>
+    <td>Web Server</td>
+    <td>192.168.1.75</td>
+  </tr>
+  <tr>
+    <td>External</td>
+    <td>203.0.113.42 (darknet.ctf)</td>
+  </tr>
 </table>
 <!-- FLAG{admin_panel_exposed} -->
 <!-- Maintenance note: webserver guest account uses default password -->
@@ -293,17 +329,20 @@ Credentials might be the defaults: guest/guest
 ---
 
 #### FLAG 7: `FLAG{file_transfer_pro}` — File Transfer
+
 **Machine**: fileserver | **Difficulty**: Intermediate | **User**: guest → ftpuser (user)
 
 **Skills taught**: `ftp`, FTP commands (ls, cd, get), file transfer workflow
 
 **Setup**:
+
 - FTP into fileserver as guest (password: "guest", hinted in gateway flag)
 - As guest on FTP: can list and navigate
 - Find hint about ftpuser in a readable directory
 - Download a file containing the flag
 
 **How to solve**:
+
 1. `ftp("192.168.1.50")` → username "guest", password "guest"
 2. FTP mode: `ls()` → see `/srv/ftp` contents
 3. `cd("uploads")` → `ls()` → find files
@@ -313,6 +352,7 @@ Credentials might be the defaults: guest/guest
 7. `get(".backup_notes.txt")`
 
 **Content** of `.backup_notes.txt`:
+
 ```
 Backup rotation schedule — DO NOT SHARE
 
@@ -330,11 +370,13 @@ Webserver SSH accepts default guest credentials.
 ---
 
 #### FLAG 8: `FLAG{binary_secrets_revealed}` — Binary Analysis
+
 **Machine**: webserver | **Difficulty**: Advanced | **User**: guest → www-data (user)
 
 **Skills taught**: `strings`, `output`, variables (`const`/`let`)
 
 **Setup**:
+
 - SSH into webserver as guest (password: "guest", hinted in admin panel + backup notes)
 - As guest: limited commands, can navigate but not use `strings`
 - Need to escalate to user (www-data) to use `strings`
@@ -343,6 +385,7 @@ Webserver SSH accepts default guest credentials.
 - Binary contains flag + half of a decryption key
 
 **How to solve**:
+
 1. `ssh("guest", "192.168.1.75")` → password "guest"
 2. As guest, explore: `cat("/var/log/access.log")` (readable by guest)
 3. Log contains: `[auth] www-data authenticated from console (webmaster)`
@@ -352,6 +395,7 @@ Webserver SSH accepts default guest credentials.
 7. `const scannerOutput = output(strings, "/opt/tools/scanner")` — store result
 
 **Content** embedded in binary (visible via strings):
+
 ```
 FLAG{binary_secrets_revealed}
 DECRYPT_KEY_PART1=a1b2c3d4e5f6
@@ -364,11 +408,13 @@ The second half of the key is in /srv/ftp/config/ on the fileserver.
 ---
 
 #### FLAG 9: `FLAG{decrypted_intel}` — Decryption Challenge
+
 **Machine**: cross-machine | **Difficulty**: Advanced | **User**: root (for decrypt command)
 
 **Skills taught**: `decrypt`, variables, cross-machine problem solving, `resolve`
 
 **Setup**:
+
 - Encrypted file on webserver: `/var/www/backups/encrypted_intel.enc` (readable by user)
 - Key part 1: from binary analysis (Flag 8)
 - Key part 2: on fileserver `/srv/ftp/config/.key_fragment` (readable by user via FTP)
@@ -376,6 +422,7 @@ The second half of the key is in /srv/ftp/config/ on the fileserver.
 - `decrypt` requires root — player must be root on current machine
 
 **How to solve**:
+
 1. Get key part 2 from fileserver via FTP: `get(".key_fragment")`
 2. Read the key fragment: `cat(".key_fragment")` → `DECRYPT_KEY_PART2=7890abcdef01`
 3. Combine: `const key = "a1b2c3d4e5f67890abcdef01..."` (64 hex chars)
@@ -384,6 +431,7 @@ The second half of the key is in /srv/ftp/config/ on the fileserver.
 6. `resolve(decrypt("/path/to/encrypted_intel.enc", key))`
 
 **Decrypted content**:
+
 ```
 FLAG{decrypted_intel}
 
@@ -401,23 +449,27 @@ Its web service runs on port 8080.
 ---
 
 #### FLAG 10: `FLAG{backdoor_found}` — Backdoor Access
+
 **Machine**: webserver | **Difficulty**: Advanced | **User**: via nc (www-data)
 
 **Skills taught**: `nc`, backdoor ports, exploring via limited shell
 
 **Setup**:
+
 - Port 4444 on webserver is the backdoor (already visible from nmap)
 - NC connects as www-data (the service owner)
 - NC mode has limited commands: pwd, cd, ls, cat, whoami, help, exit
 - Flag hidden in a directory only accessible through backdoor
 
 **How to solve**:
+
 1. `nmap("192.168.1.75")` — confirms port 4444 (elite) is open
 2. `nc("192.168.1.75", 4444)` — connects to backdoor as www-data
 3. Explore: `ls("/opt")` → find hidden service directory
 4. `cat("/opt/tools/.backdoor_log")` — contains the flag
 
 **Content**:
+
 ```
 FLAG{backdoor_found}
 
@@ -432,16 +484,19 @@ The darknet web portal at port 8080 has login information.
 ---
 
 #### FLAG 11: `FLAG{darknet_discovered}` — Darknet Recon
+
 **Machine**: darknet | **Difficulty**: Expert | **User**: from localhost
 
 **Skills taught**: `nslookup`, `curl` with custom port, API exploration
 
 **Setup**:
+
 - `nslookup("darknet.ctf")` → resolves to 203.0.113.42
 - `curl("darknet.ctf:8080")` → darknet web portal
 - API endpoint reveals credentials and flag
 
 **How to solve**:
+
 1. `nslookup("darknet.ctf")` — resolves to 203.0.113.42
 2. `curl("203.0.113.42:8080")` — darknet portal page
 3. Page mentions an API: `/api/secrets`
@@ -449,6 +504,7 @@ The darknet web portal at port 8080 has login information.
 5. Response contains flag and ghost credentials
 
 **Content** of darknet `/var/www/html/index.html` (port 8080):
+
 ```html
 <pre>
  ____    _    ____  _  ___   _ _____ _____
@@ -472,11 +528,13 @@ Backdoor service running on port 31337.
 ---
 
 #### FLAG 12: `FLAG{master_of_the_darknet}` — Final Flag
+
 **Machine**: darknet | **Difficulty**: Expert | **User**: guest → ghost → root
 
 **Skills taught**: Full chain — SSH/NC, multi-level escalation, decrypt
 
 **Setup**:
+
 - Connect to darknet via SSH as guest or NC on port 31337
 - Escalate guest → ghost (user) using credentials from Flag 11
 - As ghost (user), find encrypted final flag in `/home/ghost/`
@@ -485,6 +543,7 @@ Backdoor service running on port 31337.
 - Root password for darknet must be discovered (hidden in a config file readable by ghost)
 
 **How to solve**:
+
 1. `ssh("guest", "203.0.113.42")` → password "guest"
    OR `nc("203.0.113.42", 31337)` → connects as ghost directly
 2. If SSH as guest: `su("ghost")` → password "fun123" (from Flag 11)
@@ -499,6 +558,7 @@ Backdoor service running on port 31337.
 10. `resolve(decrypt("/home/ghost/.encrypted_flag.enc", key))`
 
 **Decrypted content**:
+
 ```
 FLAG{master_of_the_darknet}
 
@@ -516,33 +576,33 @@ Type author() to learn about the creator of this challenge.
 
 Ensures every command is needed:
 
-| Command | Used in Flags | Role |
-|---------|--------------|------|
-| `help` | Any (discovery) | Lists available commands |
-| `man` | Any (learning) | Command documentation |
-| `echo` | Any (utility) | Output values |
-| `clear` | Any (utility) | Clear screen |
-| `author` | Post-game | Creator info |
-| `ls` | 1, 2, 5, 7, 8, 10, 12 | Directory exploration |
-| `cd` | 5, 7, 8, 10, 12 | Navigation |
-| `cat` | 1, 2, 3, 4, 5, 6, 8, 10, 12 | Reading files |
-| `pwd` | Any (orientation) | Current location |
-| `whoami` | Any (identity check) | Current user |
-| `su` | 3, 5, 8, 12 | Privilege escalation |
-| `ifconfig` | 4 | Network discovery |
-| `ping` | 4 | Connectivity test |
-| `nmap` | 4, 10 | Port scanning |
-| `nslookup` | 11 | DNS resolution |
-| `curl` | 4, 6, 11 | Web content retrieval |
-| `ssh` | 5, 8, 12 | Remote shell access |
-| `ftp` | 7, 9 | File transfer |
-| `nc` | 10, 12 (alt) | Backdoor access |
-| `strings` | 8 | Binary analysis |
-| `output` | 8 | Capture command output |
-| `resolve` | 9, 12 | Unwrap async results |
-| `decrypt` | 9, 12 | Decrypt files (root only) |
-| `exit` | 5, 7, 8, 10, 12 | Return from remote |
-| `const`/`let` | 8, 9, 12 | Store values in variables |
+| Command       | Used in Flags               | Role                      |
+| ------------- | --------------------------- | ------------------------- |
+| `help`        | Any (discovery)             | Lists available commands  |
+| `man`         | Any (learning)              | Command documentation     |
+| `echo`        | Any (utility)               | Output values             |
+| `clear`       | Any (utility)               | Clear screen              |
+| `author`      | Post-game                   | Creator info              |
+| `ls`          | 1, 2, 5, 7, 8, 10, 12       | Directory exploration     |
+| `cd`          | 5, 7, 8, 10, 12             | Navigation                |
+| `cat`         | 1, 2, 3, 4, 5, 6, 8, 10, 12 | Reading files             |
+| `pwd`         | Any (orientation)           | Current location          |
+| `whoami`      | Any (identity check)        | Current user              |
+| `su`          | 3, 5, 8, 12                 | Privilege escalation      |
+| `ifconfig`    | 4                           | Network discovery         |
+| `ping`        | 4                           | Connectivity test         |
+| `nmap`        | 4, 10                       | Port scanning             |
+| `nslookup`    | 11                          | DNS resolution            |
+| `curl`        | 4, 6, 11                    | Web content retrieval     |
+| `ssh`         | 5, 8, 12                    | Remote shell access       |
+| `ftp`         | 7, 9                        | File transfer             |
+| `nc`          | 10, 12 (alt)                | Backdoor access           |
+| `strings`     | 8                           | Binary analysis           |
+| `output`      | 8                           | Capture command output    |
+| `resolve`     | 9, 12                       | Unwrap async results      |
+| `decrypt`     | 9, 12                       | Decrypt files (root only) |
+| `exit`        | 5, 7, 8, 10, 12             | Return from remote        |
+| `const`/`let` | 8, 9, 12                    | Store values in variables |
 
 ---
 
@@ -574,20 +634,21 @@ localhost (start as user "jshacker")
 
 Additional directories that require root access, providing incentive for escalation:
 
-| Directory | Machine | Contains |
-|-----------|---------|----------|
-| `/root/` | All machines | Flags, key files, config |
-| `/etc/passwd` | All remotes | User list with MD5 hashes (root-only on remotes) |
-| `/etc/shadow` | Optional | Alternative to passwd restriction |
-| `/opt/tools/` | webserver | Binary with hidden data (user-readable, but strings requires user type) |
-| `/var/www/backups/` | webserver | Encrypted files |
-| `/var/log/auth.log` | gateway, webserver | Could restrict to root on some machines |
+| Directory           | Machine            | Contains                                                                |
+| ------------------- | ------------------ | ----------------------------------------------------------------------- |
+| `/root/`            | All machines       | Flags, key files, config                                                |
+| `/etc/passwd`       | All remotes        | User list with MD5 hashes (root-only on remotes)                        |
+| `/etc/shadow`       | Optional           | Alternative to passwd restriction                                       |
+| `/opt/tools/`       | webserver          | Binary with hidden data (user-readable, but strings requires user type) |
+| `/var/www/backups/` | webserver          | Encrypted files                                                         |
+| `/var/log/auth.log` | gateway, webserver | Could restrict to root on some machines                                 |
 
 ---
 
 ## Implementation Checklist
 
 ### Phase 1: Command Restrictions
+
 - [x] Add user type checking to command registration in `useCommands.ts`
 - [x] Define command tiers (guest/user/root) as a configuration
 - [x] Show permission error when restricted command is called
@@ -595,6 +656,7 @@ Additional directories that require root access, providing incentive for escalat
 - [x] Add tests for command restrictions
 
 ### Phase 2: Filesystem Changes
+
 - [x] Update `/etc/passwd` permissions (root-only on remotes, root+user on localhost)
 - [x] Remove all existing flags from `machineFileSystems.ts`
 - [x] Add new flag files for all 12 flags
@@ -605,12 +667,14 @@ Additional directories that require root access, providing incentive for escalat
 - [x] Add `/opt/tools/` directory to webserver
 
 ### Phase 3: Web Content
+
 - [x] Redesign gateway web pages (index.html, admin.html)
 - [x] Redesign darknet web pages (index.html, API responses)
 - [x] Update webserver API content
 - [x] Ensure curl returns correct content for each endpoint
 
 ### Phase 4: Testing & Polish
+
 - [x] Update all affected tests
 - [x] Playtest the full progression start to finish
 - [x] Verify no dead ends (every flag is reachable)
@@ -618,6 +682,7 @@ Additional directories that require root access, providing incentive for escalat
 - [x] Update documentation (README, CLAUDE.md)
 
 ### Phase 5: Filesystem Noise
+
 - [x] Localhost: /etc (hostname, hosts, crontab), ~/.bash_history, ~/.bashrc, ~/downloads/ (cheatsheet, todo)
 - [x] Localhost: /var/log/syslog
 - [x] Gateway: /etc (hostname, hosts, iptables.rules), guest ~/.bash_history
@@ -638,71 +703,77 @@ Complete walkthrough verified against the actual filesystem and command implemen
 
 ### Summary Table
 
-| # | Flag | Machine | Path / Method | Access Required |
-|---|------|---------|---------------|-----------------|
-| 1 | `FLAG{welcome_hacker}` | localhost | `/home/jshacker/README.txt` | `ls`, `cat` as user |
-| 2 | `FLAG{hidden_in_plain_sight}` | localhost | `/home/jshacker/.mission` | `ls -a`, `cat` as user |
-| 3 | `FLAG{root_access_granted}` | localhost | `/root/flag.txt` | Crack passwd hash, `su root` |
-| 4 | `FLAG{network_explorer}` | gateway | `curl("192.168.1.1")` HTML comment | `ifconfig`, `nmap`, `curl` |
-| 5 | `FLAG{gateway_breach}` | gateway | `/root/flag.txt` | SSH as guest, `su admin` |
-| 6 | `FLAG{admin_panel_exposed}` | gateway | `/var/www/html/admin.html` HTML comment | `cat` as admin or `curl` |
-| 7 | `FLAG{file_transfer_pro}` | fileserver | `/srv/ftp/uploads/.backup_notes.txt` | FTP as ftpuser, `ls -a`, `get` |
-| 8 | `FLAG{binary_secrets_revealed}` | webserver | `/opt/tools/scanner` | SSH, `su www-data`, `strings` |
-| 9 | `FLAG{decrypted_intel}` | webserver | `/var/www/backups/encrypted_intel.enc` | `su root`, `decrypt` with split key |
-| 10 | `FLAG{backdoor_found}` | webserver | `/opt/tools/.backdoor_log` | `nc` port 4444, `ls -a`, `cat` |
-| 11 | `FLAG{darknet_discovered}` | darknet | `curl("http://203.0.113.42:8080")` | `nslookup`, `curl` with port |
-| 12 | `FLAG{master_of_the_darknet}` | darknet | `/home/ghost/.encrypted_flag.enc` | SSH, `su root`, `decrypt` |
+| #   | Flag                            | Machine    | Path / Method                           | Access Required                     |
+| --- | ------------------------------- | ---------- | --------------------------------------- | ----------------------------------- |
+| 1   | `FLAG{welcome_hacker}`          | localhost  | `/home/jshacker/README.txt`             | `ls`, `cat` as user                 |
+| 2   | `FLAG{hidden_in_plain_sight}`   | localhost  | `/home/jshacker/.mission`               | `ls -a`, `cat` as user              |
+| 3   | `FLAG{root_access_granted}`     | localhost  | `/root/flag.txt`                        | Crack passwd hash, `su root`        |
+| 4   | `FLAG{network_explorer}`        | gateway    | `curl("192.168.1.1")` HTML comment      | `ifconfig`, `nmap`, `curl`          |
+| 5   | `FLAG{gateway_breach}`          | gateway    | `/root/flag.txt`                        | SSH as guest, `su admin`            |
+| 6   | `FLAG{admin_panel_exposed}`     | gateway    | `/var/www/html/admin.html` HTML comment | `cat` as admin or `curl`            |
+| 7   | `FLAG{file_transfer_pro}`       | fileserver | `/srv/ftp/uploads/.backup_notes.txt`    | FTP as ftpuser, `ls -a`, `get`      |
+| 8   | `FLAG{binary_secrets_revealed}` | webserver  | `/opt/tools/scanner`                    | SSH, `su www-data`, `strings`       |
+| 9   | `FLAG{decrypted_intel}`         | webserver  | `/var/www/backups/encrypted_intel.enc`  | `su root`, `decrypt` with split key |
+| 10  | `FLAG{backdoor_found}`          | webserver  | `/opt/tools/.backdoor_log`              | `nc` port 4444, `ls -a`, `cat`      |
+| 11  | `FLAG{darknet_discovered}`      | darknet    | `curl("http://203.0.113.42:8080")`      | `nslookup`, `curl` with port        |
+| 12  | `FLAG{master_of_the_darknet}`   | darknet    | `/home/ghost/.encrypted_flag.enc`       | SSH, `su root`, `decrypt`           |
 
 ### Step-by-Step Walkthrough
 
 #### FLAG 1 — `welcome_hacker` (Beginner)
+
 ```javascript
 // Start as jshacker@localhost
-ls()                              // See README.txt
-cat("README.txt")                 // FLAG{welcome_hacker}
+ls(); // See README.txt
+cat('README.txt'); // FLAG{welcome_hacker}
 // Hint: "Try ls('.', '-a') to see hidden files"
 ```
 
 #### FLAG 2 — `hidden_in_plain_sight` (Beginner)
+
 ```javascript
-ls(".", "-a")                     // See .mission
-cat(".mission")                   // FLAG{hidden_in_plain_sight}
+ls('.', '-a'); // See .mission
+cat('.mission'); // FLAG{hidden_in_plain_sight}
 // Hint: "Check /etc/passwd... Use su('root')"
 ```
 
 #### FLAG 3 — `root_access_granted` (Beginner)
+
 ```javascript
-cat("/etc/passwd")                // See root hash: a0ff67e77425eb3cea40ecb60941aea4
+cat('/etc/passwd'); // See root hash: a0ff67e77425eb3cea40ecb60941aea4
 // Crack hash → "sup3rus3r" (use online MD5 lookup)
-su("root")                        // Enter: sup3rus3r
-cat("/root/flag.txt")             // FLAG{root_access_granted}
+su('root'); // Enter: sup3rus3r
+cat('/root/flag.txt'); // FLAG{root_access_granted}
 // Hint: "ifconfig(), ping(), nmap()"
 ```
 
 #### FLAG 4 — `network_explorer` (Intermediate)
+
 ```javascript
 // Credential: localhost /var/log/auth.log → "guest/guest2024" for gateway
-cat("/var/log/auth.log")          // "Auto-configured gateway access: guest/guest2024"
-ifconfig()                        // See gateway 192.168.1.1
-nmap("192.168.1.0/24")            // Discover all machines + open ports
-curl("192.168.1.1")               // HTML contains <!-- FLAG{network_explorer} -->
+cat('/var/log/auth.log'); // "Auto-configured gateway access: guest/guest2024"
+ifconfig(); // See gateway 192.168.1.1
+nmap('192.168.1.0/24'); // Discover all machines + open ports
+curl('192.168.1.1'); // HTML contains <!-- FLAG{network_explorer} -->
 // Hint: "Admin panel: /admin.html" + "credentials in system logs"
 ```
 
 #### FLAG 5 — `gateway_breach` (Intermediate)
+
 ```javascript
-ssh("guest", "192.168.1.1")       // Enter: guest2024
+ssh('guest', '192.168.1.1'); // Enter: guest2024
 // Now guest@gateway — basic commands only
-cat("/var/log/auth.log")          // "pam_audit: admin authenticated with password 'n3tgu4rd!'"
-su("admin")                       // Enter: n3tgu4rd!
-cat("/root/flag.txt")             // FLAG{gateway_breach}
+cat('/var/log/auth.log'); // "pam_audit: admin authenticated with password 'n3tgu4rd!'"
+su('admin'); // Enter: n3tgu4rd!
+cat('/root/flag.txt'); // FLAG{gateway_breach}
 // Hint: "admin panel at /var/www/html/admin.html" + "FTP to 192.168.1.50"
 ```
 
 #### FLAG 6 — `admin_panel_exposed` (Intermediate)
+
 ```javascript
 // As admin@gateway:
-cat("/var/www/html/admin.html")   // <!-- FLAG{admin_panel_exposed} -->
+cat('/var/www/html/admin.html'); // <!-- FLAG{admin_panel_exposed} -->
 // OR from localhost: curl("192.168.1.1/admin.html")
 // Hint: network table shows all machines + "webserver guest uses default password"
 // Also: /root/.network_config has fileserver creds: guest/anonymous, ftpuser/tr4nsf3r
@@ -710,33 +781,35 @@ cat("/var/www/html/admin.html")   // <!-- FLAG{admin_panel_exposed} -->
 ```
 
 #### FLAG 7 — `file_transfer_pro` (Intermediate)
+
 ```javascript
-exit()                            // Return to localhost
-ftp("192.168.1.50")               // Login as guest / anonymous
+exit(); // Return to localhost
+ftp('192.168.1.50'); // Login as guest / anonymous
 // FTP starts at /home/guest — navigate to FTP directory
-cd("/srv/ftp/public")
-ls()                              // See readme.txt
-cat("readme.txt")                 // "ftpuser — read/write (password: tr4nsf3r)"
-quit()
-ftp("192.168.1.50")               // Login as ftpuser / tr4nsf3r
-cd("/srv/ftp/uploads")
-ls("-a")                          // See .backup_notes.txt
-get(".backup_notes.txt")          // Download to local
-quit()
-cat(".backup_notes.txt")          // FLAG{file_transfer_pro}
+cd('/srv/ftp/public');
+ls(); // See readme.txt
+cat('readme.txt'); // "ftpuser — read/write (password: tr4nsf3r)"
+quit();
+ftp('192.168.1.50'); // Login as ftpuser / tr4nsf3r
+cd('/srv/ftp/uploads');
+ls('-a'); // See .backup_notes.txt
+get('.backup_notes.txt'); // Download to local
+quit();
+cat('.backup_notes.txt'); // FLAG{file_transfer_pro}
 // Hint: "Encrypted backup on webserver /var/www/backups/"
 //   "Key split — part 1 in /opt/tools/scanner"
 //   "Webserver SSH accepts default guest credentials"
 ```
 
 #### FLAG 8 — `binary_secrets_revealed` (Advanced)
+
 ```javascript
-ssh("guest", "192.168.1.75")      // Enter: w3lcome
+ssh('guest', '192.168.1.75'); // Enter: w3lcome
 // guest@webserver — basic commands only, can't use strings
-cat("/var/log/error.log")         // "www-data console login: password 'd3v0ps2024'"
-su("www-data")                    // Enter: d3v0ps2024
+cat('/var/log/error.log'); // "www-data console login: password 'd3v0ps2024'"
+su('www-data'); // Enter: d3v0ps2024
 // Now www-data (user) — has strings command
-strings("/opt/tools/scanner")     // Shows:
+strings('/opt/tools/scanner'); // Shows:
 //   FLAG{binary_secrets_revealed}
 //   DECRYPT_KEY_PART1=76e2e21dacea215ff2293e4eafc5985c
 //   "See /var/www/backups/ for the encrypted file."
@@ -744,65 +817,69 @@ strings("/opt/tools/scanner")     // Shows:
 ```
 
 #### FLAG 9 — `decrypted_intel` (Advanced)
+
 ```javascript
 // Key part 2: get from fileserver FTP
-exit()                            // Return to localhost
-ftp("192.168.1.50")               // Login as ftpuser / tr4nsf3r
-cd("/srv/ftp/config")
-ls("-a")                          // See .key_fragment
-cat(".key_fragment")              // DECRYPT_KEY_PART2=ea2d996cb180258ec89c0000b42db460
-quit()
+exit(); // Return to localhost
+ftp('192.168.1.50'); // Login as ftpuser / tr4nsf3r
+cd('/srv/ftp/config');
+ls('-a'); // See .key_fragment
+cat('.key_fragment'); // DECRYPT_KEY_PART2=ea2d996cb180258ec89c0000b42db460
+quit();
 
 // Decrypt on webserver (need root for decrypt command)
-ssh("guest", "192.168.1.75")      // Enter: w3lcome
-su("www-data")                    // Enter: d3v0ps2024
-cat("/var/www/backups/db_backup.sql")  // Shows root password: r00tW3b!
-su("root")                        // Enter: r00tW3b!
+ssh('guest', '192.168.1.75'); // Enter: w3lcome
+su('www-data'); // Enter: d3v0ps2024
+cat('/var/www/backups/db_backup.sql'); // Shows root password: r00tW3b!
+su('root'); // Enter: r00tW3b!
 // Now root@webserver — has decrypt command
-const key = "76e2e21dacea215ff2293e4eafc5985cea2d996cb180258ec89c0000b42db460"
-resolve(decrypt("/var/www/backups/encrypted_intel.enc", key))
+const key = '76e2e21dacea215ff2293e4eafc5985cea2d996cb180258ec89c0000b42db460';
+resolve(decrypt('/var/www/backups/encrypted_intel.enc', key));
 // FLAG{decrypted_intel}
 // Hint: "webserver backdoor on port 4444" + "darknet.ctf at 203.0.113.42:8080"
 ```
 
 #### FLAG 10 — `backdoor_found` (Advanced)
+
 ```javascript
-exit()                            // Return to localhost
-nmap("192.168.1.75")              // Confirm port 4444 (elite) open
-nc("192.168.1.75", 4444)          // Connect as www-data
-ls("/opt/tools", "-a")            // See .backdoor_log
-cat("/opt/tools/.backdoor_log")   // FLAG{backdoor_found}
+exit(); // Return to localhost
+nmap('192.168.1.75'); // Confirm port 4444 (elite) open
+nc('192.168.1.75', 4444); // Connect as www-data
+ls('/opt/tools', '-a'); // See .backdoor_log
+cat('/opt/tools/.backdoor_log'); // FLAG{backdoor_found}
 // Hint: "darknet.ctf:31337 as C2 server"
 //   "The darknet web portal at port 8080 has login information"
-exit()
+exit();
 ```
 
 #### FLAG 11 — `darknet_discovered` (Expert)
+
 ```javascript
-nslookup("darknet.ctf")           // Resolves to 203.0.113.42
-curl("http://203.0.113.42:8080")  // ASCII art + FLAG{darknet_discovered}
+nslookup('darknet.ctf'); // Resolves to 203.0.113.42
+curl('http://203.0.113.42:8080'); // ASCII art + FLAG{darknet_discovered}
 // Also shows: "ghost/sp3ctr3" + "API: /api/secrets" + "port 31337"
-curl("http://203.0.113.42:8080/api/secrets")  // JSON hints about ghost's home
+curl('http://203.0.113.42:8080/api/secrets'); // JSON hints about ghost's home
 ```
 
 #### FLAG 12 — `master_of_the_darknet` (Expert)
+
 ```javascript
 // Option A: SSH as guest then escalate
-ssh("guest", "203.0.113.42")      // Enter: sh4d0w (from webserver .darknet_access)
-su("ghost")                       // Enter: sp3ctr3 (from darknet index.html)
+ssh('guest', '203.0.113.42'); // Enter: sh4d0w (from webserver .darknet_access)
+su('ghost'); // Enter: sp3ctr3 (from darknet index.html)
 
 // Option B: NC on port 31337 for recon, then SSH
-nc("203.0.113.42", 31337)         // Connects as ghost — explore, then exit
-ssh("ghost", "203.0.113.42")      // Enter: sp3ctr3
+nc('203.0.113.42', 31337); // Connects as ghost — explore, then exit
+ssh('ghost', '203.0.113.42'); // Enter: sp3ctr3
 
 // As ghost@darknet:
-ls("-a")                          // See .encrypted_flag.enc, .notes
-cat(".notes")                     // "Need root to use decrypt(). Key in /root/keyfile.txt"
-cat("/var/log/auth.log")          // "pam_audit: root authentication - password 'd4rkn3tR00t'"
-su("root")                        // Enter: d4rkn3tR00t
-cat("/root/keyfile.txt")          // Key: 82eab922d375a8022d7659b58559e59026dbff2768110073a6c3699a15699eda
-const key = "82eab922d375a8022d7659b58559e59026dbff2768110073a6c3699a15699eda"
-resolve(decrypt("/home/ghost/.encrypted_flag.enc", key))
+ls('-a'); // See .encrypted_flag.enc, .notes
+cat('.notes'); // "Need root to use decrypt(). Key in /root/keyfile.txt"
+cat('/var/log/auth.log'); // "pam_audit: root authentication - password 'd4rkn3tR00t'"
+su('root'); // Enter: d4rkn3tR00t
+cat('/root/keyfile.txt'); // Key: 82eab922d375a8022d7659b58559e59026dbff2768110073a6c3699a15699eda
+const key = '82eab922d375a8022d7659b58559e59026dbff2768110073a6c3699a15699eda';
+resolve(decrypt('/home/ghost/.encrypted_flag.enc', key));
 // FLAG{master_of_the_darknet}
 // "Congratulations! You've completed the JSHACK.ME CTF."
 ```

@@ -49,7 +49,7 @@ const createMockCurlContext = (config: CurlContextConfig = {}) => {
       _machineId: MachineId,
       path: string,
       _cwd: string,
-      _userType: UserType
+      _userType: UserType,
     ): string | null => files[path] ?? null,
   };
 };
@@ -65,7 +65,7 @@ const collectAsyncLines = (result: unknown): readonly string[] => {
   if (isAsyncOutput(result)) {
     result.start(
       (line) => lines.push(line),
-      () => {}
+      () => {},
     );
   }
   vi.advanceTimersByTime(700);
@@ -106,7 +106,7 @@ describe('curl command', () => {
     it('should throw error when host cannot be resolved', () => {
       const curl = createCurlCommand(createMockCurlContext({ dnsRecords: [] }));
       expect(() => curl.fn('http://unknown.host/')).toThrow(
-        'curl: Could not resolve host: unknown.host'
+        'curl: Could not resolve host: unknown.host',
       );
     });
 
@@ -115,7 +115,7 @@ describe('curl command', () => {
         createMockCurlContext({
           dnsRecords: [getMockDnsRecord({ domain: 'ghost.local', ip: '10.0.0.99' })],
           machines: [],
-        })
+        }),
       );
       expect(() => curl.fn('http://ghost.local/')).toThrow('Connection refused');
     });
@@ -128,7 +128,7 @@ describe('curl command', () => {
               ports: [{ port: 80, service: 'http', open: false }],
             }),
           ],
-        })
+        }),
       );
       expect(() => curl.fn('http://webserver.local/')).toThrow('Connection refused');
     });
@@ -141,7 +141,7 @@ describe('curl command', () => {
               ports: [{ port: 80, service: 'ftp', open: true }],
             }),
           ],
-        })
+        }),
       );
       expect(() => curl.fn('http://webserver.local/')).toThrow('Connection refused');
     });
@@ -199,18 +199,14 @@ describe('curl command', () => {
 
     it('should return 404 for missing API endpoint', () => {
       const curl = createCurlCommand(createMockCurlContext());
-      const lines = collectAsyncLines(
-        curl.fn('http://webserver.local/api/missing', '-X POST')
-      );
+      const lines = collectAsyncLines(curl.fn('http://webserver.local/api/missing', '-X POST'));
       expect(lines.join('\n')).toContain('"error"');
       expect(lines.join('\n')).toContain('Not Found');
     });
 
     it('should return 400 for POST to non-API path', () => {
       const curl = createCurlCommand(createMockCurlContext());
-      const lines = collectAsyncLines(
-        curl.fn('http://webserver.local/index.html', '-X POST')
-      );
+      const lines = collectAsyncLines(curl.fn('http://webserver.local/index.html', '-X POST'));
       expect(lines.join('\n')).toContain('Invalid API endpoint');
     });
   });
@@ -244,18 +240,14 @@ describe('curl command', () => {
 
     it('should show 404 headers with -i flag', () => {
       const curl = createCurlCommand(createMockCurlContext());
-      const lines = collectAsyncLines(
-        curl.fn('http://webserver.local/missing.html', '-i')
-      );
+      const lines = collectAsyncLines(curl.fn('http://webserver.local/missing.html', '-i'));
       const output = lines.join('\n');
       expect(output).toContain('HTTP/1.1 404 Not Found');
     });
 
     it('should combine -i and -X POST flags', () => {
       const curl = createCurlCommand(createMockCurlContext());
-      const lines = collectAsyncLines(
-        curl.fn('http://webserver.local/api/users', '-i -X POST')
-      );
+      const lines = collectAsyncLines(curl.fn('http://webserver.local/api/users', '-i -X POST'));
       const output = lines.join('\n');
       expect(output).toContain('HTTP/1.1 200 OK');
       expect(output).toContain('application/json');
@@ -280,7 +272,7 @@ describe('curl command', () => {
           () => {},
           () => {
             completed = true;
-          }
+          },
         );
       }
 
@@ -298,7 +290,7 @@ describe('curl command', () => {
           () => {},
           () => {
             completed = true;
-          }
+          },
         );
       }
 
@@ -314,7 +306,7 @@ describe('curl command', () => {
       if (isAsyncOutput(result)) {
         result.start(
           (line) => lines.push(line),
-          () => {}
+          () => {},
         );
         result.cancel?.();
         vi.advanceTimersByTime(1000);
@@ -338,7 +330,7 @@ describe('curl command', () => {
           files: {
             '/var/www/html/index.html': '<h1>Darknet</h1>',
           },
-        })
+        }),
       );
       const lines = collectAsyncLines(curl.fn('http://darknet.ctf:8080/'));
       expect(lines.join('\n')).toContain('<h1>Darknet</h1>');
