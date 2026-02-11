@@ -402,16 +402,11 @@ export const Terminal = () => {
         addLine('result', `Connected to ${sshTargetIP}`);
         addLine('result', `Welcome to ${machine?.hostname ?? sshTargetIP}!`);
       } else {
-        // Local su mode
-        let userType: UserType = 'user';
-        let homePath = `/home/${targetUser}`;
-
-        if (targetUser === 'root') {
-          userType = 'root';
-          homePath = '/root';
-        } else if (targetUser === 'guest') {
-          userType = 'guest';
-        }
+        // Local su mode — look up actual userType from machine config
+        const machine = getMachine(session.machine);
+        const machineUser = machine?.users.find((u) => u.username === targetUser);
+        const userType: UserType = machineUser?.userType ?? (targetUser === 'root' ? 'root' : targetUser === 'guest' ? 'guest' : 'user');
+        const homePath = userType === 'root' ? '/root' : `/home/${targetUser}`;
 
         setUsername(targetUser!, userType);
         setCurrentPath(homePath);

@@ -195,7 +195,7 @@ Now you have full control of this machine.
 Try exploring the network:
   ifconfig() — see your network interface
   ping("192.168.1.1") — test connectivity
-  nmap("192.168.1.0/24") — scan for machines
+  nmap("192.168.1.1-254") — scan for machines
 `,
     },
   },
@@ -737,12 +737,12 @@ const scannerBinary =
 // Full key: 76e2e21dacea215ff2293e4eafc5985cea2d996cb180258ec89c0000b42db460
 // Decrypts to intelligence report with FLAG{decrypted_intel}
 const encryptedIntel =
-  'm4rFwweHGhShPmJxPq21pbiEKpauMZwWYVDKlDzFlUrhmem3Nqn4jVZ3ewxt43AQMRMPzDhvGm1e' +
-  '5og/twV5xsgQUeUh/HjVVS9LZdFj3XwFJ7mKi5D/NMdX+j38v2LK4Kvnx0uzXwPoJX3jvsuR+1f' +
-  'zce+s4i7+LaTAf3qHpVSyxYMdnHZt7h5z/o2+xKaXQYIko3GgMSFRip/ZKOdhHP1qGkvPwLrN07' +
-  'LtHxAZ5YVGPzCF0Al0D9WfQC7Jy5vxSh5fCtseYLy+4n3I0byu1WpmGxJmyNkWepar8SJssz4Tp' +
-  'aTUAPZwva/T9Obzw12GnqpG7SVMdgMT0LKw4GG3qryiNnYQGoILs2SAIkEbt7sxcmJSBrKO5i57' +
-  'HRVaOhr7UsVJZ9QnMMV8fXz1tDBPvknYeAW8qQ6uh3FFh8uyrxqtWE4/rw==';
+  'nIEphVVZp+p4FfIHgQ1vVIJo9XvcyMQd/8EojRJUlFRjk5dSZtiCKdN0G6rD7MsUkdWeu/pXaAbz' +
+  'Xrw/9O0hcB5DKTMotJq/naShTLkonFXqxgD6obYjl1AxElgcEGtFm4WQIVdWbly3AUlOiDGNFZl+' +
+  'tNB67K0p2KyYhOLe1eYRcbIhybVFSjTPihtYVtXyLEPxL/88wy57PYjw64+rptC73B/7C+MXcsbv' +
+  'L2iNgkCISFEFyHI0QJxJu0oBtnH3PazSA3DbgDan4HzArptsjw2D6J879EHCFHYXBDSfEKW/GRsk' +
+  'TU7oONMQsosJfcabUORIPrZMLssu+t/rjC6yTW6/ECB5kegStcniBFIFWZCTMfazoUiiiDJfegRK' +
+  '5X1QpVo2eFkfOIJ7KhQKYhiB62GDjk+zZo47VJ5mRt9qH0tSsyErQOl1';
 
 const webserverConfig: MachineFileSystemConfig = {
   users: [
@@ -1064,7 +1064,7 @@ CREATE TABLE users (
   role VARCHAR(20)
 );
 
-INSERT INTO users VALUES (1, 'admin', 'r00tW3b!', 'administrator');
+INSERT INTO users VALUES (1, 'root', 'r00tW3b!', 'administrator');
 INSERT INTO users VALUES (2, 'www-data', 'd3v0ps2024', 'service');
 INSERT INTO users VALUES (3, 'guest', 'w3lcome', 'readonly');
 

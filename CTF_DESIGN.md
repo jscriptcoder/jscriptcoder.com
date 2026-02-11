@@ -343,13 +343,14 @@ Credentials might be the defaults: guest/guest
 
 **How to solve**:
 
-1. `ftp("192.168.1.50")` → username "guest", password "guest"
-2. FTP mode: `ls()` → see `/srv/ftp` contents
-3. `cd("uploads")` → `ls()` → find files
-4. Find a readable file with a hint: `cat` a public notice file that mentions ftpuser
-5. `quit()` → `ftp("192.168.1.50")` as ftpuser/password
-6. `ls("uploads")` → find `.backup_notes.txt` (hidden file)
-7. `get(".backup_notes.txt")`
+1. `ftp("192.168.1.50")` → username "guest", password "anonymous"
+2. FTP mode: navigate to `/srv/ftp/public` → `ls()` → see `readme.txt`
+3. `get("readme.txt")` → download hint file
+4. `cd("/srv/ftp/uploads")` → `ls("-a")` → find `.backup_notes.txt` (hidden file)
+5. `get(".backup_notes.txt")` → download flag file
+6. `quit()` → back on localhost
+7. `cat("readme.txt")` → hints about ftpuser credentials
+8. `cat(".backup_notes.txt")` → contains the flag
 
 **Content** of `.backup_notes.txt`:
 
@@ -423,12 +424,13 @@ The second half of the key is in /srv/ftp/config/ on the fileserver.
 
 **How to solve**:
 
-1. Get key part 2 from fileserver via FTP: `get(".key_fragment")`
-2. Read the key fragment: `cat(".key_fragment")` → `DECRYPT_KEY_PART2=7890abcdef01`
-3. Combine: `const key = "a1b2c3d4e5f67890abcdef01..."` (64 hex chars)
-4. Get the encrypted file (already on webserver, or FTP get it)
-5. Must be root to use decrypt: `su("root")` on localhost (already know password "toor")
-6. `resolve(decrypt("/path/to/encrypted_intel.enc", key))`
+1. FTP into fileserver, navigate to `/srv/ftp/config`, `ls("-a")` → find `.key_fragment`
+2. `get(".key_fragment")` → download to local machine
+3. `quit()` → back on localhost
+4. `cat(".key_fragment")` → `DECRYPT_KEY_PART2=ea2d996cb180258ec89c0000b42db460`
+5. Combine with part 1: `const key = "76e2e21d...b42db460"` (64 hex chars)
+6. SSH into webserver, escalate to root (for decrypt command)
+7. `resolve(decrypt("/var/www/backups/encrypted_intel.enc", key))`
 
 **Decrypted content**:
 
@@ -439,8 +441,8 @@ INTELLIGENCE REPORT:
 The webserver at 192.168.1.75 has a backdoor running on port 4444.
 It was installed by www-data. Use nc to connect.
 
-There's also an external server at darknet.ctf (203.0.113.42).
-Use nslookup("darknet.ctf") to verify.
+There is also an external server at darknet.ctf.
+Use nslookup("darknet.ctf") to resolve its IP address.
 Its web service runs on port 8080.
 ```
 
@@ -753,7 +755,7 @@ cat('/root/flag.txt'); // FLAG{root_access_granted}
 // Credential: localhost /var/log/auth.log → "guest/guest2024" for gateway
 cat('/var/log/auth.log'); // "Auto-configured gateway access: guest/guest2024"
 ifconfig(); // See gateway 192.168.1.1
-nmap('192.168.1.0/24'); // Discover all machines + open ports
+nmap('192.168.1.1-254'); // Discover all machines + open ports
 curl('192.168.1.1'); // HTML contains <!-- FLAG{network_explorer} -->
 // Hint: "Admin panel: /admin.html" + "credentials in system logs"
 ```
@@ -788,13 +790,12 @@ ftp('192.168.1.50'); // Login as guest / anonymous
 // FTP starts at /home/guest — navigate to FTP directory
 cd('/srv/ftp/public');
 ls(); // See readme.txt
-cat('readme.txt'); // "ftpuser — read/write (password: tr4nsf3r)"
-quit();
-ftp('192.168.1.50'); // Login as ftpuser / tr4nsf3r
+get('readme.txt'); // Download hint file
 cd('/srv/ftp/uploads');
 ls('-a'); // See .backup_notes.txt
-get('.backup_notes.txt'); // Download to local
+get('.backup_notes.txt'); // Download flag file
 quit();
+cat('readme.txt'); // "ftpuser — read/write (password: tr4nsf3r)"
 cat('.backup_notes.txt'); // FLAG{file_transfer_pro}
 // Hint: "Encrypted backup on webserver /var/www/backups/"
 //   "Key split — part 1 in /opt/tools/scanner"
@@ -824,8 +825,9 @@ exit(); // Return to localhost
 ftp('192.168.1.50'); // Login as ftpuser / tr4nsf3r
 cd('/srv/ftp/config');
 ls('-a'); // See .key_fragment
-cat('.key_fragment'); // DECRYPT_KEY_PART2=ea2d996cb180258ec89c0000b42db460
+get('.key_fragment'); // Download to local
 quit();
+cat('.key_fragment'); // DECRYPT_KEY_PART2=ea2d996cb180258ec89c0000b42db460
 
 // Decrypt on webserver (need root for decrypt command)
 ssh('guest', '192.168.1.75'); // Enter: w3lcome
@@ -834,7 +836,7 @@ cat('/var/www/backups/db_backup.sql'); // Shows root password: r00tW3b!
 su('root'); // Enter: r00tW3b!
 // Now root@webserver — has decrypt command
 const key = '76e2e21dacea215ff2293e4eafc5985cea2d996cb180258ec89c0000b42db460';
-resolve(decrypt('/var/www/backups/encrypted_intel.enc', key));
+decrypt('/var/www/backups/encrypted_intel.enc', key);
 // FLAG{decrypted_intel}
 // Hint: "webserver backdoor on port 4444" + "darknet.ctf at 203.0.113.42:8080"
 ```
@@ -879,7 +881,7 @@ cat('/var/log/auth.log'); // "pam_audit: root authentication - password 'd4rkn3t
 su('root'); // Enter: d4rkn3tR00t
 cat('/root/keyfile.txt'); // Key: 82eab922d375a8022d7659b58559e59026dbff2768110073a6c3699a15699eda
 const key = '82eab922d375a8022d7659b58559e59026dbff2768110073a6c3699a15699eda';
-resolve(decrypt('/home/ghost/.encrypted_flag.enc', key));
+decrypt('/home/ghost/.encrypted_flag.enc', key);
 // FLAG{master_of_the_darknet}
 // "Congratulations! You've completed the JSHACK.ME CTF."
 ```
