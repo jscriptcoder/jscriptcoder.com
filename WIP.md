@@ -220,24 +220,27 @@ Victory tracking (Step 13):
 - **On discovery**: Show notification banner when a new flag is captured
   ```
   ╔═══════════════════════════════════════╗
-  ║  FLAG CAPTURED: welcome_to_the_underground  ║
-  ║  Progress: 3/6 flags found            ║
+  ║  FLAG CAPTURED: welcome_hacker        ║
+  ║  Progress: 3/12 flags found           ║
   ╚═══════════════════════════════════════╝
   ```
-- **flags() command**: Check progress anytime, shows found flags and progress (3/6)
-- **Victory screen**: ASCII art celebration when all 6 flags found, with stats (time, flags)
+- **flags() command**: Check progress anytime, shows found flags and progress (3/12)
+- **Victory screen**: ASCII art celebration when all 12 flags found, with stats (time, flags)
 
-### Flags to Track (9 total)
+### Flags to Track (12 total)
 
-1. `FLAG{welcome_to_the_underground}` - localhost
-2. `FLAG{router_misconfiguration}` - gateway
-3. `FLAG{router_admin_panel}` - gateway (via curl)
-4. `FLAG{ftp_hidden_treasure}` - fileserver
-5. `FLAG{sql_history_exposed}` - webserver
-6. `FLAG{database_backup_gold}` - webserver
-7. `FLAG{api_config_exposed}` - webserver (via curl POST)
-8. `FLAG{darknet_api_discovered}` - darknet (via curl POST)
-9. `FLAG{master_of_the_darknet}` - darknet
+1. `FLAG{welcome_hacker}` - localhost (ls, cat)
+2. `FLAG{hidden_in_plain_sight}` - localhost (ls -a, cat)
+3. `FLAG{root_access_granted}` - localhost (crack passwd, su root)
+4. `FLAG{network_explorer}` - gateway (ifconfig, nmap, curl)
+5. `FLAG{gateway_breach}` - gateway (ssh guest, su admin)
+6. `FLAG{admin_panel_exposed}` - gateway (cat/curl admin.html)
+7. `FLAG{file_transfer_pro}` - fileserver (ftp, ls -a, get)
+8. `FLAG{binary_secrets_revealed}` - webserver (ssh, su, strings)
+9. `FLAG{decrypted_intel}` - cross-machine (decrypt with split key)
+10. `FLAG{backdoor_found}` - webserver (nc port 4444)
+11. `FLAG{darknet_discovered}` - darknet (nslookup, curl :8080)
+12. `FLAG{master_of_the_darknet}` - darknet (ssh, su root, decrypt)
 
 ---
 
