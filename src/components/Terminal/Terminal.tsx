@@ -63,6 +63,7 @@ export const Terminal = () => {
   const lineIdRef = useRef(1);
   const outputRef = useRef<HTMLDivElement>(null);
   const asyncCancelRef = useRef<(() => void) | null>(null);
+  const terminalInputRef = useRef<HTMLInputElement>(null);
 
   const { addCommand, navigateUp, navigateDown, resetNavigation } = useCommandHistory();
   const { getVariables, getVariableNames, handleVariableOperation } = useVariables();
@@ -534,6 +535,7 @@ export const Terminal = () => {
         onTab={handleTab}
         promptMode={passwordMode ? 'password' : ftpUsernameMode ? 'username' : undefined}
         disabled={asyncRunning}
+        externalInputRef={terminalInputRef}
       />
       {editorState && (
         <NanoEditor
@@ -542,7 +544,10 @@ export const Terminal = () => {
           isNewFile={editorState.isNewFile}
           onSave={(content) => writeFile(editorState.filePath, content, session.userType)}
           onCreate={(content) => createFile(editorState.filePath, content, session.userType)}
-          onClose={() => setEditorState(null)}
+          onClose={() => {
+            setEditorState(null);
+            setTimeout(() => terminalInputRef.current?.focus(), 0);
+          }}
         />
       )}
     </div>

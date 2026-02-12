@@ -12,6 +12,7 @@ type TerminalInputProps = {
   readonly onTab: () => void;
   readonly promptMode?: PromptMode;
   readonly disabled?: boolean;
+  readonly externalInputRef?: React.RefObject<HTMLInputElement>;
 };
 
 export const TerminalInput = ({
@@ -23,10 +24,12 @@ export const TerminalInput = ({
   onTab,
   promptMode,
   disabled = false,
+  externalInputRef,
 }: TerminalInputProps) => {
   const isPromptMode = promptMode !== undefined;
   const shouldMaskInput = promptMode === 'password';
-  const inputRef = useRef<HTMLInputElement>(null);
+  const internalRef = useRef<HTMLInputElement>(null);
+  const inputRef = externalInputRef ?? internalRef;
   const [cursorPosition, setCursorPosition] = useState(0);
   const [isFocused, setIsFocused] = useState(false);
   const isUserInput = useRef(false);
