@@ -7,7 +7,7 @@ Custom React hooks that wire together commands, context, and terminal features. 
 | File                       | Description                                                                                                                         |
 | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | `useCommands.ts`           | Master command registry — combines all command sources into a single execution context and command name list                        |
-| `useFileSystemCommands.ts` | Creates filesystem commands (pwd, ls, cd, cat, whoami, decrypt, output, strings) with context from `useFileSystem` and `useSession` |
+| `useFileSystemCommands.ts` | Creates filesystem commands (pwd, ls, cd, cat, whoami, decrypt, output, strings, nano) with context from `useFileSystem` and `useSession` |
 | `useNetworkCommands.ts`    | Creates network commands (ifconfig, ping, nmap, nslookup, ssh, curl, ftp, nc) with context from `useNetwork` and `useFileSystem`    |
 | `useFtpCommands.ts`        | Creates FTP-mode commands (pwd, lpwd, cd, lcd, ls, lls, get, put, quit/bye) — returns `null` when not in FTP mode                   |
 | `useNcCommands.ts`         | Creates NC-mode commands (pwd, cd, ls, cat, whoami, help, exit) — returns `null` when not in NC mode                                |
@@ -22,7 +22,8 @@ Custom React hooks that wire together commands, context, and terminal features. 
 ```
 useCommands()
 ├── Static commands (echo, author, clear, exit, resolve)
-├── useFileSystemCommands() → pwd, ls, cd, cat, whoami, decrypt, output, strings
+├── node (lazy getter for execution context — needs access to all commands including itself)
+├── useFileSystemCommands() → pwd, ls, cd, cat, whoami, decrypt, output, strings, nano
 ├── useNetworkCommands()    → ifconfig, ping, nmap, nslookup, ssh, curl, ftp, nc
 ├── su (depends on current machine's user list)
 └── help, man (created last, with access to all commands above)

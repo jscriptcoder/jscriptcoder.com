@@ -66,32 +66,34 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 ## Available Commands
 
-| Command                | Description                                                   |
-| ---------------------- | ------------------------------------------------------------- |
-| `help()`               | List all available commands                                   |
-| `man(cmd)`             | Display detailed manual for a command                         |
-| `echo(value)`          | Output a stringified value                                    |
-| `author()`             | Display author profile card                                   |
-| `clear()`              | Clear the terminal screen                                     |
-| `pwd()`                | Print current working directory                               |
-| `ls([path], [flags])`  | List directory contents (-a for hidden files)                 |
-| `cd([path])`           | Change current directory                                      |
-| `cat(path)`            | Display file contents                                         |
-| `su(user)`             | Switch user (prompts for password)                            |
-| `whoami()`             | Display current username                                      |
-| `ifconfig([iface])`    | Display network interface configuration                       |
-| `ping(host, [count])`  | Test connectivity to a network host                           |
-| `nmap(target)`         | Scan for open ports or discover hosts in a range              |
-| `nslookup(domain)`     | Query DNS to resolve domain to IP address                     |
-| `ssh(user, host)`      | Connect to remote machine via SSH                             |
-| `exit()`               | Close SSH connection and return to previous machine           |
-| `ftp(host)`            | Connect to remote machine via FTP                             |
-| `curl(url, [flags])`   | Fetch web content via HTTP (supports -i for headers, -X POST) |
-| `nc(host, port)`       | Connect to arbitrary port (interactive for special services)  |
-| `decrypt(file, key)`   | Decrypt file using AES-256-GCM                                |
-| `output(cmd, [file])`  | Capture command output to variable or file                    |
-| `resolve(promise)`     | Unwrap a Promise and display its value                        |
-| `strings(file, [min])` | Extract printable strings from binary files                   |
+| Command                | Description                                                    |
+| ---------------------- | -------------------------------------------------------------- |
+| `help()`               | List all available commands                                    |
+| `man(cmd)`             | Display detailed manual for a command                          |
+| `echo(value)`          | Output a stringified value                                     |
+| `author()`             | Display author profile card                                    |
+| `clear()`              | Clear the terminal screen                                      |
+| `pwd()`                | Print current working directory                                |
+| `ls([path], [flags])`  | List directory contents (-a for hidden files)                  |
+| `cd([path])`           | Change current directory                                       |
+| `cat(path)`            | Display file contents                                          |
+| `su(user)`             | Switch user (prompts for password)                             |
+| `whoami()`             | Display current username                                       |
+| `ifconfig([iface])`    | Display network interface configuration                        |
+| `ping(host, [count])`  | Test connectivity to a network host                            |
+| `nmap(target)`         | Scan for open ports or discover hosts in a range               |
+| `nslookup(domain)`     | Query DNS to resolve domain to IP address                      |
+| `ssh(user, host)`      | Connect to remote machine via SSH                              |
+| `exit()`               | Close SSH connection and return to previous machine            |
+| `ftp(host)`            | Connect to remote machine via FTP                              |
+| `curl(url, [flags])`   | Fetch web content via HTTP (supports -i for headers, -X POST)  |
+| `nc(host, port)`       | Connect to arbitrary port (interactive for special services)   |
+| `decrypt(file, key)`   | Decrypt file using AES-256-GCM                                 |
+| `output(cmd, [file])`  | Capture command output to variable or file                     |
+| `resolve(promise)`     | Unwrap a Promise and display its value                         |
+| `strings(file, [min])` | Extract printable strings from binary files                    |
+| `nano(path)`           | Open file in nano-style text editor (Ctrl+S save, Ctrl+X exit) |
+| `node(path)`           | Execute a JavaScript file                                      |
 
 ### FTP Mode Commands
 
@@ -145,6 +147,11 @@ curl('http://webserver.local/'); // Fetch web page
 curl('webserver.local/config.php', '-i'); // Include headers
 curl('webserver.local/api/users', '-X POST'); // POST to API
 
+// Edit and execute files
+nano('exploit.js'); // Opens nano-style editor
+// (Type code, Ctrl+S to save, Ctrl+X to exit)
+node('exploit.js'); // Execute the file
+
 // FTP file transfer
 ftp('192.168.1.50'); // Connect to fileserver
 // In FTP mode:
@@ -183,7 +190,7 @@ npm run test:coverage # Run tests with coverage
 
 ### Test Coverage
 
-632 unit tests across 38 colocated test files covering terminal commands, hooks, components, utilities, and persistence.
+670 unit tests across 41 colocated test files covering terminal commands, hooks, components, utilities, and persistence.
 
 ## Project Structure
 

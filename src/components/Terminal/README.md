@@ -6,11 +6,12 @@ The main UI component — a retro amber-on-black CRT terminal that orchestrates 
 
 | File                 | Description                                                                                                                                    |
 | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Terminal.tsx`       | Main orchestrator — manages input state, command execution, async output streaming, password/FTP/NC mode switching, and output line management |
-| `TerminalInput.tsx`  | Input line with prompt (`user@machine>`), cursor, key handlers (Enter, ArrowUp/Down, Tab), password masking                                    |
-| `TerminalOutput.tsx` | Renders output lines: banners, commands, results, errors, and the author profile card                                                          |
-| `types.ts`           | All shared types: `Command`, `OutputLine`, `AsyncOutput`, `SpecialOutput` discriminated union, type guards                                     |
-| `index.ts`           | Module export                                                                                                                                  |
+| `Terminal.tsx`       | Main orchestrator — manages input state, command execution, async output streaming, password/FTP/NC mode switching, editor overlay, and output line management |
+| `TerminalInput.tsx`  | Input line with prompt (`user@machine>`), cursor, key handlers (Enter, ArrowUp/Down, Tab), password masking                                                   |
+| `TerminalOutput.tsx` | Renders output lines: banners, commands, results, errors, and the author profile card                                                                         |
+| `NanoEditor.tsx`     | Full-screen nano-style text editor overlay with save/exit, cursor tracking, and exit prompt for unsaved changes                                                |
+| `types.ts`           | All shared types: `Command`, `OutputLine`, `AsyncOutput`, `SpecialOutput` discriminated union, type guards                                                    |
+| `index.ts`           | Module export                                                                                                                                                 |
 
 ## Command Execution Flow
 
@@ -34,6 +35,7 @@ Terminal.tsx handleSubmit()
             ├── Returns { __type: 'ssh_prompt' } → async then password prompt
             ├── Returns { __type: 'ftp_prompt' } → switch to FTP commands
             ├── Returns { __type: 'nc_prompt' } → switch to NC commands
+            ├── Returns { __type: 'nano_open' } → open NanoEditor overlay
             ├── Returns { __type: 'exit' } → pop session stack
             └── Throws Error → display as error
 ```
@@ -50,6 +52,7 @@ Terminal.tsx handleSubmit()
 | `ftp_quit`        | `quit()`/`bye()`       | Exits FTP mode, restores normal commands                          |
 | `nc_prompt`       | `nc(host, port)`       | Switches to NC command set with `$` prompt                        |
 | `nc_quit`         | `exit()` in NC         | Exits NC mode, restores normal commands                           |
+| `nano_open`       | `nano(path)`           | Opens NanoEditor overlay with file content for editing            |
 | `exit`            | `exit()`               | Pops session stack, returns to previous machine                   |
 | `async`           | ping, nmap, curl, etc. | Streams lines via `onLine()`, disables input until `onComplete()` |
 
@@ -57,9 +60,10 @@ Terminal.tsx handleSubmit()
 
 ### Terminal (orchestrator)
 
-- Holds all state: output lines, input value, mode flags (password, FTP username, async running)
+- Holds all state: output lines, input value, mode flags (password, FTP username, async running), editor state
 - Wires hooks together: `useCommands`, `useFtpCommands`, `useNcCommands`, `useCommandHistory`, `useAutoComplete`, `useVariables`
 - Handles password validation (local `su` via `/etc/passwd`, remote SSH via machine users)
+- Manages NanoEditor overlay lifecycle (open on `nano_open`, close on editor exit)
 - Shows ASCII banner on startup
 
 ### TerminalInput
@@ -79,3 +83,15 @@ Terminal.tsx handleSubmit()
   - `error` — red text, indented
   - `author` — `AuthorCard` component with avatar, paragraphs, links
 - Auto-scrolls to bottom on new output
+
+### NanoEditor
+
+- Full-screen fixed overlay (`z-50`) covering entire viewport with amber CRT styling
+- Layout: title bar (inverted amber), textarea editor, status bar, help bar
+- Title bar shows `GNU nano 7.2`, file path, and "Modified" indicator
+- **Ctrl+S** — saves via `onSave` (existing file) or `onCreate` (new file), tracks `fileCreated` state
+- **Ctrl+X / Escape** — exits immediately if unmodified; shows "Save modified buffer?" prompt if modified
+- **Tab** — inserts 2 spaces at cursor (prevents default tab behavior)
+- Exit prompt accepts **Y** (save + close), **N** (discard + close), **C** (cancel back to editing)
+- Status bar: cursor position (Ln/Col), save confirmation, error messages (auto-clear after 3s)
+- Uses `useLayoutEffect` to restore cursor position after Tab insertion updates content

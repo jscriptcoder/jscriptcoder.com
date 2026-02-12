@@ -9,6 +9,7 @@ import { createWhoamiCommand } from '../commands/whoami';
 import { createDecryptCommand } from '../commands/decrypt';
 import { createOutputCommand } from '../commands/output';
 import { createStringsCommand } from '../commands/strings';
+import { createNanoCommand } from '../commands/nano';
 import type { Command } from '../components/Terminal/types';
 
 export const useFileSystemCommands = (): Map<string, Command> => {
@@ -92,6 +93,16 @@ export const useFileSystemCommands = (): Map<string, Command> => {
     commands.set(
       'strings',
       createStringsCommand({
+        resolvePath,
+        getNode,
+        getUserType,
+      }),
+    );
+
+    // nano command
+    commands.set(
+      'nano',
+      createNanoCommand({
         resolvePath,
         getNode,
         getUserType,

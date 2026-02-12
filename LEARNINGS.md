@@ -188,6 +188,18 @@
 - **Why it works**: Each tool does what it's best at. `eslint-config-prettier` disables conflicting ESLint rules so they don't fight.
 - **Key insight**: Configure Prettier to match existing code style first (single quotes, semicolons, trailing commas) to minimize diff when first formatting the codebase. Run `npm run format` once to align everything, then use `npm run format:check` in CI.
 
+### Full-screen editor overlay via special output type
+
+- **What**: `nano()` returns `{ __type: 'nano_open', filePath }`, Terminal.tsx detects it and renders `NanoEditor` as a fixed overlay
+- **Why it works**: Extends the existing `__type` discriminated union pattern; editor is decoupled from command logic; overlay covers terminal without destroying its state
+- **Example**: `nano("script.js")` → nano validates path → returns nano_open → Terminal reads file content → renders NanoEditor with save/create callbacks
+
+### Lazy getter for circular execution context
+
+- **What**: `node` command needs the execution context (all commands), but node itself is part of that context. Solved with a mutable `let` variable set after building the full context, captured by a getter closure.
+- **Why it works**: The getter is only called at execution time (when user runs `node("file.js")`), long after the context variable is populated during useMemo
+- **Example**: `let resolved = {}; commands.set('node', createNodeCommand({ getExecutionContext: () => resolved })); resolved = executionContext;`
+
 ### Consistent flag argument parsing across ls variants
 
 - **What**: All `ls` commands (regular, FTP ls/lls, NC ls) share the same arg parsing pattern: filter string args, check for `-a`, find first non-flag arg as path

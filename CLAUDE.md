@@ -95,6 +95,7 @@ src/
 │   ├── Terminal.tsx        # Main orchestrator component
 │   ├── TerminalInput.tsx   # Input line with prompt
 │   ├── TerminalOutput.tsx  # Output display (text, errors, cards)
+│   ├── NanoEditor.tsx      # Full-screen nano-style text editor overlay
 │   └── types.ts            # TypeScript types (Command, CommandManual, AsyncOutput, type guards)
 ├── session/
 │   └── SessionContext.tsx  # Global session state (user, machine, path) with IndexedDB persistence
@@ -107,7 +108,7 @@ src/
 │   ├── useCommandHistory.ts      # Up/down arrow command history
 │   ├── useAutoComplete.ts        # Tab completion for commands and variables
 │   ├── useVariables.ts           # const/let variable management
-│   ├── useFileSystemCommands.ts  # pwd, ls, cd, cat, whoami, decrypt command creation
+│   ├── useFileSystemCommands.ts  # pwd, ls, cd, cat, whoami, decrypt, nano command creation
 │   ├── useNetworkCommands.ts     # ifconfig and network command creation
 │   ├── useFtpCommands.ts         # FTP mode commands (pwd, ls, get, put, etc.)
 │   └── useCommands.ts            # Command registry and execution context
@@ -139,6 +140,8 @@ src/
 │   ├── strings.ts          # strings(file) - extract printable strings from binary
 │   ├── exit.ts             # exit() - close SSH connection and return
 │   ├── curl.ts             # curl(url, [flags]) - HTTP client for GET/POST
+│   ├── nano.ts             # nano(path) - open file in text editor overlay
+│   ├── node.ts             # node(path) - execute JavaScript file
 │   ├── permissions.ts      # Command restrictions by user type (guest/user/root)
 │   ├── ftp.ts              # ftp(host) - FTP connection command
 │   ├── ftp/                # FTP mode commands
@@ -169,6 +172,8 @@ src/
 │   ├── resolve.test.ts      # Tests colocated with resolve.ts
 │   ├── strings.test.ts      # Tests colocated with strings.ts
 │   ├── curl.test.ts         # Tests colocated with curl.ts
+│   ├── nano.test.ts         # Tests colocated with nano.ts
+│   ├── node.test.ts         # Tests colocated with node.ts
 │   └── permissions.test.ts  # Tests colocated with permissions.ts
 ├── utils/
 │   ├── md5.ts              # MD5 hashing for password validation
@@ -221,11 +226,11 @@ User input flows through `Terminal.tsx`:
 
 Commands are tiered by user type (`src/commands/permissions.ts`). Restricted commands show a `permission denied` error and are hidden from `help()` and tab autocomplete. `man()` can still look up any command.
 
-| Tier     | User Type | Commands                                                                                       |
-| -------- | --------- | ---------------------------------------------------------------------------------------------- |
-| Basic    | `guest`   | help, man, echo, whoami, pwd, ls, cd, cat, su, clear, author                                   |
-| Standard | `user`    | All basic + ifconfig, ping, nmap, nslookup, ssh, ftp, nc, curl, strings, output, resolve, exit |
-| Full     | `root`    | All standard + decrypt                                                                         |
+| Tier     | User Type | Commands                                                                                                   |
+| -------- | --------- | ---------------------------------------------------------------------------------------------------------- |
+| Basic    | `guest`   | help, man, echo, whoami, pwd, ls, cd, cat, su, clear, author                                               |
+| Standard | `user`    | All basic + ifconfig, ping, nmap, nslookup, ssh, ftp, nc, curl, strings, output, resolve, exit, nano, node |
+| Full     | `root`    | All standard + decrypt                                                                                     |
 
 FTP and NC modes are not restricted (they have their own separate command sets).
 
@@ -282,6 +287,8 @@ To add a command:
 | `exit()`               | Close SSH connection and return to previous machine                            |
 | `ftp(host)`            | Connect to remote machine via FTP (async, prompts for username/password)       |
 | `curl(url, [flags])`   | HTTP client - fetch web content with GET/POST (async, supports -i and -X POST) |
+| `nano(path)`           | Open file in nano-style text editor overlay (Ctrl+S save, Ctrl+X exit)         |
+| `node(path)`           | Execute a JavaScript file with access to all terminal commands                 |
 | `nc(host, port)`       | Netcat - connect to arbitrary port (async, interactive for special services)   |
 
 **FTP Mode Commands** (available only when connected via FTP):
@@ -407,6 +414,35 @@ type FileSystemPatch = {
 - `output(cmd, filePath)` — captures command output to a file
 - FTP `get(file)` — downloads file from remote to local machine
 - FTP `put(file)` — uploads file from local to remote machine
+- `nano(path)` — saves edited content via Ctrl+S in the editor overlay
+
+### Nano Editor
+
+The `nano(path)` command opens a full-screen nano-style text editor overlay (`NanoEditor.tsx`). It uses the `nano_open` special output type to signal Terminal.tsx to display the editor.
+
+**How it works:**
+
+1. `nano("file.js")` validates the path and returns `{ __type: 'nano_open', filePath }`.
+2. Terminal.tsx detects the special type, reads file content (or empty for new files), and sets `editorState`.
+3. `NanoEditor` renders as a fixed overlay covering the entire viewport with amber CRT styling.
+4. On save (Ctrl+S), the editor calls `writeFile` (existing) or `createFile` (new) from FileSystemContext.
+5. On exit (Ctrl+X/Escape), the editor calls `onClose` which clears `editorState`.
+
+**Editor features:**
+
+- **Ctrl+S** — Save file (creates or updates, shows line count in status bar)
+- **Ctrl+X / Escape** — Exit (prompts Y/N/C if unsaved changes)
+- **Tab** — Insert 2 spaces at cursor position
+- **Status bar** — Shows cursor position (Ln/Col), save status, error messages
+- **Modified indicator** — Shows "Modified" in header when content has changed
+
+### Node Execution
+
+The `node(path)` command reads a JavaScript file and executes its contents using `new Function()` with access to all terminal commands. It uses a lazy getter pattern to resolve a circular dependency — node needs the execution context which includes node itself.
+
+In `useCommands.ts`, a mutable `let resolvedExecutionContext` variable is set after building the full command map. Node's factory captures a getter `() => resolvedExecutionContext` which is only called at execution time (after the variable is populated).
+
+**Execution strategy:** Tries as expression first (`return (content)`), falls back to statement execution. Expression mode returns the value; statement mode returns undefined.
 
 ### Network System
 

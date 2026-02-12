@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { TerminalOutput } from './TerminalOutput';
 import { TerminalInput } from './TerminalInput';
+import { NanoEditor } from './NanoEditor';
 import { useCommandHistory } from '../../hooks/useCommandHistory';
 import { useAutoComplete } from '../../hooks/useAutoComplete';
 import { useVariables } from '../../hooks/useVariables';
@@ -24,6 +25,7 @@ import {
   isFtpQuit,
   isNcPrompt,
   isNcQuit,
+  isNanoOpen,
 } from './types';
 import type { AsyncFollowUp } from './types';
 import type { UserType } from '../../session/SessionContext';
@@ -53,6 +55,11 @@ export const Terminal = () => {
   const [ftpTargetIP, setFtpTargetIP] = useState<string | null>(null);
   const [ftpUsernameMode, setFtpUsernameMode] = useState(false);
   const [asyncRunning, setAsyncRunning] = useState(false);
+  const [editorState, setEditorState] = useState<{
+    readonly filePath: string;
+    readonly content: string;
+    readonly isNewFile: boolean;
+  } | null>(null);
   const lineIdRef = useRef(1);
   const outputRef = useRef<HTMLDivElement>(null);
   const asyncCancelRef = useRef<(() => void) | null>(null);
@@ -78,7 +85,7 @@ export const Terminal = () => {
   const { executionContext, commandNames } = useCommands();
   const ftpCommands = useFtpCommands();
   const ncCommands = useNcCommands();
-  const { readFile, getDefaultHomePath } = useFileSystem();
+  const { readFile, getNode, writeFile, createFile, getDefaultHomePath } = useFileSystem();
   const { getMachine } = useNetwork();
 
   // Use special commands for autocomplete when in FTP or NC mode
@@ -248,6 +255,16 @@ export const Terminal = () => {
             );
             return;
           }
+          if (isNanoOpen(result)) {
+            const node = getNode(result.filePath);
+            const fileContent = node ? (readFile(result.filePath, session.userType) ?? '') : '';
+            setEditorState({
+              filePath: result.filePath,
+              content: fileContent,
+              isNewFile: node === null,
+            });
+            return;
+          }
           const resultStr = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
           addLine('result', resultStr);
         }
@@ -273,6 +290,9 @@ export const Terminal = () => {
       ncCommands,
       exitNcMode,
       enterNcMode,
+      getNode,
+      readFile,
+      session.userType,
     ],
   );
 
@@ -405,7 +425,9 @@ export const Terminal = () => {
         // Local su mode — look up actual userType from machine config
         const machine = getMachine(session.machine);
         const machineUser = machine?.users.find((u) => u.username === targetUser);
-        const userType: UserType = machineUser?.userType ?? (targetUser === 'root' ? 'root' : targetUser === 'guest' ? 'guest' : 'user');
+        const userType: UserType =
+          machineUser?.userType ??
+          (targetUser === 'root' ? 'root' : targetUser === 'guest' ? 'guest' : 'user');
         const homePath = userType === 'root' ? '/root' : `/home/${targetUser}`;
 
         setUsername(targetUser!, userType);
@@ -513,6 +535,16 @@ export const Terminal = () => {
         promptMode={passwordMode ? 'password' : ftpUsernameMode ? 'username' : undefined}
         disabled={asyncRunning}
       />
+      {editorState && (
+        <NanoEditor
+          filePath={editorState.filePath}
+          initialContent={editorState.content}
+          isNewFile={editorState.isNewFile}
+          onSave={(content) => writeFile(editorState.filePath, content, session.userType)}
+          onCreate={(content) => createFile(editorState.filePath, content, session.userType)}
+          onClose={() => setEditorState(null)}
+        />
+      )}
     </div>
   );
 };

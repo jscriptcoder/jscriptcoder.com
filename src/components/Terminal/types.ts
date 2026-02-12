@@ -53,6 +53,11 @@ export type NcQuitOutput = {
   readonly __type: 'nc_quit';
 };
 
+export type NanoOpenData = {
+  readonly __type: 'nano_open';
+  readonly filePath: string;
+};
+
 export type AsyncFollowUp = SshPromptData | FtpPromptData | NcPromptData;
 
 export type AsyncOutput = {
@@ -75,6 +80,7 @@ export type SpecialOutput =
   | FtpQuitOutput
   | NcPromptData
   | NcQuitOutput
+  | NanoOpenData
   | AsyncOutput;
 
 export type OutputLine = {
@@ -142,3 +148,6 @@ export const isNcPrompt = (value: unknown): value is NcPromptData =>
 
 export const isNcQuit = (value: unknown): value is NcQuitOutput =>
   isSpecialOutput(value) && value.__type === 'nc_quit';
+
+export const isNanoOpen = (value: unknown): value is NanoOpenData =>
+  isSpecialOutput(value) && value.__type === 'nano_open';

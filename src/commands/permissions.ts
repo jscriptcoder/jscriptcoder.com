@@ -28,6 +28,8 @@ export const COMMAND_TIERS: Readonly<Record<string, UserType>> = {
   output: 'user',
   resolve: 'user',
   exit: 'user',
+  nano: 'user',
+  node: 'user',
   // root-level commands
   decrypt: 'root',
 };
