@@ -13,6 +13,7 @@ const createMockFileNode = (overrides?: Partial<FileNode>): FileNode => ({
   permissions: {
     read: ['root', 'user', 'guest'],
     write: ['root'],
+    execute: ['root', 'user', 'guest'],
   },
   children: {},
   ...overrides,
@@ -162,6 +163,11 @@ describe('FTP lcd command', () => {
             name: 'notes.txt',
             type: 'file',
             content: 'my notes',
+            permissions: {
+              read: ['root', 'user', 'guest'],
+              write: ['root'],
+              execute: ['root'],
+            },
           }),
         },
       });
@@ -180,6 +186,7 @@ describe('FTP lcd command', () => {
             permissions: {
               read: ['root'],
               write: ['root'],
+              execute: ['root'],
             },
           }),
         },
@@ -211,6 +218,7 @@ describe('FTP lcd command', () => {
             permissions: {
               read: ['root'],
               write: ['root'],
+              execute: ['root'],
             },
           }),
         },
@@ -232,6 +240,7 @@ describe('FTP lcd command', () => {
             permissions: {
               read: ['root', 'user'],
               write: ['root'],
+              execute: ['root', 'user'],
             },
           }),
         },
@@ -253,6 +262,7 @@ describe('FTP lcd command', () => {
             permissions: {
               read: ['root', 'user'],
               write: ['root'],
+              execute: ['root', 'user'],
             },
           }),
         },

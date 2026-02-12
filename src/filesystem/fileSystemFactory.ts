@@ -33,6 +33,7 @@ const createHomeDirectory = (user: UserConfig): FileNode => ({
   permissions: {
     read: user.userType === 'guest' ? ['root', 'user', 'guest'] : ['root', user.userType],
     write: ['root', user.userType],
+    execute: user.userType === 'guest' ? ['root', 'user', 'guest'] : ['root', user.userType],
   },
   children: user.homeContent ?? {},
 });
@@ -51,6 +52,7 @@ export const createFileSystem = (config: MachineFileSystemConfig): FileNode => (
   permissions: {
     read: ['root', 'user', 'guest'],
     write: ['root'],
+    execute: ['root', 'user', 'guest'],
   },
   children: {
     root: {
@@ -60,6 +62,7 @@ export const createFileSystem = (config: MachineFileSystemConfig): FileNode => (
       permissions: {
         read: ['root'],
         write: ['root'],
+        execute: ['root'],
       },
       children: config.rootContent ?? {},
     },
@@ -70,6 +73,7 @@ export const createFileSystem = (config: MachineFileSystemConfig): FileNode => (
       permissions: {
         read: ['root', 'user', 'guest'],
         write: ['root'],
+        execute: ['root', 'user', 'guest'],
       },
       children: createHomeDirectories(config.users),
     },
@@ -80,6 +84,7 @@ export const createFileSystem = (config: MachineFileSystemConfig): FileNode => (
       permissions: {
         read: ['root', 'user', 'guest'],
         write: ['root'],
+        execute: ['root', 'user', 'guest'],
       },
       children: {
         passwd: {
@@ -89,6 +94,7 @@ export const createFileSystem = (config: MachineFileSystemConfig): FileNode => (
           permissions: {
             read: [...(config.passwdReadableBy ?? ['root'])],
             write: ['root'],
+            execute: ['root'],
           },
           content: generatePasswdContent(config.users),
         },
@@ -102,6 +108,7 @@ export const createFileSystem = (config: MachineFileSystemConfig): FileNode => (
       permissions: {
         read: ['root', 'user', 'guest'],
         write: ['root'],
+        execute: ['root', 'user', 'guest'],
       },
       children: {
         log: {
@@ -111,6 +118,7 @@ export const createFileSystem = (config: MachineFileSystemConfig): FileNode => (
           permissions: {
             read: ['root', 'user'],
             write: ['root'],
+            execute: ['root', 'user'],
           },
           children: config.varLogContent ?? {},
         },
@@ -123,6 +131,7 @@ export const createFileSystem = (config: MachineFileSystemConfig): FileNode => (
       permissions: {
         read: ['root', 'user', 'guest'],
         write: ['root', 'user', 'guest'],
+        execute: ['root', 'user', 'guest'],
       },
       children: {},
     },

@@ -12,6 +12,7 @@ const getMockFileNode = (overrides?: Partial<FileNode>): FileNode => ({
   permissions: {
     read: ['root', 'user', 'guest'],
     write: ['root'],
+    execute: ['root', 'user', 'guest'],
   },
   ...overrides,
 });
@@ -21,6 +22,11 @@ const getMockFile = (overrides?: Partial<FileNode>): FileNode =>
     name: 'file.txt',
     type: 'file',
     content: 'test content',
+    permissions: {
+      read: ['root', 'user', 'guest'],
+      write: ['root'],
+      execute: ['root'],
+    },
     ...overrides,
   });
 
@@ -85,7 +91,7 @@ describe('nano command', () => {
     it('should allow root to open any file', () => {
       const restrictedFile = getMockFile({
         name: 'secret.txt',
-        permissions: { read: ['root'], write: ['root'] },
+        permissions: { read: ['root'], write: ['root'], execute: ['root'] },
       });
       const context = createMockContext({
         userType: 'root',
@@ -102,7 +108,11 @@ describe('nano command', () => {
   describe('opening new files', () => {
     it('should return nano_open for a non-existent file in writable directory', () => {
       const parentDir = getMockDirectory('tmp', {
-        permissions: { read: ['root', 'user', 'guest'], write: ['root', 'user', 'guest'] },
+        permissions: {
+          read: ['root', 'user', 'guest'],
+          write: ['root', 'user', 'guest'],
+          execute: ['root', 'user', 'guest'],
+        },
       });
       const context = createMockContext({
         fileSystem: { '/tmp': parentDir },
@@ -116,7 +126,11 @@ describe('nano command', () => {
 
     it('should throw permission denied for new file in unwritable directory', () => {
       const parentDir = getMockDirectory('etc', {
-        permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+        permissions: {
+          read: ['root', 'user', 'guest'],
+          write: ['root'],
+          execute: ['root', 'user', 'guest'],
+        },
       });
       const context = createMockContext({
         userType: 'user',
@@ -165,7 +179,7 @@ describe('nano command', () => {
     it('should throw permission denied for unreadable file', () => {
       const restrictedFile = getMockFile({
         name: 'secret.txt',
-        permissions: { read: ['root'], write: ['root'] },
+        permissions: { read: ['root'], write: ['root'], execute: ['root'] },
       });
       const context = createMockContext({
         userType: 'guest',

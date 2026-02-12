@@ -17,6 +17,7 @@ const createMockFile = (
   permissions: {
     read: ['root', 'user'],
     write: ['root', 'user'],
+    execute: ['root'],
   },
   content,
   ...overrides,

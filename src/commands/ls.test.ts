@@ -12,6 +12,7 @@ const getMockFileNode = (overrides?: Partial<FileNode>): FileNode => ({
   permissions: {
     read: ['root', 'user', 'guest'],
     write: ['root'],
+    execute: ['root', 'user', 'guest'],
   },
   ...overrides,
 });
@@ -21,6 +22,11 @@ const getMockFile = (overrides?: Partial<FileNode>): FileNode =>
     name: 'file.txt',
     type: 'file',
     content: 'test content',
+    permissions: {
+      read: ['root', 'user', 'guest'],
+      write: ['root'],
+      execute: ['root'],
+    },
     ...overrides,
   });
 
@@ -248,6 +254,7 @@ describe('ls command', () => {
           permissions: {
             read: ['root'],
             write: ['root'],
+            execute: ['root'],
           },
         },
       );
@@ -272,6 +279,7 @@ describe('ls command', () => {
           permissions: {
             read: ['root'],
             write: ['root'],
+            execute: ['root'],
           },
         },
       );

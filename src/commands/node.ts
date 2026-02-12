@@ -55,6 +55,10 @@ export const createNodeCommand = (context: NodeContext): Command => ({
       throw new Error(`node: ${path}: Permission denied`);
     }
 
+    if (!node.permissions.execute.includes(userType)) {
+      throw new Error(`node: ${path}: Permission denied`);
+    }
+
     const content = node.content ?? '';
     if (!content.trim()) {
       return undefined;

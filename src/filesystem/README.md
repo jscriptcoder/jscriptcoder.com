@@ -9,7 +9,7 @@ Virtual Unix-like filesystem for the CTF terminal. Each machine (localhost and r
 | `types.ts`              | Core types: `FileNode`, `FilePermissions`, `FileSystemPatch`                                                                                                       |
 | `fileSystemFactory.ts`  | `createFileSystem(config)` — generates a standard directory tree (`/root`, `/home`, `/etc`, `/var`, `/tmp`) from a `MachineFileSystemConfig`                       |
 | `machineFileSystems.ts` | Per-machine filesystem definitions (localhost, gateway, fileserver, webserver, darknet) with users, content, and CTF flags                                         |
-| `FileSystemContext.tsx` | React context providing filesystem operations: `resolvePath`, `getNode`, `readFile`, `writeFile`, `readFileFromMachine`, plus persistence via localStorage patches |
+| `FileSystemContext.tsx` | React context providing filesystem operations: `resolvePath`, `getNode`, `readFile`, `writeFile`, `readFileFromMachine`, plus persistence via IndexedDB patches |
 | `index.ts`              | Module exports                                                                                                                                                     |
 
 ## Architecture
@@ -23,7 +23,7 @@ type FileNode = {
   readonly name: string;
   readonly type: 'file' | 'directory';
   readonly owner: UserType; // 'root' | 'user' | 'guest'
-  readonly permissions: FilePermissions;
+  readonly permissions: FilePermissions; // read, write, execute arrays
   readonly content?: string; // file content (files only)
   readonly children?: Record<string, FileNode>; // subdirectories/files
 };
@@ -52,8 +52,8 @@ type FileNode = {
 
 ### Persistence
 
-User-created/modified files are persisted as patches in localStorage (`jshack-filesystem` key). On init, patches are replayed on top of the base filesystem. Only the diff is stored — clearing the key resets to factory state.
+User-created/modified files are persisted as patches in IndexedDB (`jshack-db` database, `filesystem` store). On init, patches are replayed on top of the base filesystem. Only the diff is stored — clearing the database resets to factory state.
 
 ### Permission System
 
-Each `FileNode` has read/write permission arrays per user type (`root`, `user`, `guest`). Root has access to everything. Commands like `cat`, `ls`, `cd` check permissions before allowing access.
+Each `FileNode` has read/write/execute permission arrays per user type (`root`, `user`, `guest`). Root has access to everything. Commands like `cat`, `ls`, `cd` check read permissions. The `node()` command additionally checks execute permission — directories and scripts have execute matching read, while data files are execute-restricted to root only.

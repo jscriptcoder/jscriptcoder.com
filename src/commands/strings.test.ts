@@ -16,6 +16,7 @@ const createMockFile = (
   permissions: {
     read: ['root', 'user'],
     write: ['root', 'user'],
+    execute: ['root'],
   },
   content,
   ...overrides,
@@ -28,6 +29,7 @@ const createMockDirectory = (name: string): FileNode => ({
   permissions: {
     read: ['root', 'user', 'guest'],
     write: ['root'],
+    execute: ['root', 'user', 'guest'],
   },
   children: {},
 });
@@ -111,7 +113,7 @@ describe('strings command', () => {
 
     it('should throw error when permission denied', () => {
       const restrictedFile = createMockFile('secret.bin', 'content', {
-        permissions: { read: ['root'], write: ['root'] },
+        permissions: { read: ['root'], write: ['root'], execute: ['root'] },
       });
       const context = createMockStringsContext({
         userType: 'guest',
@@ -124,7 +126,7 @@ describe('strings command', () => {
 
     it('should allow root to read any file', () => {
       const restrictedFile = createMockFile('secret.bin', 'hello world', {
-        permissions: { read: ['root'], write: ['root'] },
+        permissions: { read: ['root'], write: ['root'], execute: ['root'] },
       });
       const context = createMockStringsContext({
         userType: 'root',

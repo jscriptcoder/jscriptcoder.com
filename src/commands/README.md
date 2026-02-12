@@ -41,7 +41,7 @@ FTP and NC modes have their own separate command sets and are not restricted.
 | output  | `output.ts`  | `output(cmd, [file])`  | Capture command output to variable or file      |
 | strings | `strings.ts` | `strings(file, [min])` | Extract printable strings from binary files     |
 | nano    | `nano.ts`    | `nano(path)`           | Open file in nano-style text editor overlay     |
-| node    | `node.ts`    | `node(path)`           | Execute a JavaScript file with command access   |
+| node    | `node.ts`    | `node(path)`           | Execute a JavaScript file (requires execute permission) |
 
 ## User Management
 

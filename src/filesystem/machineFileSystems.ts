@@ -11,7 +11,7 @@ const jshackerHome: Readonly<Record<string, FileNode>> = {
     name: 'README.txt',
     type: 'file',
     owner: 'user',
-    permissions: { read: ['root', 'user'], write: ['root', 'user'] },
+    permissions: { read: ['root', 'user'], write: ['root', 'user'], execute: ['root'] },
     content: `=== WELCOME TO JSHACK.ME ===
 
 You are jshacker, a security researcher.
@@ -30,7 +30,7 @@ Try ls(".", "-a") to see hidden files.
     name: '.mission',
     type: 'file',
     owner: 'user',
-    permissions: { read: ['root', 'user'], write: ['root', 'user'] },
+    permissions: { read: ['root', 'user'], write: ['root', 'user'], execute: ['root'] },
     content: `MISSION BRIEFING
 ================
 This network has been compromised. Multiple machines are running
@@ -48,7 +48,7 @@ NEXT STEPS:
     name: '.bash_history',
     type: 'file',
     owner: 'user',
-    permissions: { read: ['root', 'user'], write: ['root', 'user'] },
+    permissions: { read: ['root', 'user'], write: ['root', 'user'], execute: ['root'] },
     content: `ls
 cd /etc
 cat passwd
@@ -64,7 +64,7 @@ ssh admin 192.168.1.1
     name: '.bashrc',
     type: 'file',
     owner: 'user',
-    permissions: { read: ['root', 'user'], write: ['root', 'user'] },
+    permissions: { read: ['root', 'user'], write: ['root', 'user'], execute: ['root'] },
     content: `# ~/.bashrc: executed by bash for non-login shells
 export PATH="/usr/local/bin:/usr/bin:/bin"
 export EDITOR=vim
@@ -81,13 +81,13 @@ PS1='\\u@\\h:\\w\\$ '
     name: 'downloads',
     type: 'directory',
     owner: 'user',
-    permissions: { read: ['root', 'user'], write: ['root', 'user'] },
+    permissions: { read: ['root', 'user'], write: ['root', 'user'], execute: ['root', 'user'] },
     children: {
       'nmap_cheatsheet.txt': {
         name: 'nmap_cheatsheet.txt',
         type: 'file',
         owner: 'user',
-        permissions: { read: ['root', 'user'], write: ['root', 'user'] },
+        permissions: { read: ['root', 'user'], write: ['root', 'user'], execute: ['root'] },
         content: `=== NMAP QUICK REFERENCE ===
 
 Host Discovery:
@@ -108,7 +108,7 @@ Tips:
         name: 'todo.txt',
         type: 'file',
         owner: 'user',
-        permissions: { read: ['root', 'user'], write: ['root', 'user'] },
+        permissions: { read: ['root', 'user'], write: ['root', 'user'], execute: ['root'] },
         content: `TODO
 ====
 [x] Set up dev environment
@@ -151,14 +151,14 @@ const localhostConfig: MachineFileSystemConfig = {
       name: 'hostname',
       type: 'file',
       owner: 'root',
-      permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+      permissions: { read: ['root', 'user', 'guest'], write: ['root'], execute: ['root'] },
       content: 'jshack-dev\n',
     },
     hosts: {
       name: 'hosts',
       type: 'file',
       owner: 'root',
-      permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+      permissions: { read: ['root', 'user', 'guest'], write: ['root'], execute: ['root'] },
       content: `127.0.0.1       localhost
 192.168.1.1     gateway.local
 192.168.1.50    fileserver.local
@@ -170,7 +170,7 @@ const localhostConfig: MachineFileSystemConfig = {
       name: 'crontab',
       type: 'file',
       owner: 'root',
-      permissions: { read: ['root'], write: ['root'] },
+      permissions: { read: ['root'], write: ['root'], execute: ['root'] },
       content: `# /etc/crontab: system-wide crontab
 SHELL=/bin/bash
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
@@ -188,7 +188,7 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
       name: 'flag.txt',
       type: 'file',
       owner: 'root',
-      permissions: { read: ['root'], write: ['root'] },
+      permissions: { read: ['root'], write: ['root'], execute: ['root'] },
       content: `FLAG{root_access_granted}
 
 Now you have full control of this machine.
@@ -205,7 +205,7 @@ Try exploring the network:
       name: 'auth.log',
       type: 'file',
       owner: 'root',
-      permissions: { read: ['root', 'user'], write: ['root'] },
+      permissions: { read: ['root', 'user'], write: ['root'], execute: ['root'] },
       content: `Mar 15 08:30:00 localhost sshd[2341]: Starting OpenSSH server
 Mar 15 09:15:22 localhost sshd[2345]: Connection from 192.168.1.1 port 22
 Mar 15 09:15:25 localhost sshd[2345]: Accepted password for jshacker
@@ -220,7 +220,7 @@ Mar 16 03:15:05 localhost sshd[2510]: Failed password for root from 203.0.113.42
       name: 'syslog',
       type: 'file',
       owner: 'root',
-      permissions: { read: ['root', 'user'], write: ['root'] },
+      permissions: { read: ['root', 'user'], write: ['root'], execute: ['root'] },
       content: `Mar 15 08:29:50 localhost kernel: [    0.000000] Linux version 5.15.0-91-generic
 Mar 15 08:29:51 localhost systemd[1]: Started Journal Service.
 Mar 15 08:29:52 localhost systemd[1]: Starting Network Manager...
@@ -243,7 +243,7 @@ const gatewayGuestHome: Readonly<Record<string, FileNode>> = {
     name: '.bash_history',
     type: 'file',
     owner: 'guest',
-    permissions: { read: ['root', 'user', 'guest'], write: ['root', 'guest'] },
+    permissions: { read: ['root', 'user', 'guest'], write: ['root', 'guest'], execute: ['root'] },
     content: `ls
 pwd
 cat /etc/passwd
@@ -273,14 +273,14 @@ const gatewayConfig: MachineFileSystemConfig = {
       name: 'hostname',
       type: 'file',
       owner: 'root',
-      permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+      permissions: { read: ['root', 'user', 'guest'], write: ['root'], execute: ['root'] },
       content: 'gateway\n',
     },
     hosts: {
       name: 'hosts',
       type: 'file',
       owner: 'root',
-      permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+      permissions: { read: ['root', 'user', 'guest'], write: ['root'], execute: ['root'] },
       content: `127.0.0.1       localhost
 192.168.1.1     gateway gateway.local
 192.168.1.50    fileserver.local
@@ -292,7 +292,7 @@ const gatewayConfig: MachineFileSystemConfig = {
       name: 'iptables.rules',
       type: 'file',
       owner: 'root',
-      permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+      permissions: { read: ['root', 'user', 'guest'], write: ['root'], execute: ['root'] },
       content: `# Generated by iptables-save v1.8.7
 *filter
 :INPUT ACCEPT [0:0]
@@ -315,7 +315,7 @@ COMMIT
       name: 'flag.txt',
       type: 'file',
       owner: 'root',
-      permissions: { read: ['root'], write: ['root'] },
+      permissions: { read: ['root'], write: ['root'], execute: ['root'] },
       content: `FLAG{gateway_breach}
 
 The admin panel at /var/www/html/admin.html contains
@@ -330,7 +330,7 @@ Default FTP credentials are often "anonymous".
       name: '.network_config',
       type: 'file',
       owner: 'root',
-      permissions: { read: ['root'], write: ['root'] },
+      permissions: { read: ['root'], write: ['root'], execute: ['root'] },
       content: `Network Configuration Notes
 ============================
 Gateway: admin / [see auth logs]
@@ -346,19 +346,31 @@ Darknet: RESTRICTED — do not connect
       name: 'var',
       type: 'directory',
       owner: 'root',
-      permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+      permissions: {
+        read: ['root', 'user', 'guest'],
+        write: ['root'],
+        execute: ['root', 'user', 'guest'],
+      },
       children: {
         log: {
           name: 'log',
           type: 'directory',
           owner: 'root',
-          permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+          permissions: {
+            read: ['root', 'user', 'guest'],
+            write: ['root'],
+            execute: ['root', 'user', 'guest'],
+          },
           children: {
             'auth.log': {
               name: 'auth.log',
               type: 'file',
               owner: 'root',
-              permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+              permissions: {
+                read: ['root', 'user', 'guest'],
+                write: ['root'],
+                execute: ['root'],
+              },
               content: `Mar 10 08:15:22 gateway sshd[1234]: Failed password for admin from 192.168.1.100
 Mar 10 08:15:25 gateway sshd[1234]: Failed password for admin from 192.168.1.100
 Mar 10 09:30:01 gateway sshd[1235]: Accepted password for admin from 10.0.0.5
@@ -373,7 +385,11 @@ Mar 13 11:00:00 gateway sshd[1260]: Connection from 192.168.1.50 port 22
               name: 'firewall.log',
               type: 'file',
               owner: 'root',
-              permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+              permissions: {
+                read: ['root', 'user', 'guest'],
+                write: ['root'],
+                execute: ['root'],
+              },
               content: `Mar 10 00:05:12 gateway kernel: DROP IN=eth0 SRC=45.33.32.156 DST=192.168.1.1 PROTO=TCP DPT=23
 Mar 10 01:22:45 gateway kernel: DROP IN=eth0 SRC=185.220.101.34 DST=192.168.1.1 PROTO=TCP DPT=3389
 Mar 10 03:14:00 gateway kernel: DROP IN=eth0 SRC=91.240.118.50 DST=192.168.1.1 PROTO=TCP DPT=445
@@ -388,19 +404,31 @@ Mar 12 09:00:00 gateway kernel: ACCEPT IN=eth1 SRC=192.168.1.75 DST=192.168.1.1 
           name: 'www',
           type: 'directory',
           owner: 'root',
-          permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+          permissions: {
+            read: ['root', 'user', 'guest'],
+            write: ['root'],
+            execute: ['root', 'user', 'guest'],
+          },
           children: {
             html: {
               name: 'html',
               type: 'directory',
               owner: 'root',
-              permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+              permissions: {
+                read: ['root', 'user', 'guest'],
+                write: ['root'],
+                execute: ['root', 'user', 'guest'],
+              },
               children: {
                 'index.html': {
                   name: 'index.html',
                   type: 'file',
                   owner: 'root',
-                  permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+                  permissions: {
+                    read: ['root', 'user', 'guest'],
+                    write: ['root'],
+                    execute: ['root'],
+                  },
                   content: `<!DOCTYPE html>
 <html>
 <head><title>NetGuard Router</title></head>
@@ -419,7 +447,7 @@ Mar 12 09:00:00 gateway kernel: ACCEPT IN=eth1 SRC=192.168.1.75 DST=192.168.1.1 
                   name: 'admin.html',
                   type: 'file',
                   owner: 'root',
-                  permissions: { read: ['root'], write: ['root'] },
+                  permissions: { read: ['root'], write: ['root'], execute: ['root'] },
                   content: `<!DOCTYPE html>
 <html>
 <head><title>NetGuard Admin Panel</title></head>
@@ -442,7 +470,11 @@ Mar 12 09:00:00 gateway kernel: ACCEPT IN=eth1 SRC=192.168.1.75 DST=192.168.1.1 
                   name: 'robots.txt',
                   type: 'file',
                   owner: 'root',
-                  permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+                  permissions: {
+                    read: ['root', 'user', 'guest'],
+                    write: ['root'],
+                    execute: ['root'],
+                  },
                   content: `User-agent: *
 Disallow: /admin.html
 Disallow: /backup/
@@ -453,13 +485,21 @@ Disallow: /config/
                   name: 'css',
                   type: 'directory',
                   owner: 'root',
-                  permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+                  permissions: {
+                    read: ['root', 'user', 'guest'],
+                    write: ['root'],
+                    execute: ['root', 'user', 'guest'],
+                  },
                   children: {
                     'style.css': {
                       name: 'style.css',
                       type: 'file',
                       owner: 'root',
-                      permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+                      permissions: {
+                        read: ['root', 'user', 'guest'],
+                        write: ['root'],
+                        execute: ['root'],
+                      },
                       content: `/* NetGuard Router UI */
 body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
 h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
@@ -510,14 +550,14 @@ const fileserverConfig: MachineFileSystemConfig = {
       name: 'hostname',
       type: 'file',
       owner: 'root',
-      permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+      permissions: { read: ['root', 'user', 'guest'], write: ['root'], execute: ['root'] },
       content: 'fileserver\n',
     },
     'vsftpd.conf': {
       name: 'vsftpd.conf',
       type: 'file',
       owner: 'root',
-      permissions: { read: ['root', 'user'], write: ['root'] },
+      permissions: { read: ['root', 'user'], write: ['root'], execute: ['root'] },
       content: `# vsftpd configuration file
 listen=YES
 listen_port=21
@@ -541,7 +581,7 @@ xferlog_file=/var/log/vsftpd.log
       name: 'vsftpd.log',
       type: 'file',
       owner: 'root',
-      permissions: { read: ['root', 'user'], write: ['root'] },
+      permissions: { read: ['root', 'user'], write: ['root'], execute: ['root'] },
       content: `Wed Mar 10 10:15:00 2024 [pid 1001] CONNECT: Client "192.168.1.100"
 Wed Mar 10 10:15:02 2024 [pid 1001] [ftpuser] OK LOGIN: Client "192.168.1.100"
 Wed Mar 10 10:15:10 2024 [pid 1001] [ftpuser] OK DOWNLOAD: Client "192.168.1.100", "/srv/ftp/public/readme.txt"
@@ -554,7 +594,7 @@ Thu Mar 11 02:00:05 2024 [pid 1010] FAIL LOGIN: Client "203.0.113.42", user "ano
       name: 'syslog',
       type: 'file',
       owner: 'root',
-      permissions: { read: ['root', 'user'], write: ['root'] },
+      permissions: { read: ['root', 'user'], write: ['root'], execute: ['root'] },
       content: `Mar 10 08:00:00 fileserver systemd[1]: Starting vsftpd FTP server...
 Mar 10 08:00:01 fileserver vsftpd[890]: Listening on port 21
 Mar 10 08:00:02 fileserver systemd[1]: Started vsftpd FTP server.
@@ -569,26 +609,42 @@ Mar 11 04:00:00 fileserver CRON[2100]: (root) CMD (/usr/bin/find /srv/ftp/upload
       name: 'srv',
       type: 'directory',
       owner: 'root',
-      permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+      permissions: {
+        read: ['root', 'user', 'guest'],
+        write: ['root'],
+        execute: ['root', 'user', 'guest'],
+      },
       children: {
         ftp: {
           name: 'ftp',
           type: 'directory',
           owner: 'root',
-          permissions: { read: ['root', 'user', 'guest'], write: ['root', 'user'] },
+          permissions: {
+            read: ['root', 'user', 'guest'],
+            write: ['root', 'user'],
+            execute: ['root', 'user', 'guest'],
+          },
           children: {
             public: {
               name: 'public',
               type: 'directory',
               owner: 'root',
-              permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+              permissions: {
+                read: ['root', 'user', 'guest'],
+                write: ['root'],
+                execute: ['root', 'user', 'guest'],
+              },
               children: {
                 // HINT: FTP notice with ftpuser credentials
                 'readme.txt': {
                   name: 'readme.txt',
                   type: 'file',
                   owner: 'root',
-                  permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+                  permissions: {
+                    read: ['root', 'user', 'guest'],
+                    write: ['root'],
+                    execute: ['root'],
+                  },
                   content: `=== FileServer FTP Service ===
 
 Public downloads: /srv/ftp/public/
@@ -605,7 +661,11 @@ For admin access, contact root.
                   name: 'CHANGELOG.txt',
                   type: 'file',
                   owner: 'root',
-                  permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+                  permissions: {
+                    read: ['root', 'user', 'guest'],
+                    write: ['root'],
+                    execute: ['root'],
+                  },
                   content: `FileServer CHANGELOG
 ====================
 
@@ -630,14 +690,22 @@ v1.0.0 (2023-06-01)
               name: 'uploads',
               type: 'directory',
               owner: 'user',
-              permissions: { read: ['root', 'user'], write: ['root', 'user'] },
+              permissions: {
+                read: ['root', 'user'],
+                write: ['root', 'user'],
+                execute: ['root', 'user'],
+              },
               children: {
                 // FLAG 7: Hidden backup notes
                 '.backup_notes.txt': {
                   name: '.backup_notes.txt',
                   type: 'file',
                   owner: 'user',
-                  permissions: { read: ['root', 'user'], write: ['root', 'user'] },
+                  permissions: {
+                    read: ['root', 'user'],
+                    write: ['root', 'user'],
+                    execute: ['root'],
+                  },
                   content: `Backup rotation schedule — DO NOT SHARE
 
 FLAG{file_transfer_pro}
@@ -653,7 +721,11 @@ Webserver SSH accepts default guest credentials.
                   name: 'meeting_notes_2024.txt',
                   type: 'file',
                   owner: 'user',
-                  permissions: { read: ['root', 'user'], write: ['root', 'user'] },
+                  permissions: {
+                    read: ['root', 'user'],
+                    write: ['root', 'user'],
+                    execute: ['root'],
+                  },
                   content: `Team Standup — March 2024
 =========================
 
@@ -673,7 +745,11 @@ Next meeting: April 1, 2024
                   name: 'tmp_data.csv',
                   type: 'file',
                   owner: 'user',
-                  permissions: { read: ['root', 'user'], write: ['root', 'user'] },
+                  permissions: {
+                    read: ['root', 'user'],
+                    write: ['root', 'user'],
+                    execute: ['root'],
+                  },
                   content: `timestamp,source_ip,dest_ip,bytes,protocol
 2024-03-10T10:00:00,192.168.1.100,192.168.1.75,4520,TCP
 2024-03-10T10:05:00,192.168.1.75,192.168.1.50,12800,TCP
@@ -688,14 +764,18 @@ Next meeting: April 1, 2024
               name: 'config',
               type: 'directory',
               owner: 'root',
-              permissions: { read: ['root', 'user'], write: ['root'] },
+              permissions: {
+                read: ['root', 'user'],
+                write: ['root'],
+                execute: ['root', 'user'],
+              },
               children: {
                 // Key part 2 for FLAG 9 decryption
                 '.key_fragment': {
                   name: '.key_fragment',
                   type: 'file',
                   owner: 'root',
-                  permissions: { read: ['root', 'user'], write: ['root'] },
+                  permissions: { read: ['root', 'user'], write: ['root'], execute: ['root'] },
                   content: `# Encryption key fragment (part 2 of 2)
 # Combine with part 1 to get the full 64-character hex key
 
@@ -770,20 +850,20 @@ const webserverConfig: MachineFileSystemConfig = {
       name: 'hostname',
       type: 'file',
       owner: 'root',
-      permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+      permissions: { read: ['root', 'user', 'guest'], write: ['root'], execute: ['root'] },
       content: 'webserver\n',
     },
     apache2: {
       name: 'apache2',
       type: 'directory',
       owner: 'root',
-      permissions: { read: ['root', 'user'], write: ['root'] },
+      permissions: { read: ['root', 'user'], write: ['root'], execute: ['root', 'user'] },
       children: {
         'apache2.conf': {
           name: 'apache2.conf',
           type: 'file',
           owner: 'root',
-          permissions: { read: ['root', 'user'], write: ['root'] },
+          permissions: { read: ['root', 'user'], write: ['root'], execute: ['root'] },
           content: `# Apache2 Configuration
 ServerRoot "/etc/apache2"
 Listen 80
@@ -810,13 +890,13 @@ CustomLog /var/log/access.log combined
       name: 'mysql',
       type: 'directory',
       owner: 'root',
-      permissions: { read: ['root', 'user'], write: ['root'] },
+      permissions: { read: ['root', 'user'], write: ['root'], execute: ['root', 'user'] },
       children: {
         'my.cnf': {
           name: 'my.cnf',
           type: 'file',
           owner: 'root',
-          permissions: { read: ['root', 'user'], write: ['root'] },
+          permissions: { read: ['root', 'user'], write: ['root'], execute: ['root'] },
           content: `# MySQL Configuration
 [mysqld]
 datadir=/var/lib/mysql
@@ -838,19 +918,31 @@ general_log_file=/var/log/mysql.log
       name: 'opt',
       type: 'directory',
       owner: 'root',
-      permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+      permissions: {
+        read: ['root', 'user', 'guest'],
+        write: ['root'],
+        execute: ['root', 'user', 'guest'],
+      },
       children: {
         tools: {
           name: 'tools',
           type: 'directory',
           owner: 'root',
-          permissions: { read: ['root', 'user'], write: ['root'] },
+          permissions: {
+            read: ['root', 'user'],
+            write: ['root'],
+            execute: ['root', 'user'],
+          },
           children: {
             scanner: {
               name: 'scanner',
               type: 'file',
               owner: 'root',
-              permissions: { read: ['root', 'user'], write: ['root'] },
+              permissions: {
+                read: ['root', 'user'],
+                write: ['root'],
+                execute: ['root', 'user'],
+              },
               content: scannerBinary,
             },
             // FLAG 10: Backdoor log found via nc
@@ -858,7 +950,7 @@ general_log_file=/var/log/mysql.log
               name: '.backdoor_log',
               type: 'file',
               owner: 'user',
-              permissions: { read: ['root', 'user'], write: ['root'] },
+              permissions: { read: ['root', 'user'], write: ['root'], execute: ['root'] },
               content: `FLAG{backdoor_found}
 
 Backdoor installed by ghost@203.0.113.42
@@ -871,7 +963,7 @@ The darknet web portal at port 8080 has login information.
               name: '.darknet_access',
               type: 'file',
               owner: 'user',
-              permissions: { read: ['root', 'user'], write: ['root'] },
+              permissions: { read: ['root', 'user'], write: ['root'], execute: ['root'] },
               content: `# Darknet SSH credentials (for maintenance)
 Host: 203.0.113.42 (darknet.ctf)
 User: guest
@@ -886,20 +978,32 @@ Pass: sh4d0w
       name: 'var',
       type: 'directory',
       owner: 'root',
-      permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+      permissions: {
+        read: ['root', 'user', 'guest'],
+        write: ['root'],
+        execute: ['root', 'user', 'guest'],
+      },
       children: {
         log: {
           name: 'log',
           type: 'directory',
           owner: 'root',
-          permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+          permissions: {
+            read: ['root', 'user', 'guest'],
+            write: ['root'],
+            execute: ['root', 'user', 'guest'],
+          },
           children: {
             // HINT: www-data credentials in access log (readable by guest)
             'access.log': {
               name: 'access.log',
               type: 'file',
               owner: 'root',
-              permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+              permissions: {
+                read: ['root', 'user', 'guest'],
+                write: ['root'],
+                execute: ['root'],
+              },
               content: `192.168.1.100 - - [10/Mar/2024:10:00:00 +0000] "GET / HTTP/1.1" 200 1234
 192.168.1.100 - - [10/Mar/2024:10:00:05 +0000] "GET /admin HTTP/1.1" 403 567
 192.168.1.1 - - [10/Mar/2024:12:30:00 +0000] "POST /api/login HTTP/1.1" 200 89
@@ -911,7 +1015,11 @@ Pass: sh4d0w
               name: 'error.log',
               type: 'file',
               owner: 'root',
-              permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+              permissions: {
+                read: ['root', 'user', 'guest'],
+                write: ['root'],
+                execute: ['root'],
+              },
               content: `[error] MySQL connection failed: Access denied for user 'webapp'@'localhost'
 [error] PHP Warning: include(/var/www/html/config.php): failed to open stream
 [warn] mod_security: SQL injection attempt detected from 203.0.113.42
@@ -923,7 +1031,7 @@ Pass: sh4d0w
               name: 'mysql.log',
               type: 'file',
               owner: 'root',
-              permissions: { read: ['root', 'user'], write: ['root'] },
+              permissions: { read: ['root', 'user'], write: ['root'], execute: ['root'] },
               content: `2024-03-10T08:00:00.000000Z 0 [System] mysqld: ready for connections. Version: '5.7.42'
 2024-03-10T10:00:15.123456Z 12 [Query] SELECT * FROM sessions WHERE expires > NOW()
 2024-03-10T10:05:22.654321Z 12 [Query] UPDATE users SET last_login = NOW() WHERE id = 2
@@ -939,19 +1047,31 @@ Pass: sh4d0w
           name: 'www',
           type: 'directory',
           owner: 'root',
-          permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+          permissions: {
+            read: ['root', 'user', 'guest'],
+            write: ['root'],
+            execute: ['root', 'user', 'guest'],
+          },
           children: {
             html: {
               name: 'html',
               type: 'directory',
               owner: 'root',
-              permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+              permissions: {
+                read: ['root', 'user', 'guest'],
+                write: ['root'],
+                execute: ['root', 'user', 'guest'],
+              },
               children: {
                 'index.html': {
                   name: 'index.html',
                   type: 'file',
                   owner: 'root',
-                  permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+                  permissions: {
+                    read: ['root', 'user', 'guest'],
+                    write: ['root'],
+                    execute: ['root'],
+                  },
                   content: `<!DOCTYPE html>
 <html>
 <head><title>TechCorp Internal</title></head>
@@ -974,7 +1094,11 @@ Pass: sh4d0w
                   name: 'robots.txt',
                   type: 'file',
                   owner: 'root',
-                  permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+                  permissions: {
+                    read: ['root', 'user', 'guest'],
+                    write: ['root'],
+                    execute: ['root'],
+                  },
                   content: `User-agent: *
 Disallow: /admin/
 Disallow: /api/
@@ -986,7 +1110,7 @@ Sitemap: http://webserver.local/sitemap.xml
                   name: '.htaccess',
                   type: 'file',
                   owner: 'root',
-                  permissions: { read: ['root', 'user'], write: ['root'] },
+                  permissions: { read: ['root', 'user'], write: ['root'], execute: ['root'] },
                   content: `RewriteEngine On
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
@@ -1002,7 +1126,11 @@ Header set X-XSS-Protection "1; mode=block"
                   name: 'style.css',
                   type: 'file',
                   owner: 'root',
-                  permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+                  permissions: {
+                    read: ['root', 'user', 'guest'],
+                    write: ['root'],
+                    execute: ['root'],
+                  },
                   content: `/* TechCorp Internal Portal */
 :root { --primary: #1a5276; --accent: #2ecc71; --bg: #ecf0f1; }
 body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; }
@@ -1018,21 +1146,25 @@ body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; }
               name: 'backups',
               type: 'directory',
               owner: 'root',
-              permissions: { read: ['root', 'user'], write: ['root'] },
+              permissions: {
+                read: ['root', 'user'],
+                write: ['root'],
+                execute: ['root', 'user'],
+              },
               children: {
                 // FLAG 9: Encrypted file (requires key from scanner + fileserver)
                 'encrypted_intel.enc': {
                   name: 'encrypted_intel.enc',
                   type: 'file',
                   owner: 'root',
-                  permissions: { read: ['root', 'user'], write: ['root'] },
+                  permissions: { read: ['root', 'user'], write: ['root'], execute: ['root'] },
                   content: encryptedIntel,
                 },
                 'backup_manifest.txt': {
                   name: 'backup_manifest.txt',
                   type: 'file',
                   owner: 'root',
-                  permissions: { read: ['root', 'user'], write: ['root'] },
+                  permissions: { read: ['root', 'user'], write: ['root'], execute: ['root'] },
                   content: `Backup Manifest — TechCorp Webserver
 =====================================
 
@@ -1052,7 +1184,7 @@ Encryption: AES-256-GCM (key stored separately)
                   name: 'db_backup.sql',
                   type: 'file',
                   owner: 'root',
-                  permissions: { read: ['root', 'user'], write: ['root'] },
+                  permissions: { read: ['root', 'user'], write: ['root'], execute: ['root'] },
                   content: `-- MySQL dump
 -- Server version: 5.7.42
 -- Database: production
@@ -1105,14 +1237,14 @@ const ghostHome: Readonly<Record<string, FileNode>> = {
     name: '.encrypted_flag.enc',
     type: 'file',
     owner: 'user',
-    permissions: { read: ['root', 'user'], write: ['root', 'user'] },
+    permissions: { read: ['root', 'user'], write: ['root', 'user'], execute: ['root'] },
     content: encryptedFinalFlag,
   },
   '.notes': {
     name: '.notes',
     type: 'file',
     owner: 'user',
-    permissions: { read: ['root', 'user'], write: ['root', 'user'] },
+    permissions: { read: ['root', 'user'], write: ['root', 'user'], execute: ['root'] },
     content: `The final flag is encrypted.
 You need root to use decrypt().
 The key is in /root/keyfile.txt.
@@ -1123,7 +1255,7 @@ Check the logs to find root's password.
     name: '.bash_history',
     type: 'file',
     owner: 'user',
-    permissions: { read: ['root', 'user'], write: ['root', 'user'] },
+    permissions: { read: ['root', 'user'], write: ['root', 'user'], execute: ['root'] },
     content: `nmap -sV 192.168.1.0/24
 ssh www-data@192.168.1.75
 cat /opt/tools/.backdoor_log
@@ -1138,13 +1270,17 @@ su root
     name: 'tools',
     type: 'directory',
     owner: 'user',
-    permissions: { read: ['root', 'user'], write: ['root', 'user'] },
+    permissions: { read: ['root', 'user'], write: ['root', 'user'], execute: ['root', 'user'] },
     children: {
       'port_scanner.py': {
         name: 'port_scanner.py',
         type: 'file',
         owner: 'user',
-        permissions: { read: ['root', 'user'], write: ['root', 'user'] },
+        permissions: {
+          read: ['root', 'user'],
+          write: ['root', 'user'],
+          execute: ['root', 'user'],
+        },
         content: `#!/usr/bin/env python3
 """Simple port scanner - ghost's toolkit"""
 import socket
@@ -1172,7 +1308,7 @@ if __name__ == "__main__":
         name: 'README.md',
         type: 'file',
         owner: 'user',
-        permissions: { read: ['root', 'user'], write: ['root', 'user'] },
+        permissions: { read: ['root', 'user'], write: ['root', 'user'], execute: ['root'] },
         content: `# Ghost's Toolkit
 
 Collection of recon and exploitation scripts.
@@ -1218,14 +1354,14 @@ const darknetConfig: MachineFileSystemConfig = {
       name: 'hostname',
       type: 'file',
       owner: 'root',
-      permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+      permissions: { read: ['root', 'user', 'guest'], write: ['root'], execute: ['root'] },
       content: 'darknet\n',
     },
     hosts: {
       name: 'hosts',
       type: 'file',
       owner: 'root',
-      permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+      permissions: { read: ['root', 'user', 'guest'], write: ['root'], execute: ['root'] },
       content: `127.0.0.1       localhost darknet
 203.0.113.42    darknet.ctf www.darknet.ctf
 10.66.66.1      shadow.onion
@@ -1240,7 +1376,7 @@ const darknetConfig: MachineFileSystemConfig = {
       name: 'keyfile.txt',
       type: 'file',
       owner: 'root',
-      permissions: { read: ['root'], write: ['root'] },
+      permissions: { read: ['root'], write: ['root'], execute: ['root'] },
       content: `# AES-256-GCM Decryption Key
 # Use with: decrypt("/home/ghost/.encrypted_flag.enc", key)
 
@@ -1251,7 +1387,7 @@ const darknetConfig: MachineFileSystemConfig = {
       name: '.bash_history',
       type: 'file',
       owner: 'root',
-      permissions: { read: ['root'], write: ['root'] },
+      permissions: { read: ['root'], write: ['root'], execute: ['root'] },
       content: `systemctl restart tor
 iptables -L -n
 cat /var/log/auth.log
@@ -1267,20 +1403,24 @@ systemctl status encrypted-services
       name: 'var',
       type: 'directory',
       owner: 'root',
-      permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+      permissions: {
+        read: ['root', 'user', 'guest'],
+        write: ['root'],
+        execute: ['root', 'user', 'guest'],
+      },
       children: {
         log: {
           name: 'log',
           type: 'directory',
           owner: 'root',
-          permissions: { read: ['root', 'user'], write: ['root'] },
+          permissions: { read: ['root', 'user'], write: ['root'], execute: ['root', 'user'] },
           children: {
             // HINT: Root password leaked in auth log (readable by ghost/user)
             'auth.log': {
               name: 'auth.log',
               type: 'file',
               owner: 'root',
-              permissions: { read: ['root', 'user'], write: ['root'] },
+              permissions: { read: ['root', 'user'], write: ['root'], execute: ['root'] },
               content: `Mar 10 00:00:00 darknet sshd[100]: Server started
 Mar 10 00:00:01 darknet systemd: Starting encrypted services...
 Mar 11 03:33:33 darknet sshd[200]: Accepted password for ghost from 192.168.1.75
@@ -1294,7 +1434,7 @@ Mar 13 12:00:00 darknet sshd[400]: Connection from 192.168.1.75 port 4444
               name: 'messages',
               type: 'file',
               owner: 'root',
-              permissions: { read: ['root', 'user'], write: ['root'] },
+              permissions: { read: ['root', 'user'], write: ['root'], execute: ['root'] },
               content: `Mar 10 00:00:00 darknet kernel: System initialized
 Mar 10 00:00:01 darknet systemd: Starting encrypted services...
 Mar 11 03:33:33 darknet ???: VGhlIHNoYWRvd3Mga25vdyB5b3VyIG5hbWU=
@@ -1306,7 +1446,7 @@ Mar 12 06:66:66 darknet ???: Connection from the void accepted
               name: 'cron.log',
               type: 'file',
               owner: 'root',
-              permissions: { read: ['root', 'user'], write: ['root'] },
+              permissions: { read: ['root', 'user'], write: ['root'], execute: ['root'] },
               content: `Mar 10 00:00:00 darknet CRON[100]: (root) CMD (/opt/encrypted-services/rotate.sh)
 Mar 10 06:00:00 darknet CRON[200]: (root) CMD (/usr/bin/find /tmp -mtime +1 -delete)
 Mar 10 12:00:00 darknet CRON[300]: (ghost) CMD (/home/ghost/tools/port_scanner.py 192.168.1.75)
@@ -1321,19 +1461,31 @@ Mar 12 00:00:00 darknet CRON[600]: (root) CMD (/opt/encrypted-services/rotate.sh
           name: 'www',
           type: 'directory',
           owner: 'root',
-          permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+          permissions: {
+            read: ['root', 'user', 'guest'],
+            write: ['root'],
+            execute: ['root', 'user', 'guest'],
+          },
           children: {
             html: {
               name: 'html',
               type: 'directory',
               owner: 'user',
-              permissions: { read: ['root', 'user', 'guest'], write: ['root', 'user'] },
+              permissions: {
+                read: ['root', 'user', 'guest'],
+                write: ['root', 'user'],
+                execute: ['root', 'user', 'guest'],
+              },
               children: {
                 'index.html': {
                   name: 'index.html',
                   type: 'file',
                   owner: 'user',
-                  permissions: { read: ['root', 'user', 'guest'], write: ['root', 'user'] },
+                  permissions: {
+                    read: ['root', 'user', 'guest'],
+                    write: ['root', 'user'],
+                    execute: ['root'],
+                  },
                   content: `<!DOCTYPE html>
 <html>
 <head><title>DARKNET</title></head>
@@ -1361,13 +1513,21 @@ Backdoor service running on port 31337.
                   name: 'api',
                   type: 'directory',
                   owner: 'root',
-                  permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+                  permissions: {
+                    read: ['root', 'user', 'guest'],
+                    write: ['root'],
+                    execute: ['root', 'user', 'guest'],
+                  },
                   children: {
                     secrets: {
                       name: 'secrets',
                       type: 'file',
                       owner: 'root',
-                      permissions: { read: ['root', 'user', 'guest'], write: ['root'] },
+                      permissions: {
+                        read: ['root', 'user', 'guest'],
+                        write: ['root'],
+                        execute: ['root'],
+                      },
                       content: `{
   "message": "Welcome to the darknet API",
   "users": ["ghost", "root"],
@@ -1383,13 +1543,17 @@ Backdoor service running on port 31337.
               name: 'api',
               type: 'directory',
               owner: 'root',
-              permissions: { read: ['root', 'user'], write: ['root'] },
+              permissions: {
+                read: ['root', 'user'],
+                write: ['root'],
+                execute: ['root', 'user'],
+              },
               children: {
                 'secrets.json': {
                   name: 'secrets.json',
                   type: 'file',
                   owner: 'root',
-                  permissions: { read: ['root', 'user'], write: ['root'] },
+                  permissions: { read: ['root', 'user'], write: ['root'], execute: ['root'] },
                   content: `{
   "message": "Welcome to the darknet API",
   "users": ["ghost", "root"],

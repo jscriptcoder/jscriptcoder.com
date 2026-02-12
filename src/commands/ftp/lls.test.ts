@@ -13,6 +13,7 @@ const createMockFileNode = (overrides?: Partial<FileNode>): FileNode => ({
   permissions: {
     read: ['root', 'user', 'guest'],
     write: ['root'],
+    execute: ['root', 'user', 'guest'],
   },
   children: {},
   ...overrides,
@@ -150,7 +151,15 @@ describe('FTP lls command', () => {
         nodes: {
           '/home/jshacker': createMockFileNode({ name: 'jshacker' }),
           '/home/jshacker/docs': createMockFileNode({ name: 'docs', type: 'directory' }),
-          '/home/jshacker/notes.txt': createMockFileNode({ name: 'notes.txt', type: 'file' }),
+          '/home/jshacker/notes.txt': createMockFileNode({
+            name: 'notes.txt',
+            type: 'file',
+            permissions: {
+              read: ['root', 'user', 'guest'],
+              write: ['root'],
+              execute: ['root'],
+            },
+          }),
         },
         directoryEntries: {
           '/home/jshacker': ['docs', 'notes.txt'],
@@ -173,6 +182,11 @@ describe('FTP lls command', () => {
             name: 'notes.txt',
             type: 'file',
             content: 'my notes',
+            permissions: {
+              read: ['root', 'user', 'guest'],
+              write: ['root'],
+              execute: ['root'],
+            },
           }),
         },
       });
@@ -205,6 +219,7 @@ describe('FTP lls command', () => {
             permissions: {
               read: ['root'],
               write: ['root'],
+              execute: ['root'],
             },
           }),
         },
@@ -234,8 +249,24 @@ describe('FTP lls command', () => {
         originCwd: '/home/jshacker',
         nodes: {
           '/home/jshacker': createMockFileNode({ name: 'jshacker' }),
-          '/home/jshacker/.mission': createMockFileNode({ name: '.mission', type: 'file' }),
-          '/home/jshacker/README.txt': createMockFileNode({ name: 'README.txt', type: 'file' }),
+          '/home/jshacker/.mission': createMockFileNode({
+            name: '.mission',
+            type: 'file',
+            permissions: {
+              read: ['root', 'user', 'guest'],
+              write: ['root'],
+              execute: ['root'],
+            },
+          }),
+          '/home/jshacker/README.txt': createMockFileNode({
+            name: 'README.txt',
+            type: 'file',
+            permissions: {
+              read: ['root', 'user', 'guest'],
+              write: ['root'],
+              execute: ['root'],
+            },
+          }),
         },
         directoryEntries: {
           '/home/jshacker': ['.mission', 'README.txt'],
@@ -254,8 +285,24 @@ describe('FTP lls command', () => {
         originCwd: '/home/jshacker',
         nodes: {
           '/home/jshacker': createMockFileNode({ name: 'jshacker' }),
-          '/home/jshacker/.mission': createMockFileNode({ name: '.mission', type: 'file' }),
-          '/home/jshacker/README.txt': createMockFileNode({ name: 'README.txt', type: 'file' }),
+          '/home/jshacker/.mission': createMockFileNode({
+            name: '.mission',
+            type: 'file',
+            permissions: {
+              read: ['root', 'user', 'guest'],
+              write: ['root'],
+              execute: ['root'],
+            },
+          }),
+          '/home/jshacker/README.txt': createMockFileNode({
+            name: 'README.txt',
+            type: 'file',
+            permissions: {
+              read: ['root', 'user', 'guest'],
+              write: ['root'],
+              execute: ['root'],
+            },
+          }),
         },
         directoryEntries: {
           '/home/jshacker': ['.mission', 'README.txt'],

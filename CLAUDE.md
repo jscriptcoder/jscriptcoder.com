@@ -381,6 +381,7 @@ type FileNode = {
   readonly permissions: {
     readonly read: readonly UserType[];
     readonly write: readonly UserType[];
+    readonly execute: readonly UserType[];
   };
   readonly content?: string;
   readonly children?: Readonly<Record<string, FileNode>>;
@@ -405,7 +406,7 @@ type FileSystemPatch = {
 - On every `writeFileToMachine` or `createFileOnMachine` call, a patch is recorded (upserted by machineId + path)
 - Patches are saved to IndexedDB via `useEffect` whenever they change (fire-and-forget async)
 - On initialization, `applyPatches()` replays patches on top of the base filesystem from `machineFileSystems`
-- Existing files get their content updated; new files are created with `read/write: ['root', owner]` permissions
+- Existing files get their content updated; new files are created with `read/write/execute: ['root', owner]` permissions
 - Base filesystem updates in code still take effect — patches layer on top
 - Clearing the IndexedDB `jshack-db` database resets to factory state
 
@@ -438,7 +439,7 @@ The `nano(path)` command opens a full-screen nano-style text editor overlay (`Na
 
 ### Node Execution
 
-The `node(path)` command reads a JavaScript file and executes its contents using `new Function()` with access to all terminal commands. It uses a lazy getter pattern to resolve a circular dependency — node needs the execution context which includes node itself.
+The `node(path)` command reads a JavaScript file and executes its contents using `new Function()` with access to all terminal commands. It checks both read and execute permissions — a file can be readable (`cat`) but not executable (`node`) unless it has explicit execute permission. It uses a lazy getter pattern to resolve a circular dependency — node needs the execution context which includes node itself.
 
 In `useCommands.ts`, a mutable `let resolvedExecutionContext` variable is set after building the full command map. Node's factory captures a getter `() => resolvedExecutionContext` which is only called at execution time (after the variable is populated).
 

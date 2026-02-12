@@ -13,6 +13,7 @@ const createMockFileNode = (overrides?: Partial<FileNode>): FileNode => ({
   permissions: {
     read: ['root', 'user', 'guest'],
     write: ['root', 'user'],
+    execute: ['root'],
   },
   content: 'file content',
   ...overrides,
@@ -212,7 +213,15 @@ describe('FTP get command', () => {
       const context = createMockContext({
         remoteCwd: '/srv/ftp',
         nodes: {
-          '/srv/ftp/subdir': createMockFileNode({ name: 'subdir', type: 'directory' }),
+          '/srv/ftp/subdir': createMockFileNode({
+            name: 'subdir',
+            type: 'directory',
+            permissions: {
+              read: ['root', 'user', 'guest'],
+              write: ['root', 'user'],
+              execute: ['root', 'user', 'guest'],
+            },
+          }),
         },
       });
       const get = createFtpGetCommand(context);
@@ -241,7 +250,15 @@ describe('FTP get command', () => {
         originCwd: '/home/jshacker',
         nodes: {
           '/srv/ftp/file.txt': createMockFileNode({ name: 'file.txt' }),
-          '/home/jshacker/file.txt': createMockFileNode({ name: 'file.txt', type: 'directory' }),
+          '/home/jshacker/file.txt': createMockFileNode({
+            name: 'file.txt',
+            type: 'directory',
+            permissions: {
+              read: ['root', 'user', 'guest'],
+              write: ['root', 'user'],
+              execute: ['root', 'user', 'guest'],
+            },
+          }),
         },
         fileContents: {
           '/srv/ftp/file.txt': 'content',

@@ -13,6 +13,7 @@ const createMockFileNode = (overrides?: Partial<FileNode>): FileNode => ({
   permissions: {
     read: ['root', 'user', 'guest'],
     write: ['root', 'user'],
+    execute: ['root'],
   },
   content: 'test content',
   ...overrides,
@@ -25,6 +26,7 @@ const createMockDirectory = (name: string): FileNode => ({
   permissions: {
     read: ['root', 'user', 'guest'],
     write: ['root'],
+    execute: ['root', 'user', 'guest'],
   },
   children: {},
 });

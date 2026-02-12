@@ -3,6 +3,7 @@ import type { UserType } from '../session/SessionContext';
 export type FilePermissions = {
   readonly read: readonly UserType[];
   readonly write: readonly UserType[];
+  readonly execute: readonly UserType[];
 };
 
 export type FileNode = {

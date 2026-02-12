@@ -17,6 +17,7 @@ const createMockFile = (
   permissions: {
     read: ['root', 'user'],
     write: ['root', 'user'],
+    execute: ['root'],
   },
   content,
   ...overrides,
@@ -29,6 +30,7 @@ const createMockDirectory = (name: string): FileNode => ({
   permissions: {
     read: ['root', 'user', 'guest'],
     write: ['root'],
+    execute: ['root', 'user', 'guest'],
   },
   children: {},
 });
@@ -142,7 +144,7 @@ describe('decrypt command', () => {
 
     it('should throw error when permission denied', () => {
       const restrictedFile = createMockFile('secret.enc', 'encrypted', {
-        permissions: { read: ['root'], write: ['root'] },
+        permissions: { read: ['root'], write: ['root'], execute: ['root'] },
       });
 
       const context = createMockDecryptContext({
@@ -173,7 +175,7 @@ describe('decrypt command', () => {
 
     it('should allow root to read any file', () => {
       const restrictedFile = createMockFile('secret.enc', 'encrypted', {
-        permissions: { read: ['root'], write: ['root'] },
+        permissions: { read: ['root'], write: ['root'], execute: ['root'] },
       });
 
       const context = createMockDecryptContext({

@@ -41,8 +41,14 @@ Implemented:
   - Lazy getter pattern resolves circular dependency (node needs execution context that includes node)
   - Tries expression mode first, falls back to statement execution
   - 12 tests covering execution, context access, and error handling
+- **Execute permission**: Added Unix-like execute permission to filesystem
+  - `FilePermissions` now has `execute` field alongside `read` and `write`
+  - Directories: `execute` matches `read`. Scripts/binaries: `execute` matches `read`. Data files: `execute: ['root']`
+  - Only `node()` checks execute permission — `cat`, `ls`, `cd` etc. unchanged
+  - User-created files (nano, output, ftp get/put): `execute: ['root', owner]`
+  - 4 new tests in node.test.ts for execute permission behavior
 - **Permission tiers**: Both nano and node added to user-tier (same as strings, output, etc.)
-- **Test count**: 670 tests across 41 colocated files
+- **Test count**: 674 tests across 41 colocated files
 
 ## Previous Session (2026-02-10)
 
@@ -468,7 +474,7 @@ Flags should be detected from output of:
 
 ### Test Coverage
 
-- 670 tests across 41 colocated test files
+- 674 tests across 41 colocated test files
 - All commands with logic are tested
 - FTP subcommands tested (cd, lcd, ls, lls, get, put)
 - NC command and subcommands tested (nc, cat, cd, ls)
@@ -477,7 +483,7 @@ Flags should be detected from output of:
 - Output command tested (16 tests)
 - Resolve command tested (14 tests)
 - Nano command tested (9 tests: existing/new files, permissions, errors)
-- Node command tested (12 tests: execution, context access, errors)
+- Node command tested (16 tests: execution, context access, execute permission, errors)
 - NanoEditor component tested (17 tests: rendering, save, exit flow, modified indicator)
 - Async commands tested with fake timers
 - React hooks tested with React Testing Library (useCommandHistory, useVariables, useAutoComplete)

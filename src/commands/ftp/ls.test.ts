@@ -13,6 +13,7 @@ const createMockFileNode = (overrides?: Partial<FileNode>): FileNode => ({
   permissions: {
     read: ['root', 'user', 'guest'],
     write: ['root'],
+    execute: ['root', 'user', 'guest'],
   },
   children: {},
   ...overrides,
@@ -150,7 +151,15 @@ describe('FTP ls command', () => {
         nodes: {
           '/srv': createMockFileNode({ name: 'srv' }),
           '/srv/ftp': createMockFileNode({ name: 'ftp', type: 'directory' }),
-          '/srv/data.txt': createMockFileNode({ name: 'data.txt', type: 'file' }),
+          '/srv/data.txt': createMockFileNode({
+            name: 'data.txt',
+            type: 'file',
+            permissions: {
+              read: ['root', 'user', 'guest'],
+              write: ['root'],
+              execute: ['root'],
+            },
+          }),
         },
         directoryEntries: {
           '/srv': ['ftp', 'data.txt'],
@@ -173,6 +182,11 @@ describe('FTP ls command', () => {
             name: 'readme.txt',
             type: 'file',
             content: 'hello',
+            permissions: {
+              read: ['root', 'user', 'guest'],
+              write: ['root'],
+              execute: ['root'],
+            },
           }),
         },
       });
@@ -205,6 +219,7 @@ describe('FTP ls command', () => {
             permissions: {
               read: ['root'],
               write: ['root'],
+              execute: ['root'],
             },
           }),
         },
@@ -234,8 +249,24 @@ describe('FTP ls command', () => {
         remoteCwd: '/srv/ftp',
         nodes: {
           '/srv/ftp': createMockFileNode({ name: 'ftp' }),
-          '/srv/ftp/.hidden': createMockFileNode({ name: '.hidden', type: 'file' }),
-          '/srv/ftp/visible.txt': createMockFileNode({ name: 'visible.txt', type: 'file' }),
+          '/srv/ftp/.hidden': createMockFileNode({
+            name: '.hidden',
+            type: 'file',
+            permissions: {
+              read: ['root', 'user', 'guest'],
+              write: ['root'],
+              execute: ['root'],
+            },
+          }),
+          '/srv/ftp/visible.txt': createMockFileNode({
+            name: 'visible.txt',
+            type: 'file',
+            permissions: {
+              read: ['root', 'user', 'guest'],
+              write: ['root'],
+              execute: ['root'],
+            },
+          }),
         },
         directoryEntries: {
           '/srv/ftp': ['.hidden', 'visible.txt'],
@@ -254,8 +285,24 @@ describe('FTP ls command', () => {
         remoteCwd: '/srv/ftp',
         nodes: {
           '/srv/ftp': createMockFileNode({ name: 'ftp' }),
-          '/srv/ftp/.hidden': createMockFileNode({ name: '.hidden', type: 'file' }),
-          '/srv/ftp/visible.txt': createMockFileNode({ name: 'visible.txt', type: 'file' }),
+          '/srv/ftp/.hidden': createMockFileNode({
+            name: '.hidden',
+            type: 'file',
+            permissions: {
+              read: ['root', 'user', 'guest'],
+              write: ['root'],
+              execute: ['root'],
+            },
+          }),
+          '/srv/ftp/visible.txt': createMockFileNode({
+            name: 'visible.txt',
+            type: 'file',
+            permissions: {
+              read: ['root', 'user', 'guest'],
+              write: ['root'],
+              execute: ['root'],
+            },
+          }),
         },
         directoryEntries: {
           '/srv/ftp': ['.hidden', 'visible.txt'],
@@ -274,8 +321,24 @@ describe('FTP ls command', () => {
         remoteCwd: '/',
         nodes: {
           '/uploads': createMockFileNode({ name: 'uploads' }),
-          '/uploads/.backup': createMockFileNode({ name: '.backup', type: 'file' }),
-          '/uploads/readme.txt': createMockFileNode({ name: 'readme.txt', type: 'file' }),
+          '/uploads/.backup': createMockFileNode({
+            name: '.backup',
+            type: 'file',
+            permissions: {
+              read: ['root', 'user', 'guest'],
+              write: ['root'],
+              execute: ['root'],
+            },
+          }),
+          '/uploads/readme.txt': createMockFileNode({
+            name: 'readme.txt',
+            type: 'file',
+            permissions: {
+              read: ['root', 'user', 'guest'],
+              write: ['root'],
+              execute: ['root'],
+            },
+          }),
         },
         directoryEntries: {
           '/uploads': ['.backup', 'readme.txt'],

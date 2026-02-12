@@ -194,6 +194,13 @@
 - **Why it works**: Extends the existing `__type` discriminated union pattern; editor is decoupled from command logic; overlay covers terminal without destroying its state
 - **Example**: `nano("script.js")` → nano validates path → returns nano_open → Terminal reads file content → renders NanoEditor with save/create callbacks
 
+### Unix-like execute permission for files
+
+- **What**: `FilePermissions` has `execute` field alongside `read` and `write`. Only `node()` checks it; `cat`, `ls`, `cd` etc. only check read/write.
+- **Why it works**: Creates realistic Unix rwx semantics; data files (.txt, .log, .conf) are readable but not executable. Scripts/binaries explicitly grant execute permission.
+- **Rule**: Directories: `execute` matches `read`. Scripts/binaries: `execute` matches `read`. Data files: `execute: ['root']`. User-created files: `execute: ['root', owner]`.
+- **Key insight**: Separating read from execute means `cat("script.js")` works but `node("script.js")` fails unless the file has explicit execute permission — CTF puzzle opportunity.
+
 ### Lazy getter for circular execution context
 
 - **What**: `node` command needs the execution context (all commands), but node itself is part of that context. Solved with a mutable `let` variable set after building the full context, captured by a getter closure.
@@ -389,5 +396,7 @@
 - decrypt on directory: "Is a directory" error
 - decrypt on empty file: "File is empty" error
 - FTP/NC ls with only dotfiles (no -a): shows "(empty directory)" — consistent with regular ls
+- node() on data file as non-root: "Permission denied" (file readable but not executable)
+- node() on script/binary as user: succeeds (execute permission matches read)
 - curl GET to path without `/var/www/html/` content: returns 404 Not Found
 - curl POST to non-existent `/var/www/api/` endpoint: returns 400 Bad Request

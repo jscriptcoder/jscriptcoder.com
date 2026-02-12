@@ -13,6 +13,7 @@ const createMockDirectory = (name: string, overrides?: Partial<FileNode>): FileN
   permissions: {
     read: ['root', 'user', 'guest'],
     write: ['root'],
+    execute: ['root', 'user', 'guest'],
   },
   children: {},
   ...overrides,
@@ -25,6 +26,7 @@ const createMockFile = (name: string): FileNode => ({
   permissions: {
     read: ['root', 'user', 'guest'],
     write: ['root', 'user'],
+    execute: ['root'],
   },
   content: 'test content',
 });
@@ -311,6 +313,7 @@ describe('nc ls command', () => {
         permissions: {
           read: ['root'],
           write: ['root'],
+          execute: ['root'],
         },
       });
 
@@ -345,6 +348,7 @@ describe('nc ls command', () => {
         permissions: {
           read: ['root'],
           write: ['root'],
+          execute: ['root'],
         },
       });
 

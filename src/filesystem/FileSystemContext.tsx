@@ -163,6 +163,7 @@ const applyPatches = (
       permissions: {
         read: ['root', patch.owner],
         write: ['root', patch.owner],
+        execute: ['root', patch.owner],
       },
       content: patch.content,
     };
@@ -403,6 +404,7 @@ export const FileSystemProvider = ({ children }: { children: ReactNode }) => {
         permissions: {
           read: ['root', userType],
           write: ['root', userType],
+          execute: ['root', userType],
         },
         content,
       };

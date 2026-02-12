@@ -12,6 +12,7 @@ const getMockFileNode = (overrides?: Partial<FileNode>): FileNode => ({
   permissions: {
     read: ['root', 'user', 'guest'],
     write: ['root'],
+    execute: ['root', 'user', 'guest'],
   },
   ...overrides,
 });
@@ -21,6 +22,11 @@ const getMockFile = (overrides?: Partial<FileNode>): FileNode =>
     name: 'file.js',
     type: 'file',
     content: '',
+    permissions: {
+      read: ['root', 'user', 'guest'],
+      write: ['root'],
+      execute: ['root', 'user', 'guest'],
+    },
     ...overrides,
   });
 
@@ -53,6 +59,20 @@ const createMockContext = (config: MockContextConfig = {}) => {
     getExecutionContext: () => executionContext,
   };
 };
+
+type NodeContextOverrides = {
+  readonly getNode?: (path: string) => FileNode | null;
+  readonly getUserType?: () => UserType;
+  readonly resolvePath?: (path: string) => string;
+  readonly getExecutionContext?: () => Record<string, (...args: unknown[]) => unknown>;
+};
+
+const createNodeContext = (overrides: NodeContextOverrides = {}) => ({
+  resolvePath: overrides.resolvePath ?? ((path: string) => (path.startsWith('/') ? path : `/${path}`)),
+  getNode: overrides.getNode ?? (() => null),
+  getUserType: overrides.getUserType ?? (() => 'user' as UserType),
+  getExecutionContext: overrides.getExecutionContext ?? (() => ({})),
+});
 
 // --- Tests ---
 
@@ -206,7 +226,7 @@ describe('node command', () => {
     it('should throw error when permission denied', () => {
       const restrictedFile = getMockFile({
         name: 'secret.js',
-        permissions: { read: ['root'], write: ['root'] },
+        permissions: { read: ['root'], write: ['root'], execute: ['root'] },
       });
       const context = createMockContext({
         userType: 'guest',
@@ -216,6 +236,40 @@ describe('node command', () => {
       const node = createNodeCommand(context);
 
       expect(() => node.fn('/secret.js')).toThrow('node: /secret.js: Permission denied');
+    });
+
+    it('throws permission denied for readable but not executable file', () => {
+      const context = createNodeContext({
+        getNode: () => ({
+          name: 'data.txt',
+          type: 'file',
+          owner: 'root',
+          permissions: { read: ['root', 'user'], write: ['root'], execute: ['root'] },
+          content: '"hello"',
+        }),
+        getUserType: () => 'user',
+      });
+      const command = createNodeCommand(context);
+      expect(() => command.fn('data.txt')).toThrow('node: data.txt: Permission denied');
+    });
+
+    it('executes file with both read and execute permission', () => {
+      const context = createNodeContext({
+        getNode: () => ({
+          name: 'script.js',
+          type: 'file',
+          owner: 'user',
+          permissions: {
+            read: ['root', 'user'],
+            write: ['root', 'user'],
+            execute: ['root', 'user'],
+          },
+          content: '2 + 2',
+        }),
+        getUserType: () => 'user',
+      });
+      const command = createNodeCommand(context);
+      expect(command.fn('script.js')).toBe(4);
     });
 
     it('should throw error for syntax errors in file content', () => {
@@ -232,7 +286,7 @@ describe('node command', () => {
     it('should allow root to execute any file', () => {
       const restrictedFile = getMockFile({
         content: '"secret result"',
-        permissions: { read: ['root'], write: ['root'] },
+        permissions: { read: ['root'], write: ['root'], execute: ['root'] },
       });
       const context = createMockContext({
         userType: 'root',
