@@ -27,16 +27,24 @@ export const useCommands = (): UseCommandsResult => {
   const fileSystemCommands = useFileSystemCommands();
   const networkCommands = useNetworkCommands();
   const { session } = useSession();
-  const { getMachine } = useNetwork();
+  const { config } = useNetwork();
   const { resolvePath, getNode } = useFileSystem();
 
   const getUsers = useCallback((): readonly string[] => {
     if (session.machine === 'localhost') {
       return LOCAL_USERS;
     }
-    const machine = getMachine(session.machine);
-    return machine?.users.map((u) => u.username) ?? [];
-  }, [session.machine, getMachine]);
+    // Search all machine configs — getMachine only searches machines reachable
+    // FROM the current machine, which doesn't include the machine itself
+    const allConfigs = Object.values(config.machineConfigs);
+    for (const mc of allConfigs) {
+      const found = mc.machines.find((m) => m.ip === session.machine);
+      if (found) {
+        return found.users.map((u) => u.username);
+      }
+    }
+    return [];
+  }, [session.machine, config.machineConfigs]);
 
   return useMemo(() => {
     // Mutable ref for circular dependency: node needs the execution context

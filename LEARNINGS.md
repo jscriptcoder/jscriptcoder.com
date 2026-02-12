@@ -87,6 +87,13 @@
 - **Solution**: Each `ls` variant must filter dotfiles itself: `entries.filter(name => showAll || !name.startsWith('.'))`
 - **Key insight**: When adding a new ls-like command, always add dotfile filtering — the filesystem layer won't do it for you
 
+### `getMachine()` only searches reachable machines, not self
+
+- **Context**: `su` command calls `getUsers()` to validate the target user exists on the current machine
+- **Issue**: `getUsers()` used `getMachine(session.machine)`, but `getMachine()` searches `currentConfig.machines` — the machines reachable FROM the current machine. A machine doesn't list itself as reachable, so `getMachine()` returns `undefined` → empty user array → "user does not exist" error
+- **Solution**: Search across ALL `config.machineConfigs` values to find the `RemoteMachine` entry matching `session.machine`, instead of using `getMachine()` which only searches the current machine's reachable list
+- **Key insight**: `getMachine(ip)` answers "can I reach this IP from here?" — not "give me info about the machine I'm currently on"
+
 ### Filesystem factory `extraDirectories` replaces entire branches
 
 - **Context**: `createFileSystem(config)` uses `extraDirectories` keys as top-level directory names

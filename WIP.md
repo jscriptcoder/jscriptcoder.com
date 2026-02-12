@@ -30,6 +30,7 @@ Hidden Network Flags (Flags 14-16) — nano + node challenges on shadow, void, a
 
 Implemented:
 
+- **Bug fix: `su` on remote machines**: `getUsers()` returned empty array on remote machines because `getMachine()` only searches reachable machines (not the machine itself). Fixed in `useCommands.ts` to search across all `config.machineConfigs` entries instead.
 - **Flag 15 — Void Data Miner**: Full filesystem for void database node (10.66.66.2)
   - `/home/dbadmin/recovery/` — manifest.txt (extraction instructions), 5 CSV tables (pipe-delimited, 20 rows each)
   - Each table has flag fragment at rows[13].split("|")[3]: fragments join to FLAG{void_data_miner}
