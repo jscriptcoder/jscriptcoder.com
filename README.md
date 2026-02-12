@@ -39,7 +39,8 @@ Start with `help()` to see available commands. Good luck, hacker.
 - **Vite** - Build tool and dev server
 - **Tailwind CSS v4** - Styling
 - **Prettier** - Code formatting
-- **Vitest** + **React Testing Library** - Testing
+- **Vitest** + **React Testing Library** - Unit testing
+- **Playwright** - E2E testing
 
 ## Getting Started
 
@@ -187,11 +188,18 @@ npm run preview       # Preview production build
 npm test              # Run tests in watch mode
 npm run test:run      # Run tests once
 npm run test:coverage # Run tests with coverage
+npm run test:e2e      # Run Playwright E2E test (full CTF playthrough)
 ```
 
 ### Test Coverage
 
 720 unit tests across 45 colocated test files covering terminal commands, hooks, components, utilities, filesystem, and persistence.
+
+1 Playwright E2E test that plays through the entire CTF game (all 16 flags) in a real browser — serves as both a comprehensive regression test and a visual demo. Run with `--headed` to watch it play:
+
+```bash
+npx playwright test --headed
+```
 
 ## Project Structure
 
@@ -205,6 +213,8 @@ src/
 ├── commands/               # Terminal commands
 ├── utils/                  # Utilities (crypto, storage, network)
 └── App.tsx                 # Root component
+e2e/
+└── ctf-playthrough.spec.ts # Playwright E2E test (full 16-flag playthrough)
 ```
 
 ## SEO & Social Sharing

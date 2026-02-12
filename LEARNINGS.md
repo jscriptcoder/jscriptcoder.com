@@ -106,6 +106,19 @@
 - **Issue**: GET and POST have completely different path resolution — easy to add content in the wrong place
 - **Solution**: GET reads `/var/www/html${urlPath}`, POST reads `/var/www/api/${endpoint}.json` — content must exist at the right path for the HTTP method
 
+### `getMachine()` returns undefined for current machine in `handlePasswordSubmit`
+
+- **Context**: `su("admin")` on gateway sets admin as 'user' instead of 'root'
+- **Issue**: `Terminal.tsx`'s `handlePasswordSubmit` used `getMachine(session.machine)` to look up user types. But `getMachine()` only searches machines reachable FROM the current machine — a machine doesn't list itself. Returns `undefined`, falls back to name-based guessing which gives "admin" the wrong type.
+- **Solution**: Added fallback in `handlePasswordSubmit` that searches `Object.values(networkConfig.machineConfigs).flatMap(mc => mc.machines)` — same pattern already used in `getUsers()` in `useCommands.ts`
+- **Key insight**: Two separate su user-type lookups existed (one in `useCommands.ts` for `getUsers()`, one in `Terminal.tsx` for `handlePasswordSubmit`). Both needed the same all-configs-search fallback.
+
+### Playwright E2E stale DOM matching
+
+- **Context**: Waiting for text like "Password:" after a command in a terminal that accumulates output
+- **Issue**: `page.locator(RESULT, { hasText: 'Password:' }).first().waitFor()` immediately matches stale output from earlier commands (e.g., a previous `su` prompt)
+- **Solution**: `countThenWait` pattern — count matching elements BEFORE the action, then wait for `locator.nth(beforeCount)` (the new match). Also use specific text patterns (regex `/^Password:$/` for su vs `${user}@${host}'s password:` for SSH) to avoid cross-matching.
+
 ## Patterns That Worked
 
 ### Command factory pattern with context injection
@@ -213,6 +226,12 @@
 - **What**: `node` command needs the execution context (all commands), but node itself is part of that context. Solved with a mutable `let` variable set after building the full context, captured by a getter closure.
 - **Why it works**: The getter is only called at execution time (when user runs `node("file.js")`), long after the context variable is populated during useMemo
 - **Example**: `let resolved = {}; commands.set('node', createNodeCommand({ getExecutionContext: () => resolved })); resolved = executionContext;`
+
+### Playwright E2E as living documentation
+
+- **What**: Single sequential test that plays through all 16 CTF flags, acting as both regression test and visual demo
+- **Why it works**: Catches real bugs that unit tests miss (found the su user-type bug on gateway), validates the full user experience end-to-end, `--headed` mode lets you watch the entire game play itself
+- **Key patterns**: `countThenWait` for robust DOM matching in accumulating output, composite helpers (`suTo`, `sshTo`, `ftpConnect`) that encapsulate multi-step flows, `test.step` blocks for per-flag organization
 
 ### Consistent flag argument parsing across ls variants
 

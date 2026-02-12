@@ -754,8 +754,8 @@ Additional directories that require root access, providing incentive for escalat
 - [x] Flag 16 — Abyss (SSH only, creds from void):
   - [x] Expand `abyss.ts`: vault/ with cipher docs + payload, auth.log (no password leak), noise
   - [x] Add tests in `abyss.test.ts`
-- [ ] Update docs (CLAUDE.md, README.md, CTF_DESIGN.md, WIP.md)
-- [ ] Playtest full chain: darknet → FTP shadow → NC void → SSH abyss
+- [x] Update docs (CLAUDE.md, README.md, CTF_DESIGN.md, WIP.md)
+- [x] Playtest full chain: Playwright E2E test plays through all 16 flags automatically
 
 ---
 

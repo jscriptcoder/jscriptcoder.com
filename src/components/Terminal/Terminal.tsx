@@ -87,7 +87,7 @@ export const Terminal = () => {
   const ftpCommands = useFtpCommands();
   const ncCommands = useNcCommands();
   const { readFile, getNode, writeFile, createFile, getDefaultHomePath } = useFileSystem();
-  const { getMachine } = useNetwork();
+  const { getMachine, config: networkConfig } = useNetwork();
 
   // Use special commands for autocomplete when in FTP or NC mode
   const activeCommandNames =
@@ -423,9 +423,16 @@ export const Terminal = () => {
         addLine('result', `Connected to ${sshTargetIP}`);
         addLine('result', `Welcome to ${machine?.hostname ?? sshTargetIP}!`);
       } else {
-        // Local su mode — look up actual userType from machine config
+        // Local su mode — look up actual userType from machine config.
+        // getMachine only finds machines reachable FROM the current machine,
+        // which excludes the machine itself. Search all configs as fallback.
         const machine = getMachine(session.machine);
-        const machineUser = machine?.users.find((u) => u.username === targetUser);
+        const machineUser =
+          machine?.users.find((u) => u.username === targetUser) ??
+          Object.values(networkConfig.machineConfigs)
+            .flatMap((mc) => mc.machines)
+            .find((m) => m.ip === session.machine)
+            ?.users.find((u) => u.username === targetUser);
         const userType: UserType =
           machineUser?.userType ??
           (targetUser === 'root' ? 'root' : targetUser === 'guest' ? 'guest' : 'user');
@@ -463,6 +470,7 @@ export const Terminal = () => {
     pushSession,
     session,
     getMachine,
+    networkConfig.machineConfigs,
     enterFtpMode,
     addLine,
     getDefaultHomePath,

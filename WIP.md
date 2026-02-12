@@ -2,11 +2,11 @@
 
 ## Current Step
 
-Hidden Network Flags (Flags 14-16) — nano + node challenges on shadow, void, abyss
+Playwright E2E test — complete, all 16 flags passing
 
 ## Status
 
-🔵 PLANNED — Ready to implement flag by flag
+✅ COMPLETE — Full CTF playthrough E2E test implemented and passing
 
 ## Completed
 
@@ -22,11 +22,25 @@ Hidden Network Flags (Flags 14-16) — nano + node challenges on shadow, void, a
 - [x] Step 10: Remote machine file systems
 - [x] Step 11: Additional exploitation commands (exit, ftp, nc)
 - [x] Step 12: Session persistence (IndexedDB, migrated from localStorage)
-- [ ] Hidden Network Flags (14-16) ← current
+- [x] Hidden Network Flags (14-16)
+- [x] Playwright E2E test (full 16-flag CTF playthrough)
 - [ ] Step 13: Victory tracking
 - [ ] Step 14: Challenge variety
 
 ## Recent Session (2026-02-12)
+
+Implemented:
+
+- **Playwright E2E test**: Full CTF playthrough test covering all 16 flags in a real browser
+  - `e2e/ctf-playthrough.spec.ts` — single sequential test with 16 `test.step` blocks
+  - `playwright.config.ts` — Chromium-only, 5min timeout, auto-starts Vite dev server
+  - Helper functions: `countThenWait` (avoids stale DOM matching), `suTo`, `sshTo`, `ftpConnect`, `ncConnect`, `writeInNano`, `saveAndExitNano`, `expectFlag`
+  - Completes in ~23 seconds; run with `--headed` for visual demo
+  - Added `@playwright/test` dev dependency, `test:e2e` npm script
+  - Excluded `e2e/` from Vitest config to avoid Playwright/Vitest conflict
+- **Bug fix: `su` user type on remote machines** (Terminal.tsx): `getMachine(session.machine)` returns undefined because machines don't list themselves in their own network config. Added fallback that searches all `networkConfig.machineConfigs` entries to find the correct user type.
+
+## Previous Session (2026-02-12)
 
 Implemented:
 
@@ -831,7 +845,8 @@ Flag detection, progress display, `flags()` command, victory celebration. Deferr
 
 ### Test Coverage
 
-- 720 tests across 45 colocated test files
+- 720 unit tests across 45 colocated test files
+- 1 Playwright E2E test (full 16-flag CTF playthrough, ~23s in Chromium)
 - All commands with logic are tested
 - FTP subcommands tested (cd, lcd, ls, lls, get, put)
 - NC command and subcommands tested (nc, cat, cd, ls)

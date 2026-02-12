@@ -77,6 +77,7 @@ npm run preview       # Preview production build
 npm test              # Run tests in watch mode
 npm run test:run      # Run tests once
 npm run test:coverage # Run tests with coverage
+npm run test:e2e      # Run Playwright E2E test (full CTF playthrough)
 ```
 
 ## Tech Stack
@@ -85,7 +86,8 @@ npm run test:coverage # Run tests with coverage
 - **Vite** - Build tool and dev server
 - **Tailwind CSS v4** - Styling (via `@tailwindcss/vite` plugin)
 - **Prettier** - Code formatting (single quotes, semicolons, trailing commas, 100 char width)
-- **Vitest** + **React Testing Library** - Testing
+- **Vitest** + **React Testing Library** - Unit testing
+- **Playwright** - E2E testing (Chromium, full CTF playthrough)
 
 ## Project Structure
 
@@ -210,6 +212,11 @@ public/
 ├── og-image.html           # Source HTML for regenerating OG image PNG
 ├── robots.txt              # Search engine crawler rules
 └── sitemap.xml             # Sitemap for search engines
+│
+e2e/
+└── ctf-playthrough.spec.ts # Playwright E2E test (full 16-flag CTF playthrough)
+│
+playwright.config.ts        # Playwright config (Chromium only, 5min timeout, webServer auto-start)
 ```
 
 ## Architecture
