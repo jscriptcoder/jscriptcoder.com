@@ -97,9 +97,44 @@ describe('node command', () => {
       });
 
       const node = createNodeCommand(context);
-      node.fn('/script.js');
+      const result = node.fn('/script.js');
 
       expect(mockEcho).toHaveBeenCalledWith('hello from script');
+      expect(result).toBe('hello from script');
+    });
+
+    it('should collect multiple echo calls into combined output', () => {
+      const mockEcho = vi.fn((val: unknown) => String(val));
+      const file = getMockFile({
+        content: 'echo("line 1");\necho("line 2");\necho("line 3");',
+      });
+      const context = createMockContext({
+        fileSystem: { '/script.js': file },
+        executionContext: { echo: mockEcho },
+      });
+
+      const node = createNodeCommand(context);
+      const result = node.fn('/script.js');
+
+      expect(mockEcho).toHaveBeenCalledTimes(3);
+      expect(result).toBe('line 1\nline 2\nline 3');
+    });
+
+    it('should not duplicate echo output in expression mode', () => {
+      const mockEcho = vi.fn((val: unknown) => String(val));
+      const file = getMockFile({
+        content: 'echo("info")',
+      });
+      const context = createMockContext({
+        fileSystem: { '/script.js': file },
+        executionContext: { echo: mockEcho },
+      });
+
+      const node = createNodeCommand(context);
+      const result = node.fn('/script.js');
+
+      // echo("info") in expression mode: buffer captures it, result is just buffer output
+      expect(result).toBe('info');
     });
 
     it('should return undefined for empty file', () => {

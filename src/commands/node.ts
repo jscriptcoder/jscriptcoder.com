@@ -9,6 +9,8 @@ type NodeContext = {
   readonly getExecutionContext: () => Record<string, (...args: unknown[]) => unknown>;
 };
 
+type EchoFn = (...args: unknown[]) => string;
+
 export const createNodeCommand = (context: NodeContext): Command => ({
   name: 'node',
   description: 'Execute a JavaScript file',
@@ -59,16 +61,42 @@ export const createNodeCommand = (context: NodeContext): Command => ({
     }
 
     const executionContext = getExecutionContext();
-    const contextKeys = Object.keys(executionContext);
-    const contextValues = Object.values(executionContext);
+
+    // Wrap echo to collect output lines during execution
+    const mutableBuffer: string[] = [];
+    const wrappedContext = {
+      ...executionContext,
+      ...(executionContext.echo
+        ? {
+            echo: (...args: unknown[]): string => {
+              const result = (executionContext.echo as EchoFn)(
+                ...args,
+              );
+              mutableBuffer[mutableBuffer.length] = result;
+              return result;
+            },
+          }
+        : {}),
+    };
+
+    const contextKeys = Object.keys(wrappedContext);
+    const contextValues = Object.values(wrappedContext);
 
     // Try as expression first (single-expression files), fall back to statements
+    let result: unknown;
     try {
       const fn = new Function(...contextKeys, `return (${content})`);
-      return fn(...contextValues);
+      result = fn(...contextValues);
     } catch {
       const fn = new Function(...contextKeys, content);
-      return fn(...contextValues);
+      result = fn(...contextValues);
     }
+
+    // If echo was called, return collected output
+    if (mutableBuffer.length > 0) {
+      return mutableBuffer.join('\n');
+    }
+
+    return result;
   },
 });
