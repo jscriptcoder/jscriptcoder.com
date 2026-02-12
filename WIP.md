@@ -59,7 +59,7 @@ Implemented:
   - `/var/log/auth.log` — NO phantom password leak (creds come from void's .abyss_notes)
   - Noise: phantom .bashrc (vault aliases), .bash_history, /etc/crontab, syslog, guest .bash_history
   - 7 behavior-focused tests: XOR decode, simulated node script, vault contents, auth.log does NOT leak phantom password
-- **Test count**: 720 tests across 45 files
+- **Test count**: 730 tests across 46 files
 
 ## Previous Session (2026-02-12)
 

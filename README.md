@@ -95,6 +95,7 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 | `strings(file, [min])` | Extract printable strings from binary files                    |
 | `nano(path)`           | Open file in nano-style text editor (Ctrl+S save, Ctrl+X exit) |
 | `node(path)`           | Execute a JavaScript file (requires execute permission)        |
+| `reset(["confirm"])`   | Reset game to factory defaults (clears all saved progress)     |
 
 ### FTP Mode Commands
 
@@ -193,7 +194,7 @@ npm run test:e2e      # Run Playwright E2E test (full CTF playthrough)
 
 ### Test Coverage
 
-720 unit tests across 45 colocated test files covering terminal commands, hooks, components, utilities, filesystem, and persistence.
+730 unit tests across 46 colocated test files covering terminal commands, hooks, components, utilities, filesystem, and persistence.
 
 1 Playwright E2E test that plays through the entire CTF game (all 16 flags) in a real browser — serves as both a comprehensive regression test and a visual demo. Run with `--headed` to watch it play:
 

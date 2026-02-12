@@ -18,15 +18,16 @@ FTP and NC modes have their own separate command sets and are not restricted.
 
 ## General
 
-| Command | File         | Signature          | Description                                            |
-| ------- | ------------ | ------------------ | ------------------------------------------------------ |
-| help    | `help.ts`    | `help()`           | List all available commands                            |
-| man     | `man.ts`     | `man(cmd)`         | Display detailed manual for a command                  |
-| echo    | `echo.ts`    | `echo(value)`      | Output a stringified value                             |
-| author  | `author.ts`  | `author()`         | Display author profile card                            |
-| clear   | `clear.ts`   | `clear()`          | Clear the terminal screen                              |
-| exit    | `exit.ts`    | `exit()`           | Close SSH/nc connection and return to previous machine |
-| resolve | `resolve.ts` | `resolve(promise)` | Unwrap a Promise and display its resolved value        |
+| Command | File         | Signature            | Description                                                |
+| ------- | ------------ | -------------------- | ---------------------------------------------------------- |
+| help    | `help.ts`    | `help()`             | List all available commands                                |
+| man     | `man.ts`     | `man(cmd)`           | Display detailed manual for a command                      |
+| echo    | `echo.ts`    | `echo(value)`        | Output a stringified value                                 |
+| author  | `author.ts`  | `author()`           | Display author profile card                                |
+| clear   | `clear.ts`   | `clear()`            | Clear the terminal screen                                  |
+| exit    | `exit.ts`    | `exit()`             | Close SSH/nc connection and return to previous machine     |
+| resolve | `resolve.ts` | `resolve(promise)`   | Unwrap a Promise and display its resolved value            |
+| reset   | `reset.ts`   | `reset(["confirm"])` | Reset game to factory defaults (clears all saved progress) |
 
 ## File System
 

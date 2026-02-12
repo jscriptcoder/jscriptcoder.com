@@ -9,12 +9,14 @@ import { createHelpCommand } from '../commands/help';
 import { createManCommand } from '../commands/man';
 import { createResolveCommand } from '../commands/resolve';
 import { createNodeCommand } from '../commands/node';
+import { createResetCommand } from '../commands/reset';
 import { applyCommandRestrictions, getAccessibleCommandNames } from '../commands/permissions';
 import { useFileSystemCommands } from './useFileSystemCommands';
 import { useNetworkCommands } from './useNetworkCommands';
 import { useSession } from '../session/SessionContext';
 import { useNetwork } from '../network';
 import { useFileSystem } from '../filesystem';
+import { getDatabase } from '../utils/storageCache';
 
 const LOCAL_USERS = ['root', 'jshacker', 'guest'] as const;
 
@@ -59,6 +61,7 @@ export const useCommands = (): UseCommandsResult => {
     commands.set('clear', clearCommand);
     commands.set('exit', exitCommand);
     commands.set('resolve', createResolveCommand());
+    commands.set('reset', createResetCommand({ getDatabase }));
 
     // User commands (depends on current machine)
     const suCommand = createSuCommand({ getUsers });

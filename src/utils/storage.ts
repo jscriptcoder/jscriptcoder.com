@@ -89,3 +89,18 @@ export const saveFilesystemPatches = async (
     // Ignore write errors
   }
 };
+
+const clearStore = (db: IDBDatabase, storeName: string): Promise<void> =>
+  new Promise((resolve, reject) => {
+    const transaction = db.transaction(storeName, 'readwrite');
+    const store = transaction.objectStore(storeName);
+    const request = store.clear();
+
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+  });
+
+export const clearAllData = async (db: IDBDatabase): Promise<void> => {
+  await clearStore(db, SESSION_STORE);
+  await clearStore(db, FILESYSTEM_STORE);
+};

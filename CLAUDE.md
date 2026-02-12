@@ -154,6 +154,7 @@ src/
 │   ├── curl.ts             # curl(url, [flags]) - HTTP client for GET/POST
 │   ├── nano.ts             # nano(path) - open file in text editor overlay
 │   ├── node.ts             # node(path) - execute JavaScript file
+│   ├── reset.ts            # reset(["confirm"]) - reset game to factory defaults
 │   ├── permissions.ts      # Command restrictions by user type (guest/user/root)
 │   ├── ftp.ts              # ftp(host) - FTP connection command
 │   ├── ftp/                # FTP mode commands
@@ -186,6 +187,7 @@ src/
 │   ├── curl.test.ts         # Tests colocated with curl.ts
 │   ├── nano.test.ts         # Tests colocated with nano.ts
 │   ├── node.test.ts         # Tests colocated with node.ts
+│   ├── reset.test.ts        # Tests colocated with reset.ts
 │   └── permissions.test.ts  # Tests colocated with permissions.ts
 ├── filesystem/
 │   └── machines/
@@ -312,6 +314,7 @@ To add a command:
 | `curl(url, [flags])`   | HTTP client - fetch web content with GET/POST (async, supports -i and -X POST) |
 | `nano(path)`           | Open file in nano-style text editor overlay (Ctrl+S save, Ctrl+X exit)         |
 | `node(path)`           | Execute a JavaScript file with access to all terminal commands                 |
+| `reset(["confirm"])`   | Reset game to factory defaults (clears IndexedDB, reloads page)                |
 | `nc(host, port)`       | Netcat - connect to arbitrary port (async, interactive for special services)   |
 
 **FTP Mode Commands** (available only when connected via FTP):

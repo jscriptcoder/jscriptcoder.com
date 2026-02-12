@@ -54,12 +54,7 @@ const suTo = async (page: Page, user: string, password: string): Promise<void> =
   await countThenWait(successLocator, () => enterInput(page, password));
 };
 
-const sshTo = async (
-  page: Page,
-  user: string,
-  host: string,
-  password: string,
-): Promise<void> => {
+const sshTo = async (page: Page, user: string, host: string, password: string): Promise<void> => {
   const pwLocator = page.locator(RESULT, { hasText: `${user}@${host}'s password:` });
   const connLocator = page.locator(RESULT, { hasText: `Connected to ${host}` });
 
