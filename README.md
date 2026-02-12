@@ -93,7 +93,7 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 | `resolve(promise)`     | Unwrap a Promise and display its value                         |
 | `strings(file, [min])` | Extract printable strings from binary files                    |
 | `nano(path)`           | Open file in nano-style text editor (Ctrl+S save, Ctrl+X exit) |
-| `node(path)`           | Execute a JavaScript file (requires execute permission)         |
+| `node(path)`           | Execute a JavaScript file (requires execute permission)        |
 
 ### FTP Mode Commands
 
@@ -190,7 +190,7 @@ npm run test:coverage # Run tests with coverage
 
 ### Test Coverage
 
-674 unit tests across 41 colocated test files covering terminal commands, hooks, components, utilities, and persistence.
+681 unit tests across 42 colocated test files covering terminal commands, hooks, components, utilities, filesystem, and persistence.
 
 ## Project Structure
 

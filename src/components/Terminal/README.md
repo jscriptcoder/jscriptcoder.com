@@ -4,14 +4,14 @@ The main UI component — a retro amber-on-black CRT terminal that orchestrates 
 
 ## Files
 
-| File                 | Description                                                                                                                                    |
-| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| File                 | Description                                                                                                                                                    |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `Terminal.tsx`       | Main orchestrator — manages input state, command execution, async output streaming, password/FTP/NC mode switching, editor overlay, and output line management |
-| `TerminalInput.tsx`  | Input line with prompt (`user@machine>`), cursor, key handlers (Enter, ArrowUp/Down, Tab), password masking                                                   |
-| `TerminalOutput.tsx` | Renders output lines: banners, commands, results, errors, and the author profile card                                                                         |
+| `TerminalInput.tsx`  | Input line with prompt (`user@machine>`), cursor, key handlers (Enter, ArrowUp/Down, Tab), password masking                                                    |
+| `TerminalOutput.tsx` | Renders output lines: banners, commands, results, errors, and the author profile card                                                                          |
 | `NanoEditor.tsx`     | Full-screen nano-style text editor overlay with save/exit, cursor tracking, and exit prompt for unsaved changes                                                |
-| `types.ts`           | All shared types: `Command`, `OutputLine`, `AsyncOutput`, `SpecialOutput` discriminated union, type guards                                                    |
-| `index.ts`           | Module export                                                                                                                                                 |
+| `types.ts`           | All shared types: `Command`, `OutputLine`, `AsyncOutput`, `SpecialOutput` discriminated union, type guards                                                     |
+| `index.ts`           | Module export                                                                                                                                                  |
 
 ## Command Execution Flow
 

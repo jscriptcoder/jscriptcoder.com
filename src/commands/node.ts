@@ -73,9 +73,7 @@ export const createNodeCommand = (context: NodeContext): Command => ({
       ...(executionContext.echo
         ? {
             echo: (...args: readonly unknown[]): string => {
-              const result = (executionContext.echo as EchoFn)(
-                ...args,
-              );
+              const result = (executionContext.echo as EchoFn)(...args);
               mutableBuffer[mutableBuffer.length] = result;
               return result;
             },

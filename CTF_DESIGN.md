@@ -105,6 +105,7 @@ On remote machines, players must discover credentials through:
 | 10  | FLAG{backdoor_found}          | webserver     | Advanced     | nmap, nc                         |
 | 11  | FLAG{darknet_discovered}      | darknet       | Expert       | nslookup, curl                   |
 | 12  | FLAG{master_of_the_darknet}   | darknet       | Expert       | ssh/nc, su, decrypt (multi-step) |
+| 13  | FLAG{code_the_decoder}        | darknet       | Bonus        | nano, node, JavaScript (ROT13)   |
 
 ---
 
@@ -605,6 +606,8 @@ Ensures every command is needed:
 | `decrypt`     | 9, 12                       | Decrypt files (root only) |
 | `exit`        | 5, 7, 8, 10, 12             | Return from remote        |
 | `const`/`let` | 8, 9, 12                    | Store values in variables |
+| `nano`        | 13                          | Edit/create files         |
+| `node`        | 13                          | Execute JavaScript files  |
 
 ---
 
@@ -696,6 +699,10 @@ Additional directories that require root access, providing incentive for escalat
 - [x] Darknet: /etc (hostname, hosts with .onion entries)
 - [x] Darknet: ghost (bash_history, tools/port_scanner.py, tools/README.md), root .bash_history, cron.log
 - [x] Verified no noise file contains FLAG{} pattern
+
+### Phase 6: Bonus Flags
+
+- [x] Flag 13 — Code the Decoder (ROT13 in darknet `/home/ghost/projects/`)
 
 ---
 
@@ -884,6 +891,29 @@ const key = '82eab922d375a8022d7659b58559e59026dbff2768110073a6c3699a15699eda';
 decrypt('/home/ghost/.encrypted_flag.enc', key);
 // FLAG{master_of_the_darknet}
 // "Congratulations! You've completed the JSHACK.ME CTF."
+```
+
+#### FLAG 13 — `code_the_decoder` (Bonus)
+
+```javascript
+// As ghost@darknet (already on darknet from Flag 12):
+ls(); // See projects/ directory
+cd('projects');
+cat('README.md'); // Explains ROT13 encoding, hints at nano + node
+cat('encoded_message.txt'); // Contains: SYNT{pbqr_gur_qrpbqre}
+
+// Write a decoder script:
+nano('decode.js');
+// In the editor, write:
+//   const encoded = cat("encoded_message.txt")
+//   const decoded = encoded.replace(/[a-zA-Z]/g, c => {
+//     const base = c <= 'Z' ? 65 : 97
+//     return String.fromCharCode(((c.charCodeAt(0) - base + 13) % 26) + base)
+//   })
+//   echo(decoded)
+// Save with Ctrl+S, exit with Ctrl+X
+
+node('decode.js'); // Outputs: FLAG{code_the_decoder}
 ```
 
 ### Credential Discovery Chain

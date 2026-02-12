@@ -8,11 +8,11 @@ Commands use a factory pattern with context injection: `createXCommand(context) 
 
 Commands are tiered by user type. Restricted commands show `permission denied: 'name' requires TYPE privileges` and are hidden from `help()` and tab autocomplete. `man()` can still look up any command.
 
-| Tier     | User Type | Available Commands                                                                                    |
-| -------- | --------- | ----------------------------------------------------------------------------------------------------- |
-| Basic    | `guest`   | help, man, echo, whoami, pwd, ls, cd, cat, su, clear, author                                          |
+| Tier     | User Type | Available Commands                                                                                         |
+| -------- | --------- | ---------------------------------------------------------------------------------------------------------- |
+| Basic    | `guest`   | help, man, echo, whoami, pwd, ls, cd, cat, su, clear, author                                               |
 | Standard | `user`    | All basic + ifconfig, ping, nmap, nslookup, ssh, ftp, nc, curl, strings, output, resolve, exit, nano, node |
-| Full     | `root`    | All standard + decrypt                                                                                |
+| Full     | `root`    | All standard + decrypt                                                                                     |
 
 FTP and NC modes have their own separate command sets and are not restricted.
 
@@ -30,17 +30,17 @@ FTP and NC modes have their own separate command sets and are not restricted.
 
 ## File System
 
-| Command | File         | Signature              | Description                                     |
-| ------- | ------------ | ---------------------- | ----------------------------------------------- |
-| pwd     | `pwd.ts`     | `pwd()`                | Print current working directory                 |
-| ls      | `ls.ts`      | `ls([path], [flags])`  | List directory contents (`-a` for hidden files) |
-| cd      | `cd.ts`      | `cd([path])`           | Change current directory                        |
-| cat     | `cat.ts`     | `cat(path)`            | Display file contents                           |
-| whoami  | `whoami.ts`  | `whoami()`             | Display current username                        |
-| decrypt | `decrypt.ts` | `decrypt(file, key)`   | Decrypt file using AES-256-GCM (async)          |
-| output  | `output.ts`  | `output(cmd, [file])`  | Capture command output to variable or file      |
-| strings | `strings.ts` | `strings(file, [min])` | Extract printable strings from binary files     |
-| nano    | `nano.ts`    | `nano(path)`           | Open file in nano-style text editor overlay     |
+| Command | File         | Signature              | Description                                             |
+| ------- | ------------ | ---------------------- | ------------------------------------------------------- |
+| pwd     | `pwd.ts`     | `pwd()`                | Print current working directory                         |
+| ls      | `ls.ts`      | `ls([path], [flags])`  | List directory contents (`-a` for hidden files)         |
+| cd      | `cd.ts`      | `cd([path])`           | Change current directory                                |
+| cat     | `cat.ts`     | `cat(path)`            | Display file contents                                   |
+| whoami  | `whoami.ts`  | `whoami()`             | Display current username                                |
+| decrypt | `decrypt.ts` | `decrypt(file, key)`   | Decrypt file using AES-256-GCM (async)                  |
+| output  | `output.ts`  | `output(cmd, [file])`  | Capture command output to variable or file              |
+| strings | `strings.ts` | `strings(file, [min])` | Extract printable strings from binary files             |
+| nano    | `nano.ts`    | `nano(path)`           | Open file in nano-style text editor overlay             |
 | node    | `node.ts`    | `node(path)`           | Execute a JavaScript file (requires execute permission) |
 
 ## User Management

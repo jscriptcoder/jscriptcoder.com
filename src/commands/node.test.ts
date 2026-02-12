@@ -68,7 +68,8 @@ type NodeContextOverrides = {
 };
 
 const createNodeContext = (overrides: NodeContextOverrides = {}) => ({
-  resolvePath: overrides.resolvePath ?? ((path: string) => (path.startsWith('/') ? path : `/${path}`)),
+  resolvePath:
+    overrides.resolvePath ?? ((path: string) => (path.startsWith('/') ? path : `/${path}`)),
   getNode: overrides.getNode ?? (() => null),
   getUserType: overrides.getUserType ?? (() => 'user' as UserType),
   getExecutionContext: overrides.getExecutionContext ?? (() => ({})),
