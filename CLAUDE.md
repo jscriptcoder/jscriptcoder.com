@@ -183,7 +183,8 @@ src/
 │   ├── node.test.ts         # Tests colocated with node.ts
 │   └── permissions.test.ts  # Tests colocated with permissions.ts
 ├── filesystem/
-│   └── machineFileSystems.test.ts  # Tests for filesystem content (Flag 13, etc.)
+│   └── machines/
+│       └── darknet.test.ts         # Tests for darknet filesystem content (Flag 13, etc.)
 ├── utils/
 │   ├── md5.ts              # MD5 hashing for password validation
 │   ├── network.ts          # Network utilities (IP validation, range parsing)
