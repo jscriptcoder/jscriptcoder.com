@@ -9,7 +9,7 @@ type NodeContext = {
   readonly getExecutionContext: () => Record<string, (...args: unknown[]) => unknown>;
 };
 
-type EchoFn = (...args: unknown[]) => string;
+type EchoFn = (...args: readonly unknown[]) => string;
 
 export const createNodeCommand = (context: NodeContext): Command => ({
   name: 'node',
@@ -68,7 +68,7 @@ export const createNodeCommand = (context: NodeContext): Command => ({
       ...executionContext,
       ...(executionContext.echo
         ? {
-            echo: (...args: unknown[]): string => {
+            echo: (...args: readonly unknown[]): string => {
               const result = (executionContext.echo as EchoFn)(
                 ...args,
               );
