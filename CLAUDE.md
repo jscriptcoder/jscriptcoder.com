@@ -102,7 +102,14 @@ src/
 ├── filesystem/
 │   ├── FileSystemContext.tsx  # Virtual filesystem operations with IndexedDB persistence
 │   ├── fileSystemFactory.ts   # Factory function for generating filesystems
-│   ├── machineFileSystems.ts  # Per-machine filesystem configurations
+│   ├── machineFileSystems.ts  # Thin assembly: imports machines, exports Record + MachineId
+│   ├── machines/
+│   │   ├── localhost.ts       # Localhost (192.168.1.100) filesystem
+│   │   ├── gateway.ts         # Gateway (192.168.1.1) filesystem
+│   │   ├── fileserver.ts      # Fileserver (192.168.1.50) filesystem
+│   │   ├── webserver.ts       # Webserver (192.168.1.75) filesystem
+│   │   ├── darknet.ts         # Darknet (203.0.113.42) filesystem
+│   │   └── index.ts           # Barrel re-exports
 │   └── types.ts               # FileNode, FilePermissions, FileSystemPatch types
 ├── hooks/
 │   ├── useCommandHistory.ts      # Up/down arrow command history
@@ -175,6 +182,8 @@ src/
 │   ├── nano.test.ts         # Tests colocated with nano.ts
 │   ├── node.test.ts         # Tests colocated with node.ts
 │   └── permissions.test.ts  # Tests colocated with permissions.ts
+├── filesystem/
+│   └── machineFileSystems.test.ts  # Tests for filesystem content (Flag 13, etc.)
 ├── utils/
 │   ├── md5.ts              # MD5 hashing for password validation
 │   ├── network.ts          # Network utilities (IP validation, range parsing)
@@ -329,7 +338,7 @@ The terminal includes a virtual Unix-like file system (`src/filesystem/`). Each 
 - `gateway` (192.168.1.1): admin - router with config backups
 - `fileserver` (192.168.1.50): ftpuser, root - FTP server with /srv/ftp
 - `webserver` (192.168.1.75): www-data, root - web server with /var/www
-- `darknet` (203.0.113.42): ghost, root - mysterious server with final flag
+- `darknet` (203.0.113.42): ghost, root - mysterious server with final flag + bonus ROT13 challenge
 
 **Common Directory Structure:**
 
