@@ -113,7 +113,15 @@ const shadowMachine: RemoteMachine = {
 const voidMachine: RemoteMachine = {
   ip: '10.66.66.2',
   hostname: 'void',
-  ports: [{ port: 22, service: 'ssh', open: true }],
+  ports: [
+    { port: 22, service: 'ssh', open: true },
+    {
+      port: 9999,
+      service: 'maintenance',
+      open: true,
+      owner: { username: 'dbadmin', userType: 'user', homePath: '/home/dbadmin' },
+    },
+  ],
   users: [
     { username: 'root', passwordHash: '9581d383d7d09ed2e81c84af511a4d35', userType: 'root' }, // v01d_null
     { username: 'dbadmin', passwordHash: '2b1e0a7a976160137d870678d3b1ed3b', userType: 'user' }, // dr0p_t4bl3s

@@ -110,8 +110,8 @@ src/
 │   │   ├── webserver.ts       # Webserver (192.168.1.75) filesystem
 │   │   ├── darknet.ts         # Darknet (203.0.113.42) filesystem
 │   │   ├── shadow.ts          # Shadow (10.66.66.1) filesystem — Flag 14 debug challenge
-│   │   ├── void.ts            # Void (10.66.66.2) filesystem — hidden network
-│   │   ├── abyss.ts           # Abyss (10.66.66.3) filesystem — hidden network
+│   │   ├── void.ts            # Void (10.66.66.2) filesystem — Flag 15 CSV extraction challenge
+│   │   ├── abyss.ts           # Abyss (10.66.66.3) filesystem — Flag 16 XOR cipher challenge
 │   │   └── index.ts           # Barrel re-exports
 │   └── types.ts               # FileNode, FilePermissions, FileSystemPatch types
 ├── hooks/
@@ -188,7 +188,9 @@ src/
 ├── filesystem/
 │   └── machines/
 │       ├── darknet.test.ts         # Tests for darknet filesystem content (Flag 13, etc.)
-│       └── shadow.test.ts         # Tests for shadow Flag 14 (script debugging logic)
+│       ├── shadow.test.ts         # Tests for shadow Flag 14 (script debugging logic)
+│       ├── void.test.ts           # Tests for void Flag 15 (CSV data extraction logic)
+│       └── abyss.test.ts         # Tests for abyss Flag 16 (XOR cipher decode logic)
 ├── utils/
 │   ├── md5.ts              # MD5 hashing for password validation
 │   ├── network.ts          # Network utilities (IP validation, range parsing)
@@ -345,8 +347,8 @@ The terminal includes a virtual Unix-like file system (`src/filesystem/`). Each 
 - `webserver` (192.168.1.75): www-data, root - web server with /var/www
 - `darknet` (203.0.113.42): ghost, root - mysterious server with final flag + bonus ROT13 challenge, dual-interface (public + hidden 10.66.66.0/24)
 - `shadow` (10.66.66.1): operator, root - monitoring node, Flag 14 debug challenge, FTP exports + diagnostics
-- `void` (10.66.66.2): dbadmin, root - hidden network (skeleton)
-- `abyss` (10.66.66.3): phantom, root - hidden network (skeleton)
+- `void` (10.66.66.2): dbadmin, root - database node, Flag 15 CSV extraction challenge, maintenance port 9999
+- `abyss` (10.66.66.3): phantom, root - deepest node, Flag 16 XOR cipher challenge, SSH only
 
 **Common Directory Structure:**
 

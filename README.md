@@ -191,7 +191,7 @@ npm run test:coverage # Run tests with coverage
 
 ### Test Coverage
 
-686 unit tests across 43 colocated test files covering terminal commands, hooks, components, utilities, filesystem, and persistence.
+720 unit tests across 45 colocated test files covering terminal commands, hooks, components, utilities, filesystem, and persistence.
 
 ## Project Structure
 

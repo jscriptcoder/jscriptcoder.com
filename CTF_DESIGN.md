@@ -748,12 +748,12 @@ Additional directories that require root access, providing incentive for escalat
 - [x] Flag 14 — Shadow (FTP recon + nano+node):
   - [x] Expand `shadow.ts`: /srv/ftp/exports/ (system_report.txt with creds), diagnostics/, auth.log, noise
   - [x] Add tests in `shadow.test.ts`
-- [ ] Flag 15 — Void (NC recon + nano+node):
-  - [ ] Expand `void.ts`: recovery/ with 5 CSV tables, .abyss_notes (phantom creds), auth.log, noise
-  - [ ] Add tests in `void.test.ts`
-- [ ] Flag 16 — Abyss (SSH only, creds from void):
-  - [ ] Expand `abyss.ts`: vault/ with cipher docs + payload, auth.log (no password leak), noise
-  - [ ] Add tests in `abyss.test.ts`
+- [x] Flag 15 — Void (NC recon + nano+node):
+  - [x] Expand `void.ts`: recovery/ with 5 CSV tables, .abyss_notes (phantom creds), auth.log, noise
+  - [x] Add tests in `void.test.ts`
+- [x] Flag 16 — Abyss (SSH only, creds from void):
+  - [x] Expand `abyss.ts`: vault/ with cipher docs + payload, auth.log (no password leak), noise
+  - [x] Add tests in `abyss.test.ts`
 - [ ] Update docs (CLAUDE.md, README.md, CTF_DESIGN.md, WIP.md)
 - [ ] Playtest full chain: darknet → FTP shadow → NC void → SSH abyss
 

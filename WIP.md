@@ -30,6 +30,26 @@ Hidden Network Flags (Flags 14-16) — nano + node challenges on shadow, void, a
 
 Implemented:
 
+- **Flag 15 — Void Data Miner**: Full filesystem for void database node (10.66.66.2)
+  - `/home/dbadmin/recovery/` — manifest.txt (extraction instructions), 5 CSV tables (pipe-delimited, 20 rows each)
+  - Each table has flag fragment at rows[13].split("|")[3]: fragments join to FLAG{void_data_miner}
+  - `/home/dbadmin/.abyss_notes` — phantom/sp3ctr4l credentials for abyss (Flag 16 setup)
+  - `/var/log/` — auth.log (leaks dbadmin password), syslog, mysql.log (database noise)
+  - Noise: dbadmin .bashrc (db aliases), .bash_history, /etc/crontab, /etc/mysql/my.cnf, guest .bash_history
+  - Added maintenance port 9999 (dbadmin owner) to void in `initialNetwork.ts`
+  - 27 behavior-focused tests: script extraction, CSV format (header, field count, anomaly markers), credential hints, manifest hints
+- **Flag 16 — Abyss Decryptor**: Full filesystem for abyss deep node (10.66.66.3)
+  - `/home/phantom/vault/` — README.txt, cipher.txt (XOR algorithm docs), key.txt (ABYSS), encoded_payload.txt (21 hex bytes)
+  - XOR decode with repeating key "ABYSS" produces FLAG{abyss_decryptor}
+  - `/var/log/auth.log` — NO phantom password leak (creds come from void's .abyss_notes)
+  - Noise: phantom .bashrc (vault aliases), .bash_history, /etc/crontab, syslog, guest .bash_history
+  - 7 behavior-focused tests: XOR decode, simulated node script, vault contents, auth.log does NOT leak phantom password
+- **Test count**: 720 tests across 45 files
+
+## Previous Session (2026-02-12)
+
+Implemented:
+
 - **Flag 14 — Shadow Debugger**: Full filesystem for shadow monitoring node (10.66.66.1)
   - `/home/operator/diagnostics/` — README.txt, access.log (21 pipe-delimited lines, tag fields spell FLAG), check_logs.js (2 bugs: off-by-one + wrong delimiter)
   - `/srv/ftp/exports/` — system_report.txt (operator creds + void hint), network_status.txt (noise)
@@ -38,7 +58,6 @@ Implemented:
   - Added FTP port 21 to shadow in `initialNetwork.ts`
   - Added `/root/.hidden_network` on darknet (lists services per hidden machine)
   - 5 behavior-focused tests: buggy script throws TypeError, partial fix gives empty output, full fix extracts flag, format validation
-- **Test count**: 686 tests across 43 files
 
 ## Previous Session (2026-02-12)
 
@@ -700,59 +719,59 @@ Start with shadow — FTP exports contain useful intel.
 
 ### Implementation Checklist
 
-#### Flag 14 — Shadow (FTP + SSH)
+#### Flag 14 — Shadow (FTP + SSH) ✅
 
-- [ ] Update `src/network/initialNetwork.ts`:
+- [x] Update `src/network/initialNetwork.ts`:
   - Add FTP port 21 to `shadowMachine` ports
-- [ ] Expand `src/filesystem/machines/shadow.ts` with full filesystem content
+- [x] Expand `src/filesystem/machines/shadow.ts` with full filesystem content
   - `/srv/ftp/exports/` — system_report.txt (operator creds + void hint), network_status.txt (noise)
   - `/home/operator/diagnostics/` — README.txt, access.log, check_logs.js
   - Auth log with operator password leak (backup credential path)
   - Noise files (.bash_history, syslog)
   - Guest home (empty or minimal)
-- [ ] Set correct permissions:
+- [x] Set correct permissions:
   - FTP exports readable by guest (for FTP browsing)
   - Diagnostics files readable+executable by user
   - Auth.log readable by guest
-- [ ] Add tests in `src/filesystem/machines/shadow.test.ts`
+- [x] Add tests in `src/filesystem/machines/shadow.test.ts`
   - Verify access.log tag characters spell `FLAG{shadow_debugger}`
   - Verify check_logs.js contains the 2 bugs
   - Verify FTP exports contain operator password and void hint
-- [ ] Update darknet.ts: add `/root/.hidden_network` hint file (lists services per machine)
-- [ ] Build + test pass
+- [x] Update darknet.ts: add `/root/.hidden_network` hint file (lists services per machine)
+- [x] Build + test pass
 
-#### Flag 15 — Void (NC + SSH)
+#### Flag 15 — Void (NC + SSH) ✅
 
-- [ ] Update `src/network/initialNetwork.ts`:
+- [x] Update `src/network/initialNetwork.ts`:
   - Add maintenance port 9999 to `voidMachine` ports with owner: `{ username: 'dbadmin', userType: 'user', homePath: '/home/dbadmin' }`
-- [ ] Expand `src/filesystem/machines/void.ts` with full filesystem content
+- [x] Expand `src/filesystem/machines/void.ts` with full filesystem content
   - `/home/dbadmin/recovery/` — manifest.txt, 5 CSV table files
   - `/home/dbadmin/.abyss_notes` — phantom credentials for abyss (visible via NC as dbadmin)
   - Auth log with dbadmin password leak
   - Noise files (.bash_history, mysql config/logs)
-- [ ] Generate 5 CSV tables with 20 data rows each, fragment at row 13 col 4
-- [ ] Set correct permissions:
+- [x] Generate 5 CSV tables with 20 data rows each, fragment at row 13 col 4
+- [x] Set correct permissions:
   - Recovery files readable by user+guest
   - .abyss_notes readable by user only (so NC as dbadmin can read, but guest SSH cannot)
-- [ ] Add tests in `src/filesystem/machines/void.test.ts`
+- [x] Add tests in `src/filesystem/machines/void.test.ts`
   - Verify fragments at row 13, column 4 concatenate to `FLAG{void_data_miner}`
   - Verify manifest describes the correct extraction pattern
   - Verify .abyss_notes contains phantom credentials
-- [ ] Build + test pass
+- [x] Build + test pass
 
-#### Flag 16 — Abyss (SSH only)
+#### Flag 16 — Abyss (SSH only) ✅
 
-- [ ] Expand `src/filesystem/machines/abyss.ts` with full filesystem content
+- [x] Expand `src/filesystem/machines/abyss.ts` with full filesystem content
   - `/home/phantom/vault/` — README.txt, cipher.txt, key.txt, encoded_payload.txt
   - Auth log (noise only — NO phantom password leak; creds from void)
   - Noise files (.bash_history, syslog)
-- [ ] Verify XOR computation: hex pairs decode correctly with key `ABYSS`
-- [ ] Set correct permissions
-- [ ] Add tests in `src/filesystem/machines/abyss.test.ts`
+- [x] Verify XOR computation: hex pairs decode correctly with key `ABYSS`
+- [x] Set correct permissions
+- [x] Add tests in `src/filesystem/machines/abyss.test.ts`
   - Verify XOR decode of encoded_payload.txt with key.txt produces `FLAG{abyss_decryptor}`
   - Verify cipher.txt documents the algorithm
   - Verify auth.log does NOT contain phantom password
-- [ ] Build + test pass
+- [x] Build + test pass
 
 #### Final
 
@@ -811,7 +830,7 @@ Flag detection, progress display, `flags()` command, victory celebration. Deferr
 
 ### Test Coverage
 
-- 686 tests across 43 colocated test files
+- 720 tests across 45 colocated test files
 - All commands with logic are tested
 - FTP subcommands tested (cd, lcd, ls, lls, get, put)
 - NC command and subcommands tested (nc, cat, cd, ls)
