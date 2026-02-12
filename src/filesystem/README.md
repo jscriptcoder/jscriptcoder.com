@@ -4,13 +4,14 @@ Virtual Unix-like filesystem for the CTF terminal. Each machine (localhost and r
 
 ## Files
 
-| File                    | Description                                                                                                                                                        |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `types.ts`              | Core types: `FileNode`, `FilePermissions`, `FileSystemPatch`                                                                                                       |
-| `fileSystemFactory.ts`  | `createFileSystem(config)` — generates a standard directory tree (`/root`, `/home`, `/etc`, `/var`, `/tmp`) from a `MachineFileSystemConfig`                       |
-| `machineFileSystems.ts` | Per-machine filesystem definitions (localhost, gateway, fileserver, webserver, darknet) with users, content, and CTF flags                                         |
+| File                    | Description                                                                                                                                                     |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `types.ts`              | Core types: `FileNode`, `FilePermissions`, `FileSystemPatch`                                                                                                    |
+| `fileSystemFactory.ts`  | `createFileSystem(config)` — generates a standard directory tree (`/root`, `/home`, `/etc`, `/var`, `/tmp`) from a `MachineFileSystemConfig`                    |
+| `machineFileSystems.ts` | Thin assembly — imports from `machines/`, exports `machineFileSystems` Record, `MachineId` type, and `getDefaultHomePath`                                       |
+| `machines/`             | Per-machine filesystem definitions: `localhost.ts`, `gateway.ts`, `fileserver.ts`, `webserver.ts`, `darknet.ts` (each exports a `FileNode`)                     |
 | `FileSystemContext.tsx` | React context providing filesystem operations: `resolvePath`, `getNode`, `readFile`, `writeFile`, `readFileFromMachine`, plus persistence via IndexedDB patches |
-| `index.ts`              | Module exports                                                                                                                                                     |
+| `index.ts`              | Module exports                                                                                                                                                  |
 
 ## Architecture
 
