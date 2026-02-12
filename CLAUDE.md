@@ -109,6 +109,9 @@ src/
 │   │   ├── fileserver.ts      # Fileserver (192.168.1.50) filesystem
 │   │   ├── webserver.ts       # Webserver (192.168.1.75) filesystem
 │   │   ├── darknet.ts         # Darknet (203.0.113.42) filesystem
+│   │   ├── shadow.ts          # Shadow (10.66.66.1) filesystem — hidden network
+│   │   ├── void.ts            # Void (10.66.66.2) filesystem — hidden network
+│   │   ├── abyss.ts           # Abyss (10.66.66.3) filesystem — hidden network
 │   │   └── index.ts           # Barrel re-exports
 │   └── types.ts               # FileNode, FilePermissions, FileSystemPatch types
 ├── hooks/
@@ -120,9 +123,9 @@ src/
 │   ├── useFtpCommands.ts         # FTP mode commands (pwd, ls, get, put, etc.)
 │   └── useCommands.ts            # Command registry and execution context
 ├── network/
-│   ├── NetworkContext.tsx     # Network state and topology
-│   ├── initialNetwork.ts      # Network configuration (machines, ports)
-│   ├── types.ts               # NetworkInterface, RemoteMachine types
+│   ├── NetworkContext.tsx     # Per-machine network state (session-aware)
+│   ├── initialNetwork.ts      # Per-machine network configs (interfaces, machines, DNS)
+│   ├── types.ts               # NetworkInterface, RemoteMachine, MachineNetworkConfig types
 │   └── index.ts               # Module exports
 ├── commands/
 │   ├── help.ts             # help() - lists available commands
@@ -336,10 +339,13 @@ The terminal includes a virtual Unix-like file system (`src/filesystem/`). Each 
 **Per-Machine Filesystems** (`machineFileSystems.ts`):
 
 - `localhost` (192.168.1.100): jshacker, guest, root - starting machine
-- `gateway` (192.168.1.1): admin - router with config backups
+- `gateway` (192.168.1.1): admin - router with config backups, dual-interface (WAN + LAN)
 - `fileserver` (192.168.1.50): ftpuser, root - FTP server with /srv/ftp
 - `webserver` (192.168.1.75): www-data, root - web server with /var/www
-- `darknet` (203.0.113.42): ghost, root - mysterious server with final flag + bonus ROT13 challenge
+- `darknet` (203.0.113.42): ghost, root - mysterious server with final flag + bonus ROT13 challenge, dual-interface (public + hidden 10.66.66.0/24)
+- `shadow` (10.66.66.1): operator, root - hidden network (skeleton)
+- `void` (10.66.66.2): dbadmin, root - hidden network (skeleton)
+- `abyss` (10.66.66.3): phantom, root - hidden network (skeleton)
 
 **Common Directory Structure:**
 
@@ -461,25 +467,48 @@ The terminal simulates a network environment for CTF puzzles (`src/network/`):
 
 **Network Topology:**
 
-```
-192.168.1.0/24 Network (Local)
-├── 192.168.1.1   (gateway)    - Router, HTTP/HTTPS open
-├── 192.168.1.50  (fileserver) - FTP and SSH open
-├── 192.168.1.75  (webserver)  - SSH, HTTP, MySQL, backdoor:4444 (www-data)
-└── 192.168.1.100 (localhost)  - Current machine
-
-External Network
-└── 203.0.113.42  (darknet)    - SSH, HTTP-ALT, backdoor:31337 (ghost)
-```
-
-**DNS Records:**
+The network is **per-machine** — each machine has its own interfaces, reachable machines, and DNS records. `NetworkContext` uses `session.machine` to resolve the active config.
 
 ```
+198.51.100.0/24 (Internet)
+│
+├── 198.51.100.10 ─── gateway eth0 (WAN)
+│                     gateway eth1 (LAN) ─── 192.168.1.1
+│                                             │
+│                                        192.168.1.0/24 (Local LAN)
+│                                             ├── 192.168.1.50  fileserver
+│                                             ├── 192.168.1.75  webserver
+│                                             └── 192.168.1.100 localhost (player)
+│
+└── 203.0.113.42 ─── darknet eth0 (Public)
+                      darknet eth1 ─── 10.66.66.100
+                                        │
+                                   10.66.66.0/24 (Hidden Network)
+                                        ├── 10.66.66.1  shadow
+                                        ├── 10.66.66.2  void
+                                        └── 10.66.66.3  abyss
+```
+
+**Reachability rules:**
+
+- LAN machines reach each other + darknet (via gateway NAT)
+- Darknet sees ONLY gateway's WAN IP (198.51.100.10) + hidden network — cannot route to 192.168.1.x
+- Hidden machines only reach each other + darknet's eth1 (10.66.66.100)
+
+**DNS Records (per-machine):**
+
+```
+# LAN + Darknet DNS (available to localhost, gateway, fileserver, webserver)
 gateway.local    -> 192.168.1.1
 fileserver.local -> 192.168.1.50
 webserver.local  -> 192.168.1.75
 darknet.ctf      -> 203.0.113.42
 www.darknet.ctf  -> 203.0.113.42
+
+# Hidden DNS (available to darknet, shadow, void, abyss)
+shadow.hidden    -> 10.66.66.1
+void.hidden      -> 10.66.66.2
+abyss.hidden     -> 10.66.66.3
 ```
 
 **NetworkInterface Structure:**
@@ -528,12 +557,30 @@ type DnsRecord = {
 };
 ```
 
+**Per-Machine Network Config:**
+
+```typescript
+type MachineNetworkConfig = {
+  readonly interfaces: readonly NetworkInterface[];
+  readonly machines: readonly RemoteMachine[];
+  readonly dnsRecords: readonly DnsRecord[];
+};
+
+type NetworkConfig = {
+  readonly machineConfigs: Readonly<Record<string, MachineNetworkConfig>>;
+};
+```
+
+`NetworkContext` imports `useSession` and resolves the active config per `session.machine`. All getter functions (`getInterfaces`, `getMachine`, `getLocalIP`, etc.) read from the resolved per-machine config — function signatures are unchanged.
+
 **Usage in commands:**
 
 ```typescript
 const { getInterfaces, getMachines, getGateway, resolveDomain } = useNetwork();
+// These automatically return data for the current machine (session.machine)
 const eth0 = getInterface('eth0');
-// eth0.inet = '192.168.1.100', eth0.gateway = '192.168.1.1'
+// On localhost: eth0.inet = '192.168.1.100', eth0.gateway = '192.168.1.1'
+// On darknet: eth0.inet = '203.0.113.42', eth0.gateway = '203.0.113.1'
 
 const record = resolveDomain('darknet.ctf');
 // record.ip = '203.0.113.42'

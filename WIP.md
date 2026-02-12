@@ -29,6 +29,26 @@ Step 13 of 14: Victory tracking
 
 Implemented:
 
+- **Per-machine network configs**: Network system is now session-aware — each machine has its own interfaces, reachable machines, and DNS
+  - Added `MachineNetworkConfig` type and changed `NetworkConfig` to hold `machineConfigs` record
+  - `NetworkContext` imports `useSession`, resolves config per `session.machine` via `useMemo`
+  - All getter functions (`getInterfaces`, `getMachine`, `getLocalIP`, etc.) unchanged externally
+  - 8 per-machine configs: localhost, gateway, fileserver, webserver, darknet, shadow, void, abyss
+- **Gateway dual interfaces**: eth0 (WAN: 198.51.100.10) + eth1 (LAN: 192.168.1.1)
+  - Added `/etc/network.conf` with WAN IP and NAT config for in-game discovery
+- **Darknet dual interfaces**: eth0 (public: 203.0.113.42) + eth1 (hidden: 10.66.66.100)
+  - Hidden 10.66.66.0/24 network with 3 new machines
+  - Darknet sees gateway via WAN IP only + hidden network — cannot route to private LAN
+- **Hidden network skeleton machines**: shadow (10.66.66.1), void (10.66.66.2), abyss (10.66.66.3)
+  - Minimal filesystems with root + named user + guest, hostname, hosts
+  - Hidden DNS: shadow.hidden, void.hidden, abyss.hidden
+  - Reachable only from darknet or each other
+- **Test count**: 681 tests across 42 files (unchanged — no test changes needed)
+
+## Previous Session (2026-02-12)
+
+Implemented:
+
 - **nano command**: Full-screen nano-style text editor overlay for creating/editing files
   - `nano(path)` validates path, returns `nano_open` special output type
   - `NanoEditor.tsx` component: fixed overlay, amber CRT aesthetic, textarea-based editing
@@ -447,6 +467,9 @@ Flags should be detected from output of:
 | fileserver | 192.168.1.50  | root, ftpuser, guest  | FLAG{ftp_hidden_treasure}                                                       |
 | webserver  | 192.168.1.75  | root, www-data, guest | FLAG{sql_history_exposed}, FLAG{database_backup_gold}, FLAG{api_config_exposed} |
 | darknet    | 203.0.113.42  | root, ghost, guest    | FLAG{master_of_the_darknet}, FLAG{darknet_api_discovered}                       |
+| shadow     | 10.66.66.1    | root, operator, guest | (skeleton)                                                                      |
+| void       | 10.66.66.2    | root, dbadmin, guest  | (skeleton)                                                                      |
+| abyss      | 10.66.66.3    | root, phantom, guest  | (skeleton)                                                                      |
 
 ### Backdoors (nc interactive mode)
 
@@ -471,6 +494,15 @@ Flags should be detected from output of:
 - root@darknet: d4rkn3tR00t
 - ghost@darknet: sp3ctr3
 - guest@darknet: sh4d0w
+- root@shadow: abc123
+- operator@shadow: 0p3r8t0r
+- guest@shadow: demo
+- root@void: password
+- dbadmin@void: test
+- guest@void: demo
+- root@abyss: qwerty
+- phantom@abyss: master
+- guest@abyss: demo
 
 ### Test Coverage
 

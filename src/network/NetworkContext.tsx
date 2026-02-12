@@ -1,6 +1,13 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
-import type { NetworkConfig, NetworkInterface, RemoteMachine, DnsRecord } from './types';
+import { createContext, useContext, useMemo, useState, useCallback, type ReactNode } from 'react';
+import type {
+  NetworkConfig,
+  MachineNetworkConfig,
+  NetworkInterface,
+  RemoteMachine,
+  DnsRecord,
+} from './types';
 import { createInitialNetwork } from './initialNetwork';
+import { useSession } from '../session/SessionContext';
 
 type NetworkContextType = {
   readonly config: NetworkConfig;
@@ -16,52 +23,66 @@ type NetworkContextType = {
 
 const NetworkContext = createContext<NetworkContextType | null>(null);
 
+const defaultMachineConfig: MachineNetworkConfig = {
+  interfaces: [],
+  machines: [],
+  dnsRecords: [],
+};
+
 export const NetworkProvider = ({ children }: { children: ReactNode }) => {
   const [config] = useState<NetworkConfig>(createInitialNetwork);
+  const { session } = useSession();
+
+  const currentConfig = useMemo(
+    (): MachineNetworkConfig => config.machineConfigs[session.machine] ?? defaultMachineConfig,
+    [config.machineConfigs, session.machine],
+  );
 
   const getInterface = useCallback(
     (name: string): NetworkInterface | undefined => {
-      return config.interfaces.find((iface) => iface.name === name);
+      return currentConfig.interfaces.find((iface) => iface.name === name);
     },
-    [config.interfaces],
+    [currentConfig.interfaces],
   );
 
   const getInterfaces = useCallback((): readonly NetworkInterface[] => {
-    return config.interfaces;
-  }, [config.interfaces]);
+    return currentConfig.interfaces;
+  }, [currentConfig.interfaces]);
 
   const getMachine = useCallback(
     (ip: string): RemoteMachine | undefined => {
-      return config.machines.find((machine) => machine.ip === ip);
+      return currentConfig.machines.find((machine) => machine.ip === ip);
     },
-    [config.machines],
+    [currentConfig.machines],
   );
 
   const getMachines = useCallback((): readonly RemoteMachine[] => {
-    return config.machines;
-  }, [config.machines]);
+    return currentConfig.machines;
+  }, [currentConfig.machines]);
 
   const getGateway = useCallback((): string => {
-    const eth0 = config.interfaces.find((iface) => iface.name === 'eth0');
+    const eth0 = currentConfig.interfaces.find((iface) => iface.name === 'eth0');
     return eth0?.gateway ?? '0.0.0.0';
-  }, [config.interfaces]);
+  }, [currentConfig.interfaces]);
 
   const getLocalIP = useCallback((): string => {
-    const eth0 = config.interfaces.find((iface) => iface.name === 'eth0');
+    const eth0 = currentConfig.interfaces.find((iface) => iface.name === 'eth0');
     return eth0?.inet ?? '0.0.0.0';
-  }, [config.interfaces]);
+  }, [currentConfig.interfaces]);
 
   const resolveDomain = useCallback(
     (domain: string): DnsRecord | undefined => {
       const normalizedDomain = domain.toLowerCase();
-      return config.dnsRecords.find((record) => record.domain.toLowerCase() === normalizedDomain);
+      return currentConfig.dnsRecords.find(
+        (record) => record.domain.toLowerCase() === normalizedDomain,
+      );
     },
-    [config.dnsRecords],
+    [currentConfig.dnsRecords],
   );
 
   const getDnsRecords = useCallback((): readonly DnsRecord[] => {
-    return config.dnsRecords;
-  }, [config.dnsRecords]);
+    return currentConfig.dnsRecords;
+  }, [currentConfig.dnsRecords]);
 
   return (
     <NetworkContext.Provider

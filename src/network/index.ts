@@ -1,2 +1,8 @@
 export { NetworkProvider, useNetwork } from './NetworkContext';
-export type { NetworkConfig, NetworkInterface, RemoteMachine, DnsRecord } from './types';
+export type {
+  NetworkConfig,
+  MachineNetworkConfig,
+  NetworkInterface,
+  RemoteMachine,
+  DnsRecord,
+} from './types';

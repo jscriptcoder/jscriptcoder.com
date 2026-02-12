@@ -53,16 +53,31 @@ On remote machines, players must discover credentials through:
 
 ---
 
-## Network Topology (Unchanged)
+## Network Topology
+
+Network is **per-machine** — each machine sees its own interfaces, reachable machines, and DNS.
 
 ```
-192.168.1.0/24 (Local Network)
-├── 192.168.1.1   gateway     — Router, HTTP/HTTPS open
-├── 192.168.1.50  fileserver  — FTP and SSH open
-├── 192.168.1.75  webserver   — SSH, HTTP, MySQL, backdoor:4444
-├── 192.168.1.100 localhost   — Player's machine
-└── 203.0.113.42  darknet     — SSH, HTTP-ALT:8080, backdoor:31337
+198.51.100.0/24 (Internet)
+│
+├── 198.51.100.10 ─── gateway eth0 (WAN)
+│                     gateway eth1 (LAN) ─── 192.168.1.1
+│                                             │
+│                                        192.168.1.0/24 (Local LAN)
+│                                             ├── 192.168.1.50  fileserver — FTP, SSH
+│                                             ├── 192.168.1.75  webserver — SSH, HTTP, MySQL, backdoor:4444
+│                                             └── 192.168.1.100 localhost — Player's machine
+│
+└── 203.0.113.42 ─── darknet eth0 (Public) — SSH, HTTP-ALT:8080, backdoor:31337
+                      darknet eth1 ─── 10.66.66.100
+                                        │
+                                   10.66.66.0/24 (Hidden Network)
+                                        ├── 10.66.66.1  shadow — SSH (skeleton)
+                                        ├── 10.66.66.2  void — SSH (skeleton)
+                                        └── 10.66.66.3  abyss — SSH (skeleton)
 ```
+
+**Reachability:** LAN machines reach each other + darknet. Darknet sees gateway WAN + hidden network only. Hidden machines see each other + darknet eth1 only.
 
 ---
 
@@ -84,6 +99,15 @@ On remote machines, players must discover credentials through:
 | **darknet**    | guest    | guest | sh4d0w        | Found via webserver backdoor (nc) output                     |
 | **darknet**    | ghost    | user  | sp3ctr3       | Found via darknet web page or API response                   |
 | **darknet**    | root     | root  | d4rkn3tR00t   | Requires decrypting a file                                   |
+| **shadow**     | operator | user  | 0p3r8t0r      | Hidden network (skeleton)                                    |
+| **shadow**     | root     | root  | abc123        | Hidden network (skeleton)                                    |
+| **shadow**     | guest    | guest | demo          | Hidden network (skeleton)                                    |
+| **void**       | dbadmin  | user  | test          | Hidden network (skeleton)                                    |
+| **void**       | root     | root  | password      | Hidden network (skeleton)                                    |
+| **void**       | guest    | guest | demo          | Hidden network (skeleton)                                    |
+| **abyss**      | phantom  | user  | master        | Hidden network (skeleton)                                    |
+| **abyss**      | root     | root  | qwerty        | Hidden network (skeleton)                                    |
+| **abyss**      | guest    | guest | demo          | Hidden network (skeleton)                                    |
 
 ---
 

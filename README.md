@@ -171,8 +171,9 @@ Use network reconnaissance commands to:
 - Find other machines on the network
 - Identify running services and open ports
 - Connect to remote systems
+- Pivot through machines to reach hidden networks
 
-The network holds flags waiting to be captured. Can you find them all?
+Each machine has its own network view - interfaces, reachable hosts, and DNS change based on where you are. The deeper you go, the more you discover.
 
 ## Development
 

@@ -4,14 +4,14 @@ Virtual Unix-like filesystem for the CTF terminal. Each machine (localhost and r
 
 ## Files
 
-| File                    | Description                                                                                                                                                     |
-| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `types.ts`              | Core types: `FileNode`, `FilePermissions`, `FileSystemPatch`                                                                                                    |
-| `fileSystemFactory.ts`  | `createFileSystem(config)` — generates a standard directory tree (`/root`, `/home`, `/etc`, `/var`, `/tmp`) from a `MachineFileSystemConfig`                    |
-| `machineFileSystems.ts` | Thin assembly — imports from `machines/`, exports `machineFileSystems` Record, `MachineId` type, and `getDefaultHomePath`                                       |
-| `machines/`             | Per-machine filesystem definitions: `localhost.ts`, `gateway.ts`, `fileserver.ts`, `webserver.ts`, `darknet.ts` (each exports a `FileNode`)                     |
-| `FileSystemContext.tsx` | React context providing filesystem operations: `resolvePath`, `getNode`, `readFile`, `writeFile`, `readFileFromMachine`, plus persistence via IndexedDB patches |
-| `index.ts`              | Module exports                                                                                                                                                  |
+| File                    | Description                                                                                                                                                                     |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `types.ts`              | Core types: `FileNode`, `FilePermissions`, `FileSystemPatch`                                                                                                                    |
+| `fileSystemFactory.ts`  | `createFileSystem(config)` — generates a standard directory tree (`/root`, `/home`, `/etc`, `/var`, `/tmp`) from a `MachineFileSystemConfig`                                    |
+| `machineFileSystems.ts` | Thin assembly — imports from `machines/`, exports `machineFileSystems` Record, `MachineId` type, and `getDefaultHomePath`                                                       |
+| `machines/`             | Per-machine filesystem definitions: `localhost.ts`, `gateway.ts`, `fileserver.ts`, `webserver.ts`, `darknet.ts`, `shadow.ts`, `void.ts`, `abyss.ts` (each exports a `FileNode`) |
+| `FileSystemContext.tsx` | React context providing filesystem operations: `resolvePath`, `getNode`, `readFile`, `writeFile`, `readFileFromMachine`, plus persistence via IndexedDB patches                 |
+| `index.ts`              | Module exports                                                                                                                                                                  |
 
 ## Architecture
 
@@ -43,13 +43,16 @@ type FileNode = {
 
 ### Machines
 
-| Machine    | IP            | Key Content                                                |
-| ---------- | ------------- | ---------------------------------------------------------- |
-| localhost  | 192.168.1.100 | Starting machine, encrypted files, keyfile                 |
-| gateway    | 192.168.1.1   | Router config backups, web admin panel                     |
-| fileserver | 192.168.1.50  | FTP directories (`/srv/ftp`), hidden backups               |
-| webserver  | 192.168.1.75  | Web content (`/var/www`), API endpoints, backdoored binary |
-| darknet    | 203.0.113.42  | Darknet web content, API secrets, final flag               |
+| Machine    | IP            | Key Content                                                                    |
+| ---------- | ------------- | ------------------------------------------------------------------------------ |
+| localhost  | 192.168.1.100 | Starting machine, encrypted files, keyfile                                     |
+| gateway    | 192.168.1.1   | Router config backups, web admin panel, dual-interface (WAN + LAN)             |
+| fileserver | 192.168.1.50  | FTP directories (`/srv/ftp`), hidden backups                                   |
+| webserver  | 192.168.1.75  | Web content (`/var/www`), API endpoints, backdoored binary                     |
+| darknet    | 203.0.113.42  | Darknet web content, API secrets, final flag, dual-interface (public + hidden) |
+| shadow     | 10.66.66.1    | Hidden network skeleton — operator, root, guest                                |
+| void       | 10.66.66.2    | Hidden network skeleton — dbadmin, root, guest                                 |
+| abyss      | 10.66.66.3    | Hidden network skeleton — phantom, root, guest                                 |
 
 ### Persistence
 

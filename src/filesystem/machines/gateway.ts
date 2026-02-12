@@ -51,6 +51,27 @@ const gatewayConfig: MachineFileSystemConfig = {
 192.168.1.100   jshack-dev
 `,
     },
+    'network.conf': {
+      name: 'network.conf',
+      type: 'file',
+      owner: 'root',
+      permissions: { read: ['root', 'user', 'guest'], write: ['root'], execute: ['root'] },
+      content: `# Network Interface Configuration
+# eth0 - WAN (Internet)
+IFACE_ETH0=198.51.100.10
+NETMASK_ETH0=255.255.255.0
+GATEWAY_ETH0=198.51.100.1
+
+# eth1 - LAN (Internal)
+IFACE_ETH1=192.168.1.1
+NETMASK_ETH1=255.255.255.0
+
+# NAT masquerade enabled for LAN -> WAN
+NAT_ENABLED=true
+NAT_SOURCE=192.168.1.0/24
+NAT_OUTGOING=eth0
+`,
+    },
     'iptables.rules': {
       name: 'iptables.rules',
       type: 'file',

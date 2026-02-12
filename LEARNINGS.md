@@ -265,6 +265,13 @@
 - **Rationale**: CTF game context, realistic for vulnerable systems, simple implementation
 - **Trade-offs**: Not secure for real apps, but fits the "hackable system" theme
 
+### Per-machine network configs with session awareness
+
+- **Options considered**: Single global network config, per-machine configs in separate files, per-machine map in one config
+- **Decision**: Per-machine `MachineNetworkConfig` map in `NetworkConfig`, resolved via `session.machine` in `NetworkContext`
+- **Rationale**: Each machine should see different interfaces/machines/DNS. Config keyed by machine ID (e.g., `'192.168.1.1'`, `'203.0.113.42'`) keeps it all in one place. `NetworkContext` just reads `session.machine` — no circular deps since `SessionProvider` wraps `NetworkProvider`.
+- **Trade-offs**: Larger `initialNetwork.ts` with some duplication (machine defs shared across configs), but clear and explicit. Command factories need zero changes since getter signatures are unchanged.
+
 ### Separate network context from file system
 
 - **Options considered**: Unified system context, separate contexts

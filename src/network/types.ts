@@ -39,8 +39,12 @@ export type DnsRecord = {
   readonly type: 'A';
 };
 
-export type NetworkConfig = {
+export type MachineNetworkConfig = {
   readonly interfaces: readonly NetworkInterface[];
   readonly machines: readonly RemoteMachine[];
   readonly dnsRecords: readonly DnsRecord[];
+};
+
+export type NetworkConfig = {
+  readonly machineConfigs: Readonly<Record<string, MachineNetworkConfig>>;
 };
