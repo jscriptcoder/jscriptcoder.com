@@ -50,7 +50,7 @@ type FileNode = {
 | fileserver | 192.168.1.50  | FTP directories (`/srv/ftp`), hidden backups                                   |
 | webserver  | 192.168.1.75  | Web content (`/var/www`), API endpoints, backdoored binary                     |
 | darknet    | 203.0.113.42  | Darknet web content, API secrets, final flag, dual-interface (public + hidden) |
-| shadow     | 10.66.66.1    | Hidden network skeleton — operator, root, guest                                |
+| shadow     | 10.66.66.1    | Monitoring node — Flag 14 debug challenge, FTP exports, diagnostics scripts    |
 | void       | 10.66.66.2    | Hidden network skeleton — dbadmin, root, guest                                 |
 | abyss      | 10.66.66.3    | Hidden network skeleton — phantom, root, guest                                 |
 

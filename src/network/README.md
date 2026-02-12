@@ -47,7 +47,7 @@ Simulated network environment for CTF puzzles. Defines the topology, machines, p
 | fileserver | 192.168.1.50 | 21, 22             | ftp, ssh                           |
 | webserver  | 192.168.1.75 | 22, 80, 3306, 4444 | ssh, http, mysql, elite (backdoor) |
 | darknet    | 203.0.113.42 | 22, 8080, 31337    | ssh, http-alt, elite (backdoor)    |
-| shadow     | 10.66.66.1   | 22                 | ssh                                |
+| shadow     | 10.66.66.1   | 21, 22             | ftp, ssh                           |
 | void       | 10.66.66.2   | 22                 | ssh                                |
 | abyss      | 10.66.66.3   | 22                 | ssh                                |
 
