@@ -5,13 +5,13 @@ const voidConfig: MachineFileSystemConfig = {
   users: [
     {
       username: 'root',
-      passwordHash: '5f4dcc3b5aa765d61d8327deb882cf99', // password
+      passwordHash: '9581d383d7d09ed2e81c84af511a4d35', // v01d_null
       userType: 'root',
       uid: 0,
     },
     {
       username: 'dbadmin',
-      passwordHash: '098f6bcd4621d373cade4e832627b4f6', // test
+      passwordHash: '2b1e0a7a976160137d870678d3b1ed3b', // dr0p_t4bl3s
       userType: 'user',
       uid: 1000,
     },

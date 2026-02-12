@@ -5,13 +5,13 @@ const abyssConfig: MachineFileSystemConfig = {
   users: [
     {
       username: 'root',
-      passwordHash: 'd8578edf8458ce06fbc5bb76a58c5ca4', // qwerty
+      passwordHash: 'f81e258a762fbfac58a72dee289ea2c5', // d33p_d4rk
       userType: 'root',
       uid: 0,
     },
     {
       username: 'phantom',
-      passwordHash: 'eb0a191797624dd3a48fa681d3061212', // master
+      passwordHash: '7312e6b090b29bd2d55f3284fc2472d2', // sp3ctr4l
       userType: 'user',
       uid: 1000,
     },

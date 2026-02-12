@@ -99,14 +99,14 @@ Network is **per-machine** — each machine sees its own interfaces, reachable m
 | **darknet**    | guest    | guest | sh4d0w        | Found via webserver backdoor (nc) output                     |
 | **darknet**    | ghost    | user  | sp3ctr3       | Found via darknet web page or API response                   |
 | **darknet**    | root     | root  | d4rkn3tR00t   | Requires decrypting a file                                   |
-| **shadow**     | operator | user  | 0p3r8t0r      | Hidden network (skeleton)                                    |
-| **shadow**     | root     | root  | abc123        | Hidden network (skeleton)                                    |
+| **shadow**     | operator | user  | c0ntr0l_pl4n3 | Hidden network (skeleton)                                    |
+| **shadow**     | root     | root  | sh4d0w_r00t   | Hidden network (skeleton)                                    |
 | **shadow**     | guest    | guest | demo          | Hidden network (skeleton)                                    |
-| **void**       | dbadmin  | user  | test          | Hidden network (skeleton)                                    |
-| **void**       | root     | root  | password      | Hidden network (skeleton)                                    |
+| **void**       | dbadmin  | user  | dr0p_t4bl3s   | Hidden network (skeleton)                                    |
+| **void**       | root     | root  | v01d_null     | Hidden network (skeleton)                                    |
 | **void**       | guest    | guest | demo          | Hidden network (skeleton)                                    |
-| **abyss**      | phantom  | user  | master        | Hidden network (skeleton)                                    |
-| **abyss**      | root     | root  | qwerty        | Hidden network (skeleton)                                    |
+| **abyss**      | phantom  | user  | sp3ctr4l      | Hidden network (skeleton)                                    |
+| **abyss**      | root     | root  | d33p_d4rk     | Hidden network (skeleton)                                    |
 | **abyss**      | guest    | guest | demo          | Hidden network (skeleton)                                    |
 
 ---

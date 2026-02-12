@@ -494,14 +494,14 @@ Flags should be detected from output of:
 - root@darknet: d4rkn3tR00t
 - ghost@darknet: sp3ctr3
 - guest@darknet: sh4d0w
-- root@shadow: abc123
-- operator@shadow: 0p3r8t0r
+- root@shadow: sh4d0w_r00t
+- operator@shadow: c0ntr0l_pl4n3
 - guest@shadow: demo
-- root@void: password
-- dbadmin@void: test
+- root@void: v01d_null
+- dbadmin@void: dr0p_t4bl3s
 - guest@void: demo
-- root@abyss: qwerty
-- phantom@abyss: master
+- root@abyss: d33p_d4rk
+- phantom@abyss: sp3ctr4l
 - guest@abyss: demo
 
 ### Test Coverage

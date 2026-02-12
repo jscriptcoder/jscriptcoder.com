@@ -101,8 +101,8 @@ const shadowMachine: RemoteMachine = {
   hostname: 'shadow',
   ports: [{ port: 22, service: 'ssh', open: true }],
   users: [
-    { username: 'root', passwordHash: 'e99a18c428cb38d5f260853678922e03', userType: 'root' }, // abc123
-    { username: 'operator', passwordHash: 'c18696e8a628add9628bafdb7905ebe4', userType: 'user' }, // 0p3r8t0r
+    { username: 'root', passwordHash: 'ace0140d2da9deaa60d16eb681afb542', userType: 'root' }, // sh4d0w_r00t
+    { username: 'operator', passwordHash: '8687c82d19711171491bbcbda4353a50', userType: 'user' }, // c0ntr0l_pl4n3
     { username: 'guest', passwordHash: 'fe01ce2a7fbac8fafaed7c982a04e229', userType: 'guest' }, // demo
   ],
 };
@@ -112,8 +112,8 @@ const voidMachine: RemoteMachine = {
   hostname: 'void',
   ports: [{ port: 22, service: 'ssh', open: true }],
   users: [
-    { username: 'root', passwordHash: '5f4dcc3b5aa765d61d8327deb882cf99', userType: 'root' }, // password
-    { username: 'dbadmin', passwordHash: '098f6bcd4621d373cade4e832627b4f6', userType: 'user' }, // test
+    { username: 'root', passwordHash: '9581d383d7d09ed2e81c84af511a4d35', userType: 'root' }, // v01d_null
+    { username: 'dbadmin', passwordHash: '2b1e0a7a976160137d870678d3b1ed3b', userType: 'user' }, // dr0p_t4bl3s
     { username: 'guest', passwordHash: 'fe01ce2a7fbac8fafaed7c982a04e229', userType: 'guest' }, // demo
   ],
 };
@@ -123,8 +123,8 @@ const abyssMachine: RemoteMachine = {
   hostname: 'abyss',
   ports: [{ port: 22, service: 'ssh', open: true }],
   users: [
-    { username: 'root', passwordHash: 'd8578edf8458ce06fbc5bb76a58c5ca4', userType: 'root' }, // qwerty
-    { username: 'phantom', passwordHash: 'eb0a191797624dd3a48fa681d3061212', userType: 'user' }, // master
+    { username: 'root', passwordHash: 'f81e258a762fbfac58a72dee289ea2c5', userType: 'root' }, // d33p_d4rk
+    { username: 'phantom', passwordHash: '7312e6b090b29bd2d55f3284fc2472d2', userType: 'user' }, // sp3ctr4l
     { username: 'guest', passwordHash: 'fe01ce2a7fbac8fafaed7c982a04e229', userType: 'guest' }, // demo
   ],
 };

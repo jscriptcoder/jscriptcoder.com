@@ -5,13 +5,13 @@ const shadowConfig: MachineFileSystemConfig = {
   users: [
     {
       username: 'root',
-      passwordHash: 'e99a18c428cb38d5f260853678922e03', // abc123
+      passwordHash: 'ace0140d2da9deaa60d16eb681afb542', // sh4d0w_r00t
       userType: 'root',
       uid: 0,
     },
     {
       username: 'operator',
-      passwordHash: 'c18696e8a628add9628bafdb7905ebe4', // 0p3r8t0r
+      passwordHash: '8687c82d19711171491bbcbda4353a50', // c0ntr0l_pl4n3
       userType: 'user',
       uid: 1000,
     },
