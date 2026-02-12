@@ -109,7 +109,7 @@ src/
 │   │   ├── fileserver.ts      # Fileserver (192.168.1.50) filesystem
 │   │   ├── webserver.ts       # Webserver (192.168.1.75) filesystem
 │   │   ├── darknet.ts         # Darknet (203.0.113.42) filesystem
-│   │   ├── shadow.ts          # Shadow (10.66.66.1) filesystem — hidden network
+│   │   ├── shadow.ts          # Shadow (10.66.66.1) filesystem — Flag 14 debug challenge
 │   │   ├── void.ts            # Void (10.66.66.2) filesystem — hidden network
 │   │   ├── abyss.ts           # Abyss (10.66.66.3) filesystem — hidden network
 │   │   └── index.ts           # Barrel re-exports
@@ -187,7 +187,8 @@ src/
 │   └── permissions.test.ts  # Tests colocated with permissions.ts
 ├── filesystem/
 │   └── machines/
-│       └── darknet.test.ts         # Tests for darknet filesystem content (Flag 13, etc.)
+│       ├── darknet.test.ts         # Tests for darknet filesystem content (Flag 13, etc.)
+│       └── shadow.test.ts         # Tests for shadow Flag 14 (script debugging logic)
 ├── utils/
 │   ├── md5.ts              # MD5 hashing for password validation
 │   ├── network.ts          # Network utilities (IP validation, range parsing)
@@ -343,7 +344,7 @@ The terminal includes a virtual Unix-like file system (`src/filesystem/`). Each 
 - `fileserver` (192.168.1.50): ftpuser, root - FTP server with /srv/ftp
 - `webserver` (192.168.1.75): www-data, root - web server with /var/www
 - `darknet` (203.0.113.42): ghost, root - mysterious server with final flag + bonus ROT13 challenge, dual-interface (public + hidden 10.66.66.0/24)
-- `shadow` (10.66.66.1): operator, root - hidden network (skeleton)
+- `shadow` (10.66.66.1): operator, root - monitoring node, Flag 14 debug challenge, FTP exports + diagnostics
 - `void` (10.66.66.2): dbadmin, root - hidden network (skeleton)
 - `abyss` (10.66.66.3): phantom, root - hidden network (skeleton)
 

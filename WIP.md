@@ -2,11 +2,11 @@
 
 ## Current Step
 
-Step 13 of 14: Victory tracking
+Hidden Network Flags (Flags 14-16) — nano + node challenges on shadow, void, abyss
 
 ## Status
 
-⏸️ WAITING - Ready to start next feature
+🔵 PLANNED — Ready to implement flag by flag
 
 ## Completed
 
@@ -22,10 +22,25 @@ Step 13 of 14: Victory tracking
 - [x] Step 10: Remote machine file systems
 - [x] Step 11: Additional exploitation commands (exit, ftp, nc)
 - [x] Step 12: Session persistence (IndexedDB, migrated from localStorage)
-- [ ] Step 13: Victory tracking ← next
+- [ ] Hidden Network Flags (14-16) ← current
+- [ ] Step 13: Victory tracking
 - [ ] Step 14: Challenge variety
 
 ## Recent Session (2026-02-12)
+
+Implemented:
+
+- **Flag 14 — Shadow Debugger**: Full filesystem for shadow monitoring node (10.66.66.1)
+  - `/home/operator/diagnostics/` — README.txt, access.log (21 pipe-delimited lines, tag fields spell FLAG), check_logs.js (2 bugs: off-by-one + wrong delimiter)
+  - `/srv/ftp/exports/` — system_report.txt (operator creds + void hint), network_status.txt (noise)
+  - `/var/log/` — auth.log (backup credential path), syslog, monitoring.log (node health checks)
+  - Noise: operator .bashrc (monitoring aliases), scripts/ (check_nodes.sh, rotate_logs.sh), /etc/crontab, /etc/monitoring.conf, guest .bash_history
+  - Added FTP port 21 to shadow in `initialNetwork.ts`
+  - Added `/root/.hidden_network` on darknet (lists services per hidden machine)
+  - 5 behavior-focused tests: buggy script throws TypeError, partial fix gives empty output, full fix extracts flag, format validation
+- **Test count**: 686 tests across 43 files
+
+## Previous Session (2026-02-12)
 
 Implemented:
 
@@ -244,215 +259,512 @@ Implemented:
 
 None currently.
 
-## Next Action
+## Next Action — Hidden Network Flags (14-16)
 
-Victory tracking (Step 13):
+Three new flags on the hidden 10.66.66.0/24 network machines, each requiring the player to **write and execute JavaScript** with `nano` + `node`. Difficulty ramp: debug existing code → write data-gathering code → write a full decoder.
 
-### Flag Detection
+### Overview
 
-- Detect flags automatically when user runs `cat` on a file containing `FLAG{...}` pattern
-- Intercept output in Terminal component and scan for flag patterns
-- Mark flag as found without requiring special command
+| #   | Flag                    | Machine | Difficulty   | Recon    | Key Skills                       | Idea Source         |
+| --- | ----------------------- | ------- | ------------ | -------- | -------------------------------- | ------------------- |
+| 14  | `FLAG{shadow_debugger}` | shadow  | Intermediate | FTP      | nano, node, JavaScript debugging | Idea 1 (Fix Script) |
+| 15  | `FLAG{void_data_miner}` | void    | Advanced     | NC :9999 | nano, node, cat() in code        | Idea 3 (Discovery)  |
+| 16  | `FLAG{abyss_decryptor}` | abyss   | Expert       | SSH only | nano, node, XOR cipher decoding  | Idea 4 (Exploit)    |
 
-### Storage
+### Credential Discovery Chain
 
-- Store found flags in IndexedDB (similar to session/filesystem persistence)
-- Track: list of found flags, timestamp when each was discovered
-- Type: `FlagState = { foundFlags: string[], firstFoundAt: Record<string, number> }`
+Player reaches hidden network from darknet (after Flags 12-13).
 
-### Presentation
+Connection variety: **FTP → NC → SSH** (each machine uses a different recon method).
 
-- **On discovery**: Show notification banner when a new flag is captured
-  ```
-  ╔═══════════════════════════════════════╗
-  ║  FLAG CAPTURED: welcome_hacker        ║
-  ║  Progress: 3/12 flags found           ║
-  ╚═══════════════════════════════════════╝
-  ```
-- **flags() command**: Check progress anytime, shows found flags and progress (3/12)
-- **Victory screen**: ASCII art celebration when all 12 flags found, with stats (time, flags)
-
-### Flags to Track (12 total)
-
-1. `FLAG{welcome_hacker}` - localhost (ls, cat)
-2. `FLAG{hidden_in_plain_sight}` - localhost (ls -a, cat)
-3. `FLAG{root_access_granted}` - localhost (crack passwd, su root)
-4. `FLAG{network_explorer}` - gateway (ifconfig, nmap, curl)
-5. `FLAG{gateway_breach}` - gateway (ssh guest, su admin)
-6. `FLAG{admin_panel_exposed}` - gateway (cat/curl admin.html)
-7. `FLAG{file_transfer_pro}` - fileserver (ftp, ls -a, get)
-8. `FLAG{binary_secrets_revealed}` - webserver (ssh, su, strings)
-9. `FLAG{decrypted_intel}` - cross-machine (decrypt with split key)
-10. `FLAG{backdoor_found}` - webserver (nc port 4444)
-11. `FLAG{darknet_discovered}` - darknet (nslookup, curl :8080)
-12. `FLAG{master_of_the_darknet}` - darknet (ssh, su root, decrypt)
+```
+darknet (as root/ghost)
+├── ifconfig() → see eth1: 10.66.66.100
+├── /etc/hosts → shadow.hidden, void.hidden, abyss.hidden
+├── /root/.hidden_network → lists services per machine:
+│     shadow: FTP (port 21, guest/demo)
+│     void: maintenance service (port 9999)
+│     abyss: SSH only
+│
+├── shadow (FTP recon → SSH to solve)
+│   ├── ftp("10.66.66.1") → login as guest/demo
+│   ├── Browse /srv/ftp/exports/ → find operator creds + void hint
+│   ├── quit() → ssh("operator", "10.66.66.1") with discovered password
+│   └── Solve Flag 14 (debug script with nano+node)
+│
+├── void (NC recon → SSH to solve)
+│   ├── nc("10.66.66.2", 9999) → connects as dbadmin (read-only shell)
+│   ├── Browse recovery/ → preview challenge, find abyss hint
+│   ├── exit() → ssh("guest", "10.66.66.2") → su("dbadmin") with password from auth.log
+│   └── Solve Flag 15 (data extraction with nano+node)
+│
+└── abyss (SSH only — hardest)
+    ├── ssh("guest", "10.66.66.3") → demo
+    ├── /var/log/auth.log → phantom password
+    ├── su("phantom") → solve Flag 16 (XOR cipher with nano+node)
+    └── Credentials for phantom discovered via void NC recon
+```
 
 ---
 
-## Challenge Variety (Step 14)
+### FLAG 14: `FLAG{shadow_debugger}` — Fix the Script
 
-### Alternative Flag Discovery Methods
+**Machine**: shadow (10.66.66.1) | **User**: operator | **Difficulty**: Intermediate
 
-Beyond `cat`, flags can be discovered through various commands:
+**Theme**: Shadow is a monitoring/control server. Operator has a diagnostic script that extracts status tags from access logs, but it has 2 bugs. Player must debug with `nano` then run with `node`.
 
-#### curl Command
+**Files to create**:
 
-HTTP requests to web servers for clues and flags:
+#### `/home/operator/diagnostics/README.txt` (readable by user+guest)
 
-**GET requests:**
+```
+SHADOW MONITORING SYSTEM
+========================
 
-```javascript
-curl('http://192.168.1.75/robots.txt'); // Reveals hidden paths
-curl('http://192.168.1.75/.git/config'); // Exposed git config
-curl('http://192.168.1.75/admin/backup'); // Returns a flag
+Diagnostic script: check_logs.js
+Data source: access.log
+
+The check_logs.js script extracts the tag field from each log entry
+and concatenates them to reveal a status message. Operator reports
+it's throwing errors and producing wrong output.
+
+Log format: timestamp|source_ip|method|endpoint|status|tag
+
+Run: node("diagnostics/check_logs.js")
+Fix: nano("diagnostics/check_logs.js")
 ```
 
-**POST requests:**
+#### `/home/operator/diagnostics/access.log` (readable by user+guest)
 
-```javascript
-curl('http://192.168.1.75/api/login', { method: 'POST', body: { user: 'admin', pass: 'admin' } });
-// Returns: { "token": "FLAG{...}" }
+21 log lines. The `tag` field (last column, pipe-delimited) of each line spells `FLAG{shadow_debugger}` one character at a time:
+
+```
+2024-03-15 08:00:01|10.66.66.100|GET|/api/heartbeat|200|F
+2024-03-15 08:00:12|10.66.66.2|POST|/api/metrics|201|L
+2024-03-15 08:00:23|10.66.66.3|GET|/api/status|200|A
+2024-03-15 08:00:34|10.66.66.100|GET|/api/health|200|G
+2024-03-15 08:00:45|10.66.66.2|DELETE|/api/cache|204|{
+2024-03-15 08:00:56|10.66.66.100|POST|/api/report|201|s
+2024-03-15 08:01:07|10.66.66.3|GET|/api/nodes|200|h
+2024-03-15 08:01:18|10.66.66.100|GET|/api/heartbeat|200|a
+2024-03-15 08:01:29|10.66.66.2|POST|/api/data|200|d
+2024-03-15 08:01:40|10.66.66.3|GET|/api/status|200|o
+2024-03-15 08:01:51|10.66.66.100|GET|/api/config|200|w
+2024-03-15 08:02:02|10.66.66.2|POST|/api/metrics|201|_
+2024-03-15 08:02:13|10.66.66.100|GET|/api/heartbeat|200|d
+2024-03-15 08:02:24|10.66.66.3|GET|/api/health|200|e
+2024-03-15 08:02:35|10.66.66.100|POST|/api/report|201|b
+2024-03-15 08:02:46|10.66.66.2|GET|/api/nodes|200|u
+2024-03-15 08:02:57|10.66.66.3|GET|/api/status|200|g
+2024-03-15 08:03:08|10.66.66.100|GET|/api/heartbeat|200|g
+2024-03-15 08:03:19|10.66.66.2|POST|/api/data|201|e
+2024-03-15 08:03:30|10.66.66.3|GET|/api/config|200|r
+2024-03-15 08:03:41|10.66.66.100|GET|/api/status|200|}
 ```
 
-**Scenarios:**
+#### `/home/operator/diagnostics/check_logs.js` (readable+executable by user)
 
-- Query web server, find hints in HTML comments
-- Discover API endpoints from config files, then query them
-- POST credentials found in log files to get access tokens
-
-#### Other Potential Commands
-
-| Command                        | Use Case                           |
-| ------------------------------ | ---------------------------------- |
-| `grep("FLAG", "/var")`         | Search files for patterns          |
-| `strings("binary.dat")`        | Extract text from "binary" files   |
-| `base64("-d", "RkxBR3suLi59")` | Decode obfuscated content          |
-| `env()`                        | Environment variables with secrets |
-| `mysql("SELECT * FROM users")` | SQL queries on webserver           |
-
-#### Multi-Step Discovery Chains
-
-Example puzzle requiring multiple steps:
-
-1. `cat /var/log/auth.log` → reveals a username
-2. `curl http://webserver/~username/` → finds a config file path
-3. `cat` the config → contains base64-encoded flag
-4. `base64 -d` → reveals the flag
-
-#### Encrypted File Challenge (Web Crypto API)
-
-Use the Web Crypto API (AES-GCM) for encryption puzzles:
-
-**decrypt command:**
+Buggy script with 2 bugs:
 
 ```javascript
-decrypt(file, key); // Decrypt a file using AES-256-GCM
+const logs = cat('diagnostics/access.log');
+const lines = logs.split('\n');
+const result = [];
+for (let i = 0; i <= lines.length; i++) {
+  const parts = lines[i].split(',');
+  if (parts.length >= 6) {
+    result.push(parts[5]);
+  }
+}
+echo(result.join(''));
 ```
 
-**Example puzzle:**
+**Bug 1**: `i <= lines.length` — accesses `lines[lines.length]` which is `undefined` → TypeError crash
+**Bug 2**: `.split(",")` — log uses `|` delimiter, not `,` → fields.length is always 1, no output
 
-```javascript
-// 1. Player finds an encrypted file
-cat('/home/ghost/secret.enc');
-// Output: "U2FsdGVkX1..." (base64 encrypted data)
+**Debugging flow**:
 
-// 2. Player finds a key elsewhere (in logs, config, etc.)
-cat('/var/log/keyfile');
-// Output: "aes-key: 7f3d8a..."
+1. `node("diagnostics/check_logs.js")` → `TypeError: Cannot read properties of undefined (reading 'split')`
+2. Player uses `nano` to fix `<=` to `<`
+3. Runs again → empty output (split on wrong delimiter)
+4. Player reads `access.log`, sees pipe delimiters, fixes `","` to `"|"`
+5. Runs again → `FLAG{shadow_debugger}`
 
-// 3. Player decrypts the file
-decrypt('secret.enc', '7f3d8a...');
-// Output: "FLAG{crypto_master}"
+#### FTP directory: `/srv/ftp/` (shadow has FTP on port 21)
+
+Player FTPs in as guest/demo from darknet before SSH-ing. FTP provides recon files.
+
+`/srv/ftp/exports/system_report.txt` (readable by guest):
+
+```
+SHADOW MONITORING — SYSTEM REPORT
+===================================
+Date: 2024-03-15
+
+Active users:
+  operator  — primary diagnostics account (password: c0ntr0l_pl4n3)
+  guest     — read-only FTP access
+
+Diagnostics status: FAILING
+  Script /home/operator/diagnostics/check_logs.js has errors.
+  Operator has been unable to fix it. See diagnostics/ for details.
+
+Network notes:
+  void.hidden (10.66.66.2) has a maintenance service on port 9999.
+  Useful for previewing database recovery status.
 ```
 
-**Implementation notes:**
+`/srv/ftp/exports/network_status.txt` (readable by guest — noise):
 
-- Use `crypto.subtle.decrypt()` with AES-GCM
-- Keys found in various locations (log files, env vars, API responses)
-- Encrypted files contain base64-encoded ciphertext
-- Wrong key → "Decryption failed" error
-
-#### Hash Verification Challenge (Web Crypto API)
-
-Use `crypto.subtle.digest()` to verify file integrity - detect backdoored binaries:
-
-**checksum command:**
-
-```javascript
-checksum(file); // Calculate SHA-256 hash of a file
+```
+NETWORK STATUS — 10.66.66.0/24
+================================
+shadow  (10.66.66.1)  — ONLINE  — monitoring/control
+void    (10.66.66.2)  — ONLINE  — database server
+abyss   (10.66.66.3)  — ONLINE  — secure vault
+darknet (10.66.66.100) — ONLINE — gateway
 ```
 
-**Example puzzle:**
+**FTP recon flow**:
 
-```javascript
-// 1. Find a list of known good hashes
-cat('/etc/checksums');
-// Output:
-// /bin/sudo: sha256:5e884898da28047d...
-// /bin/login: sha256:a3f8c2e1b9d04567...
+1. `ftp("10.66.66.1")` → login as guest/demo
+2. `cd("/srv/ftp/exports")` → `ls()` → see system_report.txt, network_status.txt
+3. `get("system_report.txt")` → download
+4. `quit()` → `cat("system_report.txt")` → operator password + void hint
+5. `ssh("operator", "10.66.66.1")` → c0ntr0l_pl4n3 → solve Flag 14
 
-// 2. Check if system binaries have been tampered with
-checksum('/bin/sudo');
-// Output: "sha256:9f86d081884c7d65..." (different!)
+#### Other shadow files
 
-// 3. The tampered binary contains a clue or backdoor
-strings('/bin/sudo');
-// Output: "BACKDOOR_PASSWORD=FLAG{binary_tampering}"
+- `/var/log/auth.log` — readable by guest, leaks operator password (backup credential path):
+  ```
+  [2024-03-15 08:23:11] pam_unix: session opened for user operator
+  [2024-03-15 08:23:11] pam_auth: operator authenticated - password 'c0ntr0l_pl4n3'
+  [2024-03-15 09:15:42] sshd: accepted connection from 10.66.66.100
+  [2024-03-15 12:00:01] cron: running /etc/cron.daily/monitor
+  ```
+- `/home/operator/.bash_history` — noise:
+  ```
+  node diagnostics/check_logs.js
+  cat diagnostics/access.log
+  nano diagnostics/check_logs.js
+  ping 10.66.66.2
+  ssh dbadmin@10.66.66.2
+  ```
+- `/var/log/syslog` — noise monitoring logs
+
+---
+
+### FLAG 15: `FLAG{void_data_miner}` — Script-Based Discovery
+
+**Machine**: void (10.66.66.2) | **User**: dbadmin | **Difficulty**: Advanced
+
+**Theme**: Void is a database server. A master key was fragmented across 5 database table dumps for security. Each table has 20 data rows; only row 13 in each table's `hash` column contains a fragment. A manifest file explains the extraction pattern. Too tedious to do by hand — player writes a script.
+
+**Files to create**:
+
+#### `/home/dbadmin/recovery/manifest.txt` (readable by user+guest)
+
+```
+DATABASE RECOVERY MANIFEST
+===========================
+
+The master key was fragmented across 5 database table dumps
+for security. Each table's "hash" column (4th field) at data
+row 13 contains one fragment.
+
+Tables (in order): table_01.csv through table_05.csv
+Format: pipe-delimited, header row + 20 data rows
+Target: row 13, column 4 ("hash")
+
+Concatenate all 5 fragments in table order to reconstruct the key.
+
+Hint: Writing a script is faster than doing this by hand.
+      node() has access to cat() for reading files.
 ```
 
-**Implementation notes:**
+#### `/home/dbadmin/recovery/table_01.csv` through `table_05.csv`
 
-- Use `crypto.subtle.digest('SHA-256', data)`
-- Compare hashes to detect modifications
-- Tampered files reveal clues about attacker activity
+Each file: header + 20 data rows, pipe-delimited: `id|name|status|hash|timestamp`
 
-#### HMAC API Authentication Challenge (Web Crypto API)
+Row 13's `hash` field in each table:
 
-Use `crypto.subtle.sign()` with HMAC for API request signing:
+- `table_01.csv` → `FLAG{`
+- `table_02.csv` → `void_`
+- `table_03.csv` → `data_`
+- `table_04.csv` → `mine`
+- `table_05.csv` → `r}`
 
-**hmac command:**
+All other rows have realistic-looking hex hash noise (e.g., `a3f8c2e1`, `9d4b7f20`).
 
-```javascript
-hmac(message, key); // Generate HMAC-SHA256 signature
-```
-
-**Example puzzle:**
+**Expected player solution**:
 
 ```javascript
-// 1. Find API documentation mentioning HMAC auth
-cat('/var/www/api/README');
-// Output: "All requests must include X-Signature header with HMAC-SHA256"
-
-// 2. Find the secret key
-cat('/etc/api/.secret');
-// Output: "hmac-secret: a3f8c2e1b9d0..."
-
-// 3. Craft a signed request
-curl('http://192.168.1.75/api/admin', {
-  headers: { 'X-Signature': hmac('GET /api/admin', 'a3f8c2e1b9d0...') },
+const tables = ['table_01.csv', 'table_02.csv', 'table_03.csv', 'table_04.csv', 'table_05.csv'];
+const fragments = tables.map((t) => {
+  const rows = cat('recovery/' + t).split('\n');
+  return rows[13].split('|')[3];
 });
-// Output: { "flag": "FLAG{api_signature_master}" }
+echo(fragments.join(''));
+// Output: FLAG{void_data_miner}
 ```
 
-**Implementation notes:**
+#### NC service: port 9999 "maintenance" (void has NC backdoor)
 
-- Use `crypto.subtle.sign('HMAC', key, data)`
-- Unsigned or incorrectly signed requests → "401 Unauthorized"
-- Teaches real-world API security concepts
+Player NCs in from darknet as dbadmin (read-only shell). Provides preview of challenge + abyss credentials.
 
-#### Flag Detection Points
+Port config in `initialNetwork.ts`:
 
-Flags should be detected from output of:
+```
+{ port: 9999, service: 'maintenance', open: true, owner: { username: 'dbadmin', userType: 'user', homePath: '/home/dbadmin' } }
+```
 
-- `cat` - reading files
-- `curl` - HTTP responses (body, headers)
-- `grep` - search results
-- `strings` - extracted text from binaries
-- `base64` - decoded content
-- `decrypt` - decrypted content (Web Crypto API)
-- `checksum` - hash verification may reveal tampered files with clues
-- `mysql` - query results
-- Any command that outputs text containing `FLAG{...}` pattern
+**NC recon flow**:
+
+1. `nc("10.66.66.2", 9999)` → connects as dbadmin
+2. `ls("recovery")` → see manifest.txt, table_01.csv ... table_05.csv
+3. `cat("recovery/manifest.txt")` → preview the challenge (need nano+node to solve)
+4. `cat("/var/log/auth.log")` → dbadmin password (for SSH later)
+5. `ls("/home/dbadmin", "-a")` → find `.abyss_notes`
+6. `cat("/home/dbadmin/.abyss_notes")` → phantom credentials for abyss
+7. `exit()` → back to darknet
+
+`/home/dbadmin/.abyss_notes` (readable by user — visible via NC as dbadmin):
+
+```
+ABYSS ACCESS
+=============
+Vault server at abyss.hidden (10.66.66.3).
+SSH only — no other services exposed.
+
+Guest access: guest / demo
+Vault operator: phantom / sp3ctr4l
+
+The vault contains an encrypted payload that needs
+a custom decryption script to decode.
+```
+
+#### Other void files
+
+- `/var/log/auth.log` — readable by guest, leaks dbadmin password:
+  ```
+  [2024-03-16 10:15:22] pam_auth: dbadmin authenticated - password 'dr0p_t4bl3s'
+  [2024-03-16 10:15:22] pam_unix: session opened for user dbadmin
+  [2024-03-16 14:30:00] mysqld: backup completed to /home/dbadmin/recovery/
+  ```
+- `/home/dbadmin/.bash_history` — noise:
+  ```
+  mysqldump --all-databases > recovery/full_dump.sql
+  ls recovery/
+  cat recovery/manifest.txt
+  ssh phantom@10.66.66.3
+  ```
+- `/var/lib/mysql/my.cnf` — noise database config
+- `/var/log/mysql.log` — noise database logs
+
+---
+
+### FLAG 16: `FLAG{abyss_decryptor}` — Exploit Script (XOR Cipher)
+
+**Machine**: abyss (10.66.66.3) | **User**: phantom | **Difficulty**: Expert
+
+**Theme**: Abyss holds a vault with an encoded payload. The encoding is XOR with a repeating key, then hex-encoded. Player must write a full decoder script. The key is in a separate file.
+
+**Files to create**:
+
+#### `/home/phantom/vault/README.txt` (readable by user+guest)
+
+```
+THE VAULT
+=========
+
+This vault contains an encrypted payload that was intercepted
+from the network. The encoding scheme is documented in cipher.txt.
+The key is stored separately in key.txt.
+
+You'll need to write a decryption script to recover the plaintext.
+Use nano() to create your script and node() to execute it.
+```
+
+#### `/home/phantom/vault/cipher.txt` (readable by user+guest)
+
+```
+CIPHER SPECIFICATION
+====================
+
+Algorithm: XOR with repeating key
+Encoding: each XOR'd byte is hex-encoded (2 hex chars per byte)
+Format: space-separated hex pairs
+
+Decryption steps:
+  1. Read the hex pairs from encoded_payload.txt
+  2. Read the key from key.txt
+  3. For each hex pair: convert to integer, XOR with key byte
+     (key repeats cyclically)
+  4. Convert resulting bytes to characters
+
+Note: XOR is its own inverse — same operation encrypts and decrypts.
+```
+
+#### `/home/phantom/vault/key.txt` (readable by user)
+
+```
+ABYSS
+```
+
+#### `/home/phantom/vault/encoded_payload.txt` (readable by user)
+
+Pre-computed XOR of `FLAG{abyss_decryptor}` with repeating key `ABYSS`:
+
+```
+07 0e 18 14 28 20 20 20 20 20 1e 26 3c 30 21 38 32 2d 3c 21 3c
+```
+
+Computation detail (for verification during implementation):
+
+```
+F(46)^A(41)=07  L(4c)^B(42)=0e  A(41)^Y(59)=18  G(47)^S(53)=14
+{(7b)^S(53)=28  a(61)^A(41)=20  b(62)^B(42)=20  y(79)^Y(59)=20
+s(73)^S(53)=20  s(73)^S(53)=20  _(5f)^A(41)=1e  d(64)^B(42)=26
+e(65)^Y(59)=3c  c(63)^S(53)=30  r(72)^S(53)=21  y(79)^A(41)=38
+p(70)^B(42)=32  t(74)^Y(59)=2d  o(6f)^S(53)=3c  r(72)^S(53)=21
+}(7d)^A(41)=3c
+```
+
+Fun pattern: bytes 5-9 are all `20` (space) because `abyss` XOR `ABYSS` = lowercase XOR uppercase = 0x20 for each. A keen player might notice this and deduce the key!
+
+**Expected player solution**:
+
+```javascript
+const hex = cat('vault/encoded_payload.txt').trim();
+const key = cat('vault/key.txt').trim();
+const bytes = hex.split(' ');
+const decoded = bytes
+  .map((b, i) => String.fromCharCode(parseInt(b, 16) ^ key.charCodeAt(i % key.length)))
+  .join('');
+echo(decoded);
+// Output: FLAG{abyss_decryptor}
+```
+
+#### Other abyss files
+
+- `/var/log/auth.log` — readable by guest (noise only, no password leak — creds come from void):
+  ```
+  [2024-03-17 14:32:45] pam_unix: session opened for user phantom
+  [2024-03-17 14:33:01] sshd: connection from 10.66.66.100
+  [2024-03-17 15:00:00] cron: running /etc/cron.daily/backup
+  ```
+- `/home/phantom/.bash_history` — noise:
+  ```
+  ls vault/
+  cat vault/cipher.txt
+  cat vault/encoded_payload.txt
+  nano decode.js
+  ```
+- `/var/log/syslog` — noise system logs
+
+**Credential path**: Phantom's password (`sp3ctr4l`) is NOT leaked on abyss itself.
+Player must discover it from void's `/home/dbadmin/.abyss_notes` via NC recon.
+This forces the FTP→NC→SSH chain rather than allowing players to skip ahead.
+
+---
+
+### Cross-Cutting: Darknet Hint File
+
+Add to darknet filesystem (readable by root or ghost):
+
+#### `/root/.hidden_network` on darknet
+
+```
+HIDDEN NETWORK ACCESS
+=====================
+
+Internal network: 10.66.66.0/24 (via eth1)
+
+Machines:
+  shadow.hidden  (10.66.66.1)  — monitoring/control
+    Services: FTP (port 21), SSH (port 22)
+    FTP access: guest / demo
+
+  void.hidden    (10.66.66.2)  — database server
+    Services: SSH (port 22), maintenance (port 9999)
+    Maintenance port may have useful access.
+
+  abyss.hidden   (10.66.66.3)  — secure vault
+    Services: SSH (port 22) only
+    High security. Credentials unknown.
+
+Start with shadow — FTP exports contain useful intel.
+```
+
+---
+
+### Implementation Checklist
+
+#### Flag 14 — Shadow (FTP + SSH)
+
+- [ ] Update `src/network/initialNetwork.ts`:
+  - Add FTP port 21 to `shadowMachine` ports
+- [ ] Expand `src/filesystem/machines/shadow.ts` with full filesystem content
+  - `/srv/ftp/exports/` — system_report.txt (operator creds + void hint), network_status.txt (noise)
+  - `/home/operator/diagnostics/` — README.txt, access.log, check_logs.js
+  - Auth log with operator password leak (backup credential path)
+  - Noise files (.bash_history, syslog)
+  - Guest home (empty or minimal)
+- [ ] Set correct permissions:
+  - FTP exports readable by guest (for FTP browsing)
+  - Diagnostics files readable+executable by user
+  - Auth.log readable by guest
+- [ ] Add tests in `src/filesystem/machines/shadow.test.ts`
+  - Verify access.log tag characters spell `FLAG{shadow_debugger}`
+  - Verify check_logs.js contains the 2 bugs
+  - Verify FTP exports contain operator password and void hint
+- [ ] Update darknet.ts: add `/root/.hidden_network` hint file (lists services per machine)
+- [ ] Build + test pass
+
+#### Flag 15 — Void (NC + SSH)
+
+- [ ] Update `src/network/initialNetwork.ts`:
+  - Add maintenance port 9999 to `voidMachine` ports with owner: `{ username: 'dbadmin', userType: 'user', homePath: '/home/dbadmin' }`
+- [ ] Expand `src/filesystem/machines/void.ts` with full filesystem content
+  - `/home/dbadmin/recovery/` — manifest.txt, 5 CSV table files
+  - `/home/dbadmin/.abyss_notes` — phantom credentials for abyss (visible via NC as dbadmin)
+  - Auth log with dbadmin password leak
+  - Noise files (.bash_history, mysql config/logs)
+- [ ] Generate 5 CSV tables with 20 data rows each, fragment at row 13 col 4
+- [ ] Set correct permissions:
+  - Recovery files readable by user+guest
+  - .abyss_notes readable by user only (so NC as dbadmin can read, but guest SSH cannot)
+- [ ] Add tests in `src/filesystem/machines/void.test.ts`
+  - Verify fragments at row 13, column 4 concatenate to `FLAG{void_data_miner}`
+  - Verify manifest describes the correct extraction pattern
+  - Verify .abyss_notes contains phantom credentials
+- [ ] Build + test pass
+
+#### Flag 16 — Abyss (SSH only)
+
+- [ ] Expand `src/filesystem/machines/abyss.ts` with full filesystem content
+  - `/home/phantom/vault/` — README.txt, cipher.txt, key.txt, encoded_payload.txt
+  - Auth log (noise only — NO phantom password leak; creds from void)
+  - Noise files (.bash_history, syslog)
+- [ ] Verify XOR computation: hex pairs decode correctly with key `ABYSS`
+- [ ] Set correct permissions
+- [ ] Add tests in `src/filesystem/machines/abyss.test.ts`
+  - Verify XOR decode of encoded_payload.txt with key.txt produces `FLAG{abyss_decryptor}`
+  - Verify cipher.txt documents the algorithm
+  - Verify auth.log does NOT contain phantom password
+- [ ] Build + test pass
+
+#### Final
+
+- [ ] Update docs: CLAUDE.md (project structure if needed), README.md (test count), CTF_DESIGN.md
+- [ ] Update WIP.md: move to completed, update test count
+- [ ] Playtest the full hidden network chain: darknet → FTP shadow → NC void → SSH abyss
+
+---
+
+## Deferred: Victory Tracking (Step 13)
+
+Flag detection, progress display, `flags()` command, victory celebration. Deferred until hidden network flags are complete. See PLAN.md Step 13 for full spec.
 
 ---
 
@@ -460,23 +772,16 @@ Flags should be detected from output of:
 
 ### Machines with Per-Machine Filesystems
 
-| Machine    | IP            | Users                 | Flags                                                                           |
-| ---------- | ------------- | --------------------- | ------------------------------------------------------------------------------- |
-| localhost  | 192.168.1.100 | jshacker, root, guest | FLAG{welcome_to_the_underground}                                                |
-| gateway    | 192.168.1.1   | admin, guest          | FLAG{router_misconfiguration}, FLAG{router_admin_panel}                         |
-| fileserver | 192.168.1.50  | root, ftpuser, guest  | FLAG{ftp_hidden_treasure}                                                       |
-| webserver  | 192.168.1.75  | root, www-data, guest | FLAG{sql_history_exposed}, FLAG{database_backup_gold}, FLAG{api_config_exposed} |
-| darknet    | 203.0.113.42  | root, ghost, guest    | FLAG{master_of_the_darknet}, FLAG{darknet_api_discovered}                       |
-| shadow     | 10.66.66.1    | root, operator, guest | (skeleton)                                                                      |
-| void       | 10.66.66.2    | root, dbadmin, guest  | (skeleton)                                                                      |
-| abyss      | 10.66.66.3    | root, phantom, guest  | (skeleton)                                                                      |
-
-### Backdoors (nc interactive mode)
-
-| Machine   | Port  | Service | User     | Home Path   |
-| --------- | ----- | ------- | -------- | ----------- |
-| webserver | 4444  | elite   | www-data | /var/www    |
-| darknet   | 31337 | elite   | ghost    | /home/ghost |
+| Machine    | IP            | Users                 | Flags                                              |
+| ---------- | ------------- | --------------------- | -------------------------------------------------- |
+| localhost  | 192.168.1.100 | jshacker, root, guest | FLAG 1, 2, 3                                       |
+| gateway    | 192.168.1.1   | admin, guest          | FLAG 4, 5, 6                                       |
+| fileserver | 192.168.1.50  | root, ftpuser, guest  | FLAG 7                                             |
+| webserver  | 192.168.1.75  | root, www-data, guest | FLAG 8, 9, 10                                      |
+| darknet    | 203.0.113.42  | root, ghost, guest    | FLAG 11, 12, 13                                    |
+| shadow     | 10.66.66.1    | root, operator, guest | FLAG 14 — Fix the Script (nano+node debug)         |
+| void       | 10.66.66.2    | root, dbadmin, guest  | FLAG 15 — Script Discovery (nano+node data mining) |
+| abyss      | 10.66.66.3    | root, phantom, guest  | FLAG 16 — Exploit Script (nano+node XOR cipher)    |
 
 ### Known Passwords (MD5 hashed)
 
@@ -506,7 +811,7 @@ Flags should be detected from output of:
 
 ### Test Coverage
 
-- 674 tests across 41 colocated test files
+- 686 tests across 43 colocated test files
 - All commands with logic are tested
 - FTP subcommands tested (cd, lcd, ls, lls, get, put)
 - NC command and subcommands tested (nc, cat, cd, ls)

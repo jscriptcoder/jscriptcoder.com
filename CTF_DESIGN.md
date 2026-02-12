@@ -72,9 +72,9 @@ Network is **per-machine** — each machine sees its own interfaces, reachable m
                       darknet eth1 ─── 10.66.66.100
                                         │
                                    10.66.66.0/24 (Hidden Network)
-                                        ├── 10.66.66.1  shadow — SSH (skeleton)
-                                        ├── 10.66.66.2  void — SSH (skeleton)
-                                        └── 10.66.66.3  abyss — SSH (skeleton)
+                                        ├── 10.66.66.1  shadow — FTP, SSH
+                                        ├── 10.66.66.2  void — SSH, maintenance:9999
+                                        └── 10.66.66.3  abyss — SSH only
 ```
 
 **Reachability:** LAN machines reach each other + darknet. Darknet sees gateway WAN + hidden network only. Hidden machines see each other + darknet eth1 only.
@@ -130,6 +130,9 @@ Network is **per-machine** — each machine sees its own interfaces, reachable m
 | 11  | FLAG{darknet_discovered}      | darknet       | Expert       | nslookup, curl                   |
 | 12  | FLAG{master_of_the_darknet}   | darknet       | Expert       | ssh/nc, su, decrypt (multi-step) |
 | 13  | FLAG{code_the_decoder}        | darknet       | Bonus        | nano, node, JavaScript (ROT13)   |
+| 14  | FLAG{shadow_debugger}         | shadow        | Intermediate | ftp recon, nano, node, JS debug  |
+| 15  | FLAG{void_data_miner}         | void          | Advanced     | nc recon, nano, node, cat()      |
+| 16  | FLAG{abyss_decryptor}         | abyss         | Expert       | ssh, nano, node, XOR cipher      |
 
 ---
 
@@ -615,23 +618,23 @@ Ensures every command is needed:
 | `cat`         | 1, 2, 3, 4, 5, 6, 8, 10, 12 | Reading files             |
 | `pwd`         | Any (orientation)           | Current location          |
 | `whoami`      | Any (identity check)        | Current user              |
-| `su`          | 3, 5, 8, 12                 | Privilege escalation      |
+| `su`          | 3, 5, 8, 12, 14, 15, 16     | Privilege escalation      |
 | `ifconfig`    | 4                           | Network discovery         |
 | `ping`        | 4                           | Connectivity test         |
 | `nmap`        | 4, 10                       | Port scanning             |
 | `nslookup`    | 11                          | DNS resolution            |
 | `curl`        | 4, 6, 11                    | Web content retrieval     |
-| `ssh`         | 5, 8, 12                    | Remote shell access       |
-| `ftp`         | 7, 9                        | File transfer             |
-| `nc`          | 10, 12 (alt)                | Backdoor access           |
+| `ssh`         | 5, 8, 12, 14, 15, 16        | Remote shell access       |
+| `ftp`         | 7, 9, 14                    | File transfer / recon     |
+| `nc`          | 10, 12 (alt), 15            | Backdoor access / recon   |
 | `strings`     | 8                           | Binary analysis           |
 | `output`      | 8                           | Capture command output    |
 | `resolve`     | 9, 12                       | Unwrap async results      |
 | `decrypt`     | 9, 12                       | Decrypt files (root only) |
-| `exit`        | 5, 7, 8, 10, 12             | Return from remote        |
+| `exit`        | 5, 7, 8, 10, 12, 14, 15, 16 | Return from remote        |
 | `const`/`let` | 8, 9, 12                    | Store values in variables |
-| `nano`        | 13                          | Edit/create files         |
-| `node`        | 13                          | Execute JavaScript files  |
+| `nano`        | 13, 14, 15, 16              | Edit/create files         |
+| `node`        | 13, 14, 15, 16              | Execute JavaScript files  |
 
 ---
 
@@ -654,7 +657,17 @@ localhost (start as user "jshacker")
 │
 └── darknet (SSH as guest or NC on 31337)
     ├── su to ghost (user) → find encrypted flag
-    └── Read logs → find root password → su to root → decrypt
+    ├── Read logs → find root password → su to root → decrypt
+    ├── /root/.hidden_network → guest/demo for hidden network
+    │
+    ├── shadow (SSH as guest)
+    │   └── Read logs → find operator password → su to operator → debug script (nano+node)
+    │
+    ├── void (SSH as guest)
+    │   └── Read logs → find dbadmin password → su to dbadmin → extract data (nano+node)
+    │
+    └── abyss (SSH as guest)
+        └── Read logs → find phantom password → su to phantom → XOR decode (nano+node)
 ```
 
 ---
@@ -728,6 +741,22 @@ Additional directories that require root access, providing incentive for escalat
 
 - [x] Flag 13 — Code the Decoder (ROT13 in darknet `/home/ghost/projects/`)
 
+### Phase 7: Hidden Network Flags (FTP/NC recon + nano + node challenges)
+
+- [x] Update `initialNetwork.ts`: add FTP port to shadow ~~, add NC port 9999 to void (with dbadmin owner)~~
+- [x] Add darknet hint file `/root/.hidden_network` (lists services per machine)
+- [x] Flag 14 — Shadow (FTP recon + nano+node):
+  - [x] Expand `shadow.ts`: /srv/ftp/exports/ (system_report.txt with creds), diagnostics/, auth.log, noise
+  - [x] Add tests in `shadow.test.ts`
+- [ ] Flag 15 — Void (NC recon + nano+node):
+  - [ ] Expand `void.ts`: recovery/ with 5 CSV tables, .abyss_notes (phantom creds), auth.log, noise
+  - [ ] Add tests in `void.test.ts`
+- [ ] Flag 16 — Abyss (SSH only, creds from void):
+  - [ ] Expand `abyss.ts`: vault/ with cipher docs + payload, auth.log (no password leak), noise
+  - [ ] Add tests in `abyss.test.ts`
+- [ ] Update docs (CLAUDE.md, README.md, CTF_DESIGN.md, WIP.md)
+- [ ] Playtest full chain: darknet → FTP shadow → NC void → SSH abyss
+
 ---
 
 ## Verified Playtest — Solutions Guide
@@ -736,20 +765,24 @@ Complete walkthrough verified against the actual filesystem and command implemen
 
 ### Summary Table
 
-| #   | Flag                            | Machine    | Path / Method                           | Access Required                     |
-| --- | ------------------------------- | ---------- | --------------------------------------- | ----------------------------------- |
-| 1   | `FLAG{welcome_hacker}`          | localhost  | `/home/jshacker/README.txt`             | `ls`, `cat` as user                 |
-| 2   | `FLAG{hidden_in_plain_sight}`   | localhost  | `/home/jshacker/.mission`               | `ls -a`, `cat` as user              |
-| 3   | `FLAG{root_access_granted}`     | localhost  | `/root/flag.txt`                        | Crack passwd hash, `su root`        |
-| 4   | `FLAG{network_explorer}`        | gateway    | `curl("192.168.1.1")` HTML comment      | `ifconfig`, `nmap`, `curl`          |
-| 5   | `FLAG{gateway_breach}`          | gateway    | `/root/flag.txt`                        | SSH as guest, `su admin`            |
-| 6   | `FLAG{admin_panel_exposed}`     | gateway    | `/var/www/html/admin.html` HTML comment | `cat` as admin or `curl`            |
-| 7   | `FLAG{file_transfer_pro}`       | fileserver | `/srv/ftp/uploads/.backup_notes.txt`    | FTP as ftpuser, `ls -a`, `get`      |
-| 8   | `FLAG{binary_secrets_revealed}` | webserver  | `/opt/tools/scanner`                    | SSH, `su www-data`, `strings`       |
-| 9   | `FLAG{decrypted_intel}`         | webserver  | `/var/www/backups/encrypted_intel.enc`  | `su root`, `decrypt` with split key |
-| 10  | `FLAG{backdoor_found}`          | webserver  | `/opt/tools/.backdoor_log`              | `nc` port 4444, `ls -a`, `cat`      |
-| 11  | `FLAG{darknet_discovered}`      | darknet    | `curl("http://203.0.113.42:8080")`      | `nslookup`, `curl` with port        |
-| 12  | `FLAG{master_of_the_darknet}`   | darknet    | `/home/ghost/.encrypted_flag.enc`       | SSH, `su root`, `decrypt`           |
+| #   | Flag                            | Machine    | Path / Method                           | Access Required                                     |
+| --- | ------------------------------- | ---------- | --------------------------------------- | --------------------------------------------------- |
+| 1   | `FLAG{welcome_hacker}`          | localhost  | `/home/jshacker/README.txt`             | `ls`, `cat` as user                                 |
+| 2   | `FLAG{hidden_in_plain_sight}`   | localhost  | `/home/jshacker/.mission`               | `ls -a`, `cat` as user                              |
+| 3   | `FLAG{root_access_granted}`     | localhost  | `/root/flag.txt`                        | Crack passwd hash, `su root`                        |
+| 4   | `FLAG{network_explorer}`        | gateway    | `curl("192.168.1.1")` HTML comment      | `ifconfig`, `nmap`, `curl`                          |
+| 5   | `FLAG{gateway_breach}`          | gateway    | `/root/flag.txt`                        | SSH as guest, `su admin`                            |
+| 6   | `FLAG{admin_panel_exposed}`     | gateway    | `/var/www/html/admin.html` HTML comment | `cat` as admin or `curl`                            |
+| 7   | `FLAG{file_transfer_pro}`       | fileserver | `/srv/ftp/uploads/.backup_notes.txt`    | FTP as ftpuser, `ls -a`, `get`                      |
+| 8   | `FLAG{binary_secrets_revealed}` | webserver  | `/opt/tools/scanner`                    | SSH, `su www-data`, `strings`                       |
+| 9   | `FLAG{decrypted_intel}`         | webserver  | `/var/www/backups/encrypted_intel.enc`  | `su root`, `decrypt` with split key                 |
+| 10  | `FLAG{backdoor_found}`          | webserver  | `/opt/tools/.backdoor_log`              | `nc` port 4444, `ls -a`, `cat`                      |
+| 11  | `FLAG{darknet_discovered}`      | darknet    | `curl("http://203.0.113.42:8080")`      | `nslookup`, `curl` with port                        |
+| 12  | `FLAG{master_of_the_darknet}`   | darknet    | `/home/ghost/.encrypted_flag.enc`       | SSH, `su root`, `decrypt`                           |
+| 13  | `FLAG{code_the_decoder}`        | darknet    | `/home/ghost/projects/` (ROT13)         | `nano`, `node` as ghost                             |
+| 14  | `FLAG{shadow_debugger}`         | shadow     | `/home/operator/diagnostics/` (debug)   | FTP recon, SSH as operator, `nano`, `node`          |
+| 15  | `FLAG{void_data_miner}`         | void       | `/home/dbadmin/recovery/` (CSV extract) | NC recon:9999, SSH, `su dbadmin`, `nano`, `node`    |
+| 16  | `FLAG{abyss_decryptor}`         | abyss      | `/home/phantom/vault/` (XOR cipher)     | SSH, `su phantom` (creds from void), `nano`, `node` |
 
 ### Step-by-Step Walkthrough
 
@@ -940,6 +973,107 @@ nano('decode.js');
 node('decode.js'); // Outputs: FLAG{code_the_decoder}
 ```
 
+#### FLAG 14 — `shadow_debugger` (Intermediate — FTP recon + nano + node)
+
+```javascript
+// From darknet, discover hidden network:
+ifconfig(); // See eth1: 10.66.66.100
+cat('/root/.hidden_network'); // Lists shadow (FTP), void (maintenance:9999), abyss (SSH only)
+
+// FTP recon on shadow:
+ftp('10.66.66.1'); // Login as guest / demo
+cd('/srv/ftp/exports');
+ls(); // system_report.txt, network_status.txt
+get('system_report.txt');
+quit();
+cat('system_report.txt');
+// Reveals: operator password 'c0ntr0l_pl4n3' + void maintenance port 9999
+
+// SSH to shadow as operator:
+ssh('operator', '10.66.66.1'); // Enter: c0ntr0l_pl4n3
+
+// Find the challenge:
+ls('diagnostics'); // README.txt, access.log, check_logs.js
+cat('diagnostics/README.txt'); // Explains the broken script
+
+// Try running the buggy script:
+node('diagnostics/check_logs.js');
+// Error: TypeError: Cannot read properties of undefined (reading 'split')
+
+// Debug — fix bug 1: i <= lines.length → i < lines.length
+nano('diagnostics/check_logs.js'); // Fix the loop bound
+node('diagnostics/check_logs.js');
+// Empty output — still wrong
+
+// Debug — fix bug 2: split(",") → split("|")
+cat('diagnostics/access.log'); // See pipe-delimited format
+nano('diagnostics/check_logs.js'); // Fix the delimiter
+node('diagnostics/check_logs.js');
+// Output: FLAG{shadow_debugger}
+```
+
+#### FLAG 15 — `void_data_miner` (Advanced — NC recon + nano + node)
+
+```javascript
+// NC recon on void (maintenance service):
+exit(); // Back to darknet
+nc('10.66.66.2', 9999); // Connects as dbadmin (read-only shell)
+ls('recovery'); // Preview: manifest.txt, table_01.csv ... table_05.csv
+cat('recovery/manifest.txt'); // See the extraction challenge
+cat('/var/log/auth.log'); // "dbadmin authenticated - password 'dr0p_t4bl3s'"
+ls('/home/dbadmin', '-a'); // See .abyss_notes
+cat('/home/dbadmin/.abyss_notes'); // phantom / sp3ctr4l for abyss
+exit(); // Back to darknet
+
+// SSH to void as dbadmin:
+ssh('guest', '10.66.66.2'); // Enter: demo
+su('dbadmin'); // Enter: dr0p_t4bl3s
+
+// Write a data extraction script:
+nano('extract.js');
+// In the editor:
+//   const tables = ["table_01.csv","table_02.csv","table_03.csv","table_04.csv","table_05.csv"]
+//   const fragments = tables.map(t => {
+//     const rows = cat("recovery/" + t).split("\n")
+//     return rows[13].split("|")[3]
+//   })
+//   echo(fragments.join(""))
+// Save and exit
+
+node('extract.js'); // Output: FLAG{void_data_miner}
+```
+
+#### FLAG 16 — `abyss_decryptor` (Expert — SSH only, creds from void)
+
+```javascript
+// SSH to abyss (credentials discovered from void NC recon):
+exit(); // Back to darknet
+ssh('guest', '10.66.66.3'); // Enter: demo
+su('phantom'); // Enter: sp3ctr4l (from void's .abyss_notes)
+
+// Find the challenge:
+ls('vault'); // README.txt, cipher.txt, key.txt, encoded_payload.txt
+cat('vault/README.txt'); // Context about the vault
+cat('vault/cipher.txt'); // XOR with repeating key, hex-encoded
+cat('vault/key.txt'); // ABYSS
+cat('vault/encoded_payload.txt');
+// 07 0e 18 14 28 20 20 20 20 20 1e 26 3c 30 21 38 32 2d 3c 21 3c
+
+// Write a decoder script:
+nano('decrypt.js');
+// In the editor:
+//   const hex = cat("vault/encoded_payload.txt").trim()
+//   const key = cat("vault/key.txt").trim()
+//   const bytes = hex.split(" ")
+//   const decoded = bytes.map((b, i) =>
+//     String.fromCharCode(parseInt(b, 16) ^ key.charCodeAt(i % key.length))
+//   ).join("")
+//   echo(decoded)
+// Save and exit
+
+node('decrypt.js'); // Output: FLAG{abyss_decryptor}
+```
+
 ### Credential Discovery Chain
 
 ```
@@ -972,7 +1106,22 @@ localhost (start as jshacker)
    ├─ curl :8080 → flag + ghost/sp3ctr3 [Flag 11]
    ├─ /var/log/auth.log → root/d4rkn3tR00t
    ├─ /root/keyfile.txt → decrypt key
-   └─ /home/ghost/.encrypted_flag.enc → decrypt [Flag 12]
+   ├─ /home/ghost/.encrypted_flag.enc → decrypt [Flag 12]
+   ├─ /home/ghost/projects/ → ROT13 challenge [Flag 13]
+   ├─ /root/.hidden_network → services per machine (FTP, NC, SSH)
+   │
+   ├─ shadow (FTP recon → SSH as operator)
+   │  ├─ ftp: /srv/ftp/exports/system_report.txt → operator/c0ntr0l_pl4n3 + void hint
+   │  └─ ssh: /home/operator/diagnostics/ → debug buggy script [Flag 14]
+   │
+   ├─ void (NC recon on port 9999 → SSH as dbadmin)
+   │  ├─ nc: preview recovery/, read auth.log → dbadmin/dr0p_t4bl3s
+   │  ├─ nc: /home/dbadmin/.abyss_notes → phantom/sp3ctr4l (abyss creds)
+   │  └─ ssh: /home/dbadmin/recovery/ → extract from 5 CSV tables [Flag 15]
+   │
+   └─ abyss (SSH only — creds from void NC recon)
+      ├─ ssh as guest/demo → su phantom (password from void)
+      └─ /home/phantom/vault/ → XOR cipher decode [Flag 16]
 ```
 
 ---

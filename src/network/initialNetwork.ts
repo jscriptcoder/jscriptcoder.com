@@ -99,7 +99,10 @@ const darknetHiddenMachine: RemoteMachine = {
 const shadowMachine: RemoteMachine = {
   ip: '10.66.66.1',
   hostname: 'shadow',
-  ports: [{ port: 22, service: 'ssh', open: true }],
+  ports: [
+    { port: 21, service: 'ftp', open: true },
+    { port: 22, service: 'ssh', open: true },
+  ],
   users: [
     { username: 'root', passwordHash: 'ace0140d2da9deaa60d16eb681afb542', userType: 'root' }, // sh4d0w_r00t
     { username: 'operator', passwordHash: '8687c82d19711171491bbcbda4353a50', userType: 'user' }, // c0ntr0l_pl4n3

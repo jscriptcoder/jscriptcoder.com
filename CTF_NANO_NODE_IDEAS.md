@@ -4,7 +4,7 @@ Brainstormed ideas for new flags that leverage the `nano` (file editor) and `nod
 
 ---
 
-## Idea 1: Write-and-Execute Challenge
+## Idea 1: Write-and-Execute Challenge ✅ PLANNED — Flag 14 (shadow)
 
 **Concept**: Player finds a broken/incomplete `.js` script on a machine. They must `nano` it to fix the bug, then `node` it to reveal the flag.
 
@@ -45,7 +45,7 @@ Brainstormed ideas for new flags that leverage the `nano` (file editor) and `nod
 
 ---
 
-## Idea 3: Script-Based Privilege Discovery
+## Idea 3: Script-Based Privilege Discovery ✅ PLANNED — Flag 15 (void)
 
 **Concept**: Scattered clues across multiple files on a machine. Player writes a `node` script that reads several files with `cat()` and combines/filters the results to extract a password or key.
 
@@ -59,7 +59,7 @@ Brainstormed ideas for new flags that leverage the `nano` (file editor) and `nod
 
 ---
 
-## Idea 4: Exploit Script (Favorite)
+## Idea 4: Exploit Script (Favorite) ✅ PLANNED — Flag 16 (abyss)
 
 **Concept**: A service or challenge file requires a computed input — a hash, a math result, a token. The player must write and run a script that computes the answer. Since `node` has access to all terminal commands, the script can read challenge data, compute the solution, and output the flag.
 

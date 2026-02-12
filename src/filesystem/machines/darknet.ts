@@ -224,6 +224,30 @@ cat /var/log/auth.log
 ls /home/ghost
 cat /home/ghost/.notes
 systemctl status encrypted-services
+nmap 10.66.66.0/24
+`,
+    },
+    '.hidden_network': {
+      name: '.hidden_network',
+      type: 'file',
+      owner: 'root',
+      permissions: { read: ['root'], write: ['root'], execute: ['root'] },
+      content: `HIDDEN NETWORK ACCESS
+=====================
+
+Nodes discovered on 10.66.66.0/24 subnet:
+
+  shadow  (10.66.66.1)  — FTP (21), SSH (22)
+    Exports available via anonymous FTP (guest / demo)
+
+  void    (10.66.66.2)  — SSH (22), maintenance (9999)
+    Diagnostics endpoint on port 9999
+
+  abyss   (10.66.66.3)  — SSH (22)
+    Locked down. Credentials unknown.
+    Check void for intel.
+
+Default guest credentials: guest / demo
 `,
     },
   },
