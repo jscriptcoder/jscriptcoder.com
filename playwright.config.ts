@@ -13,6 +13,7 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:5173',
     trace: 'on-first-retry',
+    video: process.env.RECORD_VIDEO ? 'on' : 'off',
     launchOptions: {
       slowMo: parseInt(process.env.SLOW_MO || '0', 10),
     },
