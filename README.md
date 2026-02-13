@@ -4,7 +4,9 @@ A web-based JavaScript terminal emulator with a retro amber-on-black CRT aesthet
 
 **Live Demo:** [jshack.me](https://jshack.me)
 
-<video src="assets/demo.webm" controls muted width="100%"></video>
+<p align="center">
+  <img src="assets/demo.gif" alt="CTF playthrough demo" width="600">
+</p>
 
 ## The Challenge
 
