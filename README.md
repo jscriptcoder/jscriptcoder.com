@@ -4,6 +4,8 @@ A web-based JavaScript terminal emulator with a retro amber-on-black CRT aesthet
 
 **Live Demo:** [jshack.me](https://jshack.me)
 
+<video src="assets/demo.webm" controls muted width="100%"></video>
+
 ## The Challenge
 
 You start as a regular user on a machine connected to a network. Hidden throughout the system are **flags** - secret strings in the format `FLAG{...}` that prove you've successfully completed a challenge.
