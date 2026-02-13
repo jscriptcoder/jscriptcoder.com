@@ -236,6 +236,13 @@ To regenerate the OG image after edits to `public/og-image.html`:
 npx playwright screenshot --viewport-size="1200,630" --full-page public/og-image.html public/og-image.png
 ```
 
+## Documentation
+
+- **[CTF_DESIGN.md](CTF_DESIGN.md)** — Full CTF game design: all 16 flags, credential chains, machine layouts, and puzzle specifications
+- **[CTF_NANO_NODE_IDEAS.md](CTF_NANO_NODE_IDEAS.md)** — Design ideas for the nano+node scripting challenges (Flags 14-16)
+- **[WIP.md](WIP.md)** — Work-in-progress log: session-by-session implementation history and current status
+- **[LEARNINGS.md](LEARNINGS.md)** — Gotchas, patterns that worked, architectural decisions, and testing insights
+
 ## Deployment
 
 The project is configured for Vercel deployment. Push to the `main` branch to trigger automatic deployment.
