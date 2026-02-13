@@ -1,6 +1,13 @@
 import { test, type Page, type Locator } from '@playwright/test';
 
 // ---------------------------------------------------------------------------
+// Configuration
+// ---------------------------------------------------------------------------
+
+/** Per-character typing delay in ms. 0 = instant fill (CI), e.g. 50 = visible typing. */
+const TYPE_DELAY = parseInt(process.env.TYPE_DELAY || '0', 10);
+
+// ---------------------------------------------------------------------------
 // Selectors
 // ---------------------------------------------------------------------------
 
@@ -11,6 +18,15 @@ const NANO_TEXTAREA = 'textarea[data-testid="nano-editor-textarea"]';
 // ---------------------------------------------------------------------------
 // Core helpers
 // ---------------------------------------------------------------------------
+
+/** Fill instantly or type character-by-character depending on TYPE_DELAY. */
+const fillOrType = async (locator: Locator, text: string): Promise<void> => {
+  if (TYPE_DELAY > 0) {
+    await locator.pressSequentially(text, { delay: TYPE_DELAY });
+  } else {
+    await locator.fill(text);
+  }
+};
 
 /**
  * Count matching result elements, perform an action, then wait for a NEW match.
@@ -28,13 +44,13 @@ const countThenWait = async (
 
 const typeCommand = async (page: Page, cmd: string): Promise<void> => {
   const input = page.locator(INPUT);
-  await input.fill(cmd);
+  await fillOrType(input, cmd);
   await input.press('Enter');
 };
 
 const enterInput = async (page: Page, value: string): Promise<void> => {
   const input = page.locator(INPUT);
-  await input.fill(value);
+  await fillOrType(input, value);
   await input.press('Enter');
 };
 
@@ -104,7 +120,7 @@ const writeInNano = async (page: Page, filePath: string, content: string): Promi
   await typeCommand(page, `nano("${filePath}")`);
   const textarea = page.locator(NANO_TEXTAREA);
   await textarea.waitFor();
-  await textarea.fill(content);
+  await fillOrType(textarea, content);
 };
 
 const saveAndExitNano = async (page: Page): Promise<void> => {
@@ -122,6 +138,11 @@ const expectFlag = async (page: Page, flag: string): Promise<void> => {
 // ---------------------------------------------------------------------------
 // Full CTF Playthrough
 // ---------------------------------------------------------------------------
+
+// Increase timeout when typing character-by-character
+if (TYPE_DELAY > 0) {
+  test.setTimeout(15 * 60 * 1000);
+}
 
 test('Full CTF playthrough — all 16 flags', async ({ page }) => {
   await page.goto('/');
