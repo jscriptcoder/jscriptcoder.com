@@ -1,8 +1,8 @@
-# JscriptCoder
+# JSHACK.ME
 
 A web-based JavaScript terminal emulator with a retro amber-on-black CRT aesthetic. Execute JavaScript expressions and custom commands in a terminal-like interface, featuring a virtual Unix-like file system and network simulation for CTF-style hacking puzzles.
 
-**Live Demo:** [jscriptcoder.com](https://jscriptcoder.com)
+**Live Demo:** [jshack.me](https://jshack.me)
 
 ## The Challenge
 
@@ -53,8 +53,8 @@ Start with `help()` to see available commands. Good luck, hacker.
 
 ```bash
 # Clone the repository
-git clone https://github.com/jscriptcoder/jscriptcoder.git
-cd jscriptcoder
+git clone https://github.com/jscriptcoder/jshack.me.git
+cd jshack.me
 
 # Install dependencies
 npm install
