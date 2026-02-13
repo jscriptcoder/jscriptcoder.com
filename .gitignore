@@ -27,3 +27,6 @@ dist-ssr
 # Playwright
 test-results/
 playwright-report/
+
+# Generated encoded filesystems
+src/filesystem/machines/__encoded.ts

@@ -4,7 +4,10 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "encode": "tsx scripts/encode-filesystems.ts",
+    "predev": "npm run encode",
     "dev": "vite",
+    "prebuild": "npm run encode",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "format": "prettier --write .",
@@ -39,6 +42,7 @@
     "jsdom": "^27.4.0",
     "prettier": "^3.8.1",
     "tailwindcss": "^4.1.18",
+    "tsx": "^4.21.0",
     "typescript": "~5.6.2",
     "typescript-eslint": "^8.18.2",
     "vite": "^6.0.5",

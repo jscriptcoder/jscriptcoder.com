@@ -8,7 +8,7 @@ import {
   shadow,
   voidFs,
   abyss,
-} from './machines';
+} from './machines/__encoded';
 
 export type MachineId =
   | 'localhost'

@@ -31,6 +31,7 @@ Start with `help()` to see available commands. Good luck, hacker.
 - **Network Simulation** - Discover and hack into remote machines
 - **Session Persistence** - Your location and files are saved; return where you left off after refresh
 - **SEO & Social Sharing** - Open Graph and Twitter Card meta tags for rich link previews
+- **Anti-Cheat** - Filesystem content encoded at build time; flags can't be found by searching the JS bundle
 - **Retro CRT Theme** - Classic amber-on-black terminal aesthetic
 
 ## Tech Stack
@@ -180,8 +181,9 @@ Each machine has its own network view - interfaces, reachable hosts, and DNS cha
 ## Development
 
 ```bash
-npm run dev           # Start development server
-npm run build         # Production build
+npm run dev           # Start development server (auto-encodes filesystems first)
+npm run build         # Production build (auto-encodes filesystems first)
+npm run encode        # Generate encoded filesystem module
 npm run lint          # Run ESLint
 npm run format        # Format code with Prettier
 npm run format:check  # Check formatting (CI)
@@ -194,7 +196,7 @@ npm run test:e2e      # Run Playwright E2E test (full CTF playthrough)
 
 ### Test Coverage
 
-730 unit tests across 46 colocated test files covering terminal commands, hooks, components, utilities, filesystem, and persistence.
+738 unit tests across 47 colocated test files covering terminal commands, hooks, components, utilities, filesystem, and persistence.
 
 1 Playwright E2E test that plays through the entire CTF game (all 16 flags) in a real browser — serves as both a comprehensive regression test and a visual demo. Run with `--headed` to watch it play:
 
@@ -212,8 +214,10 @@ src/
 ├── network/                # Network simulation
 ├── hooks/                  # Custom React hooks
 ├── commands/               # Terminal commands
-├── utils/                  # Utilities (crypto, storage, network)
+├── utils/                  # Utilities (crypto, storage, network, content codec)
 └── App.tsx                 # Root component
+scripts/
+└── encode-filesystems.ts   # Pre-build: encodes filesystem content (anti-cheat)
 e2e/
 └── ctf-playthrough.spec.ts # Playwright E2E test (full 16-flag playthrough)
 ```

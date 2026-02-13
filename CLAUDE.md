@@ -68,8 +68,9 @@ const data = result as AuthorData;
 ## Build & Development Commands
 
 ```bash
-npm run dev           # Start Vite dev server (http://localhost:5173)
-npm run build         # TypeScript compile + Vite production build
+npm run dev           # Start Vite dev server (auto-runs encode first)
+npm run build         # TypeScript compile + Vite production build (auto-runs encode first)
+npm run encode        # Generate encoded filesystem (src/filesystem/machines/__encoded.ts)
 npm run lint          # Run ESLint
 npm run format        # Format all files with Prettier
 npm run format:check  # Check formatting without modifying (CI-friendly)
@@ -88,6 +89,7 @@ npm run test:e2e      # Run Playwright E2E test (full CTF playthrough)
 - **Prettier** - Code formatting (single quotes, semicolons, trailing commas, 100 char width)
 - **Vitest** + **React Testing Library** - Unit testing
 - **Playwright** - E2E testing (Chromium, full CTF playthrough)
+- **tsx** - TypeScript runner for pre-build scripts
 
 ## Project Structure
 
@@ -104,7 +106,7 @@ src/
 ├── filesystem/
 │   ├── FileSystemContext.tsx  # Virtual filesystem operations with IndexedDB persistence
 │   ├── fileSystemFactory.ts   # Factory function for generating filesystems
-│   ├── machineFileSystems.ts  # Thin assembly: imports machines, exports Record + MachineId
+│   ├── machineFileSystems.ts  # Thin assembly: imports from __encoded.ts, exports Record + MachineId
 │   ├── machines/
 │   │   ├── localhost.ts       # Localhost (192.168.1.100) filesystem
 │   │   ├── gateway.ts         # Gateway (192.168.1.1) filesystem
@@ -114,7 +116,8 @@ src/
 │   │   ├── shadow.ts          # Shadow (10.66.66.1) filesystem — Flag 14 debug challenge
 │   │   ├── void.ts            # Void (10.66.66.2) filesystem — Flag 15 CSV extraction challenge
 │   │   ├── abyss.ts           # Abyss (10.66.66.3) filesystem — Flag 16 XOR cipher challenge
-│   │   └── index.ts           # Barrel re-exports
+│   │   ├── index.ts           # Barrel re-exports
+│   │   └── __encoded.ts       # GENERATED (gitignored) — encoded FileNode trees for production
 │   └── types.ts               # FileNode, FilePermissions, FileSystemPatch types
 ├── hooks/
 │   ├── useCommandHistory.ts      # Up/down arrow command history
@@ -199,6 +202,7 @@ src/
 │   ├── md5.ts              # MD5 hashing for password validation
 │   ├── network.ts          # Network utilities (IP validation, range parsing)
 │   ├── crypto.ts           # Crypto utilities (AES-256-GCM encrypt/decrypt, hex conversion)
+│   ├── contentCodec.ts     # XOR+Base64 encode/decode for filesystem content (anti-cheat)
 │   ├── stringify.ts        # Value stringification (used by echo, output, resolve)
 │   ├── storage.ts          # IndexedDB wrapper (open, read, write for session and filesystem stores)
 │   └── storageCache.ts     # Pre-load cache: loads IndexedDB before React mounts, localStorage migration
@@ -214,6 +218,9 @@ public/
 ├── og-image.html           # Source HTML for regenerating OG image PNG
 ├── robots.txt              # Search engine crawler rules
 └── sitemap.xml             # Sitemap for search engines
+│
+scripts/
+└── encode-filesystems.ts   # Pre-build script: encodes machine filesystems into __encoded.ts
 │
 e2e/
 └── ctf-playthrough.spec.ts # Playwright E2E test (full 16-flag CTF playthrough)
@@ -445,6 +452,58 @@ type FileSystemPatch = {
 - FTP `get(file)` — downloads file from remote to local machine
 - FTP `put(file)` — uploads file from local to remote machine
 - `nano(path)` — saves edited content via Ctrl+S in the editor overlay
+
+### Content Encoding (Anti-Cheat)
+
+All filesystem content (flags, hints, passwords, logs) is encoded at build time to prevent players from finding flags by searching the JS bundle for `FLAG{`.
+
+**How it works:**
+
+```
+Source files (readable)          Build script           Generated file (encoded)
+localhost.ts, gateway.ts... ──→  encode-filesystems.ts ──→  __encoded.ts
+                                                              ↓
+                             machineFileSystems.ts imports from __encoded.ts
+                                                              ↓
+                             At init: decodeFileSystem() restores plain content
+                                                              ↓
+                             Game works exactly as before
+```
+
+**Encoding scheme:** UTF-8 bytes XOR'd with a static key, then Base64-encoded. Applied only to `content` strings — tree structure (names, types, permissions) remains as plain JSON.
+
+**Key files:**
+
+| File | Purpose |
+|------|---------|
+| `src/utils/contentCodec.ts` | `encodeContent`, `decodeContent`, `encodeFileSystem`, `decodeFileSystem` |
+| `scripts/encode-filesystems.ts` | Pre-build script: imports all 8 machines, encodes, writes `__encoded.ts` |
+| `src/filesystem/machines/__encoded.ts` | Generated (gitignored) — encoded FileNode trees, decoded at import time |
+
+**Build integration:**
+
+- `npm run encode` runs `scripts/encode-filesystems.ts` via `tsx`
+- `predev` and `prebuild` npm hooks auto-run `encode` before `dev` and `build`
+- `machineFileSystems.ts` imports from `./machines/__encoded` (not `./machines`)
+- `__encoded.ts` is gitignored — always regenerated from source machine files
+
+**What's NOT in the bundle:**
+
+- Original machine `.ts` source files (not imported by app, tree-shaken away)
+- Plain-text content strings (only encoded versions ship)
+
+**What IS in the bundle:**
+
+- FileNode structure (names, types, permissions) as JSON
+- Encoded content strings (XOR + Base64, not searchable for `FLAG{`)
+- The `decodeContent` function + XOR key (needed at runtime)
+
+**Testing:**
+
+- Unit tests import machine files directly (e.g., `from './machines/localhost'`), unchanged
+- Unit tests for the codec itself are in `src/utils/contentCodec.test.ts`
+- E2E tests exercise the full encode-decode pipeline (they run against the built app)
+- Verify with `grep -r "FLAG{" dist/` after build — should return zero matches
 
 ### Nano Editor
 

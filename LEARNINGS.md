@@ -113,6 +113,13 @@
 - **Solution**: Added fallback in `handlePasswordSubmit` that searches `Object.values(networkConfig.machineConfigs).flatMap(mc => mc.machines)` — same pattern already used in `getUsers()` in `useCommands.ts`
 - **Key insight**: Two separate su user-type lookups existed (one in `useCommands.ts` for `getUsers()`, one in `Terminal.tsx` for `handlePasswordSubmit`). Both needed the same all-configs-search fallback.
 
+### `btoa` rejects characters above Latin-1 after XOR
+
+- **Context**: XOR cipher on string characters, then `btoa()` to Base64
+- **Issue**: XOR of two Unicode characters can produce code points > 255. `btoa()` only accepts Latin-1 (0-255) and throws `InvalidCharacterError` for anything above.
+- **Solution**: Work at the byte level instead — `TextEncoder.encode()` to get UTF-8 bytes, XOR the bytes with key bytes, then Base64-encode the resulting byte array. Decode in reverse: Base64 → bytes → XOR → `TextDecoder.decode()`.
+- **Key insight**: String-level XOR is unreliable for Base64 encoding. Always convert to bytes first when doing bitwise operations on text.
+
 ### Playwright E2E stale DOM matching
 
 - **Context**: Waiting for text like "Password:" after a command in a terminal that accumulates output
@@ -232,6 +239,14 @@
 - **What**: Single sequential test that plays through all 16 CTF flags, acting as both regression test and visual demo
 - **Why it works**: Catches real bugs that unit tests miss (found the su user-type bug on gateway), validates the full user experience end-to-end, `--headed` mode lets you watch the entire game play itself
 - **Key patterns**: `countThenWait` for robust DOM matching in accumulating output, composite helpers (`suTo`, `sshTo`, `ftpConnect`) that encapsulate multi-step flows, `test.step` blocks for per-flag organization
+
+### Build-time content encoding for anti-cheat
+
+- **What**: Pre-build script encodes all filesystem `content` strings (XOR+Base64), writes a generated module that decodes at import time
+- **Why it works**: Source machine files stay readable for development and tests. Only the generated encoded module is imported by the app, so original files are tree-shaken away. Bundle contains only encoded content — `grep "FLAG{" dist/` returns zero matches.
+- **Key design**: Generated file calls `decodeFileSystem(JSON.parse(json))` at import time, so downstream code (contexts, commands) receives fully decoded FileNode trees with zero changes needed.
+- **Example**: `npm run encode` → `scripts/encode-filesystems.ts` imports all 8 machines → encodes → writes `__encoded.ts` → `machineFileSystems.ts` imports from `__encoded`
+- **Gotcha**: The generated file is gitignored and must be regenerated before dev/build — `predev`/`prebuild` npm hooks handle this automatically
 
 ### Consistent flag argument parsing across ls variants
 

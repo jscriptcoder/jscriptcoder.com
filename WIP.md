@@ -27,7 +27,24 @@ Playwright E2E test — complete, all 16 flags passing
 - [ ] Step 13: Victory tracking
 - [ ] Step 14: Challenge variety
 
-## Recent Session (2026-02-12)
+## Recent Session (2026-02-13)
+
+Implemented:
+
+- **Content encoding (anti-cheat)**: All filesystem content (flags, hints, passwords, logs) is encoded at build time to prevent finding flags by searching the JS bundle
+  - `src/utils/contentCodec.ts` — XOR+Base64 encode/decode for strings, plus recursive FileNode tree transformers (`encodeFileSystem`/`decodeFileSystem`)
+  - `scripts/encode-filesystems.ts` — Pre-build script: imports all 8 machine filesystems, encodes content, writes `src/filesystem/machines/__encoded.ts`
+  - `__encoded.ts` (generated, gitignored) — JSON-serialized encoded FileNode trees that decode at import time via `decodeFileSystem(JSON.parse(json))`
+  - `machineFileSystems.ts` imports from `./machines/__encoded` instead of `./machines`
+  - `predev` and `prebuild` npm hooks auto-run `npm run encode` before `dev` and `build`
+  - Added `tsx` dev dependency for running the encode script
+  - 8 unit tests for codec round-trips (strings, empty strings, special characters, full FileNode trees, structure preservation)
+  - Encoding scheme: UTF-8 bytes → XOR with static key → Base64. Only `content` strings encoded; tree structure (names, types, permissions) stays as plain JSON.
+  - Existing unit tests unchanged (they import source machine files directly)
+  - Verified: `grep -r "FLAG{" dist/` returns zero matches after build
+- **Test count**: 738 tests across 47 files
+
+## Previous Session (2026-02-12)
 
 Implemented:
 
@@ -845,7 +862,7 @@ Flag detection, progress display, `flags()` command, victory celebration. Deferr
 
 ### Test Coverage
 
-- 720 unit tests across 45 colocated test files
+- 738 unit tests across 47 colocated test files
 - 1 Playwright E2E test (full 16-flag CTF playthrough, ~23s in Chromium)
 - All commands with logic are tested
 - FTP subcommands tested (cd, lcd, ls, lls, get, put)

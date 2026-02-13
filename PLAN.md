@@ -18,7 +18,7 @@ Build a web-based CTF (Capture The Flag) hacking game where players use a JavaSc
 - [x] Additional exploitation commands (curl, strings, decrypt, output, resolve, exit)
 - [x] Session and filesystem persistence (IndexedDB)
 - [x] Realistic filesystem noise (configs, logs, dotfiles, red herrings)
-- [x] Unit tests (632 tests across 38 files)
+- [x] Unit tests (738 tests across 47 files)
 - [ ] Victory tracking — flag detection, progress display, completion celebration
 - [ ] Challenge variety — additional commands (grep, base64, mysql, etc.)
 
@@ -93,7 +93,7 @@ Additional commands and multi-step puzzle types: grep, base64, env, mysql, check
 
 ## Test Coverage
 
-632 tests across 38 colocated test files:
+738 tests across 47 colocated test files:
 
 - All commands with logic are tested (factory pattern with mock context injection)
 - FTP subcommands tested (cd, lcd, ls, lls, get, put)
