@@ -473,11 +473,13 @@ export const Terminal = () => {
   }, [navigateDown]);
 
   const handleTab = useCallback(() => {
-    const { matches, displayText } = getCompletions(input);
+    const { matches, displayText, commonPrefix } = getCompletions(input);
     if (matches.length === 1) {
-      // Single match - autocomplete
       setInput(matches[0].display);
     } else if (matches.length > 1) {
+      if (commonPrefix.length > input.trim().length) {
+        setInput(commonPrefix);
+      }
       // Multiple matches - show list
       addLine('result', displayText);
     }

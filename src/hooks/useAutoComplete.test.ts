@@ -11,6 +11,7 @@ describe('useAutoComplete', () => {
 
       expect(completions.matches).toEqual([]);
       expect(completions.displayText).toBe('');
+      expect(completions.commonPrefix).toBe('');
     });
 
     it('should return empty results for whitespace only', () => {
@@ -20,6 +21,7 @@ describe('useAutoComplete', () => {
 
       expect(completions.matches).toEqual([]);
       expect(completions.displayText).toBe('');
+      expect(completions.commonPrefix).toBe('');
     });
   });
 
@@ -202,6 +204,48 @@ describe('useAutoComplete', () => {
       const completions = result.current.getCompletions('uni');
 
       expect(completions.displayText).toBe('unique()');
+    });
+  });
+
+  describe('commonPrefix', () => {
+    it('should return full name as prefix for single match', () => {
+      const { result } = renderHook(() => useAutoComplete(['help', 'echo']));
+
+      const completions = result.current.getCompletions('hel');
+
+      expect(completions.commonPrefix).toBe('help');
+    });
+
+    it('should return longest common prefix for multiple matches', () => {
+      const { result } = renderHook(() => useAutoComplete(['reset', 'resolve', 'respond']));
+
+      const completions = result.current.getCompletions('r');
+
+      expect(completions.commonPrefix).toBe('res');
+    });
+
+    it('should return input-length prefix when matches diverge immediately', () => {
+      const { result } = renderHook(() => useAutoComplete(['cat', 'cd', 'clear']));
+
+      const completions = result.current.getCompletions('c');
+
+      expect(completions.commonPrefix).toBe('c');
+    });
+
+    it('should return empty prefix for no matches', () => {
+      const { result } = renderHook(() => useAutoComplete(['help']));
+
+      const completions = result.current.getCompletions('xyz');
+
+      expect(completions.commonPrefix).toBe('');
+    });
+
+    it('should compute prefix across commands and variables', () => {
+      const { result } = renderHook(() => useAutoComplete(['strings'], ['stringify']));
+
+      const completions = result.current.getCompletions('str');
+
+      expect(completions.commonPrefix).toBe('string');
     });
   });
 
