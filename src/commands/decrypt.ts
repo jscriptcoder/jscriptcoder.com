@@ -1,6 +1,7 @@
 import type { Command, AsyncOutput } from '../components/Terminal/types';
 import type { UserType } from '../session/SessionContext';
 import type { FileNode } from '../filesystem/types';
+import { createCancellationToken } from '../utils/asyncCommand';
 
 type DecryptContext = {
   readonly resolvePath: (path: string) => string;
@@ -10,7 +11,6 @@ type DecryptContext = {
 
 const DECRYPT_DELAY_MS = 500;
 
-// Convert hex string to Uint8Array
 const hexToBytes = (hex: string): Uint8Array => {
   const cleanHex = hex.replace(/\s/g, '');
   const bytes = new Uint8Array(cleanHex.length / 2);
@@ -20,29 +20,23 @@ const hexToBytes = (hex: string): Uint8Array => {
   return bytes;
 };
 
-// Decrypt content using AES-GCM with Web Crypto API
 const decryptContent = async (encryptedBase64: string, keyHex: string): Promise<string> => {
-  // Decode base64 to get IV + ciphertext
   const encryptedData = Uint8Array.from(atob(encryptedBase64), (c) => c.charCodeAt(0));
 
-  // First 12 bytes are the IV (standard for AES-GCM)
   const iv = encryptedData.slice(0, 12);
   const ciphertext = encryptedData.slice(12);
 
-  // Import the key
   const keyBytes = hexToBytes(keyHex);
   const cryptoKey = await crypto.subtle.importKey('raw', keyBytes, { name: 'AES-GCM' }, false, [
     'decrypt',
   ]);
 
-  // Decrypt
   const decryptedBuffer = await crypto.subtle.decrypt(
     { name: 'AES-GCM', iv },
     cryptoKey,
     ciphertext,
   );
 
-  // Convert to string
   const decoder = new TextDecoder();
   return decoder.decode(decryptedBuffer);
 };
@@ -93,7 +87,6 @@ export const createDecryptCommand = (context: DecryptContext): Command => ({
       throw new Error('decrypt: missing key\nUsage: decrypt("file", "key")');
     }
 
-    // Validate key format (should be 64 hex characters for AES-256)
     const cleanKey = key.replace(/\s/g, '');
     if (!/^[0-9a-fA-F]{64}$/.test(cleanKey)) {
       throw new Error(
@@ -113,7 +106,6 @@ export const createDecryptCommand = (context: DecryptContext): Command => ({
       throw new Error(`decrypt: ${filePath}: Is a directory`);
     }
 
-    // Check read permission
     if (!node.permissions.read.includes(userType) && userType !== 'root') {
       throw new Error(`decrypt: ${filePath}: Permission denied`);
     }
@@ -123,38 +115,32 @@ export const createDecryptCommand = (context: DecryptContext): Command => ({
       throw new Error(`decrypt: ${filePath}: File is empty`);
     }
 
-    let cancelled = false;
-    const timeoutIds: ReturnType<typeof setTimeout>[] = [];
+    const token = createCancellationToken();
 
     return {
       __type: 'async',
       start: (onLine, onComplete) => {
         onLine('Decrypting...');
 
-        const timeoutId = setTimeout(() => {
-          if (cancelled) return;
+        token.schedule(() => {
+          if (token.isCancelled()) return;
 
           decryptContent(encryptedContent, cleanKey)
             .then((decrypted) => {
-              if (cancelled) return;
+              if (token.isCancelled()) return;
               onLine('');
               onLine(decrypted);
               onComplete();
             })
             .catch(() => {
-              if (cancelled) return;
+              if (token.isCancelled()) return;
               onLine('');
               onLine('Error: Decryption failed - invalid key or corrupted data');
               onComplete();
             });
         }, DECRYPT_DELAY_MS);
-
-        timeoutIds.push(timeoutId);
       },
-      cancel: () => {
-        cancelled = true;
-        timeoutIds.forEach((id) => clearTimeout(id));
-      },
+      cancel: token.cancel,
     };
   },
 });

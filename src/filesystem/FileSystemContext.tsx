@@ -16,7 +16,6 @@ type FileSystemContextValue = {
   readonly writeFile: (path: string, content: string, userType: UserType) => PermissionResult;
   readonly createFile: (path: string, content: string, userType: UserType) => PermissionResult;
   readonly getDefaultHomePath: (machineId: string, username: string) => string;
-  // Cross-machine operations for FTP
   readonly resolvePathForMachine: (path: string, cwd: string) => string;
   readonly getNodeFromMachine: (machineId: MachineId, path: string, cwd: string) => FileNode | null;
   readonly canReadFromMachine: (
@@ -111,8 +110,6 @@ const addChildAtPath = (
 
 type FileSystemsState = Readonly<Record<MachineId, FileNode>>;
 
-// --- Patch Persistence ---
-
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
 
@@ -194,7 +191,6 @@ export const FileSystemProvider = ({ children }: { children: ReactNode }) => {
   const [fileSystems, setFileSystems] = useState<FileSystemsState>(initializeFileSystems);
   const [patches, setPatches] = useState<readonly FileSystemPatch[]>(getCachedFilesystemPatches);
 
-  // Persist patches to IndexedDB
   useEffect(() => {
     const db = getDatabase();
     if (db) {
@@ -454,7 +450,6 @@ export const FileSystemProvider = ({ children }: { children: ReactNode }) => {
         writeFile,
         createFile,
         getDefaultHomePath: getDefaultHomePathFn,
-        // Cross-machine operations for FTP
         resolvePathForMachine,
         getNodeFromMachine,
         canReadFromMachine,

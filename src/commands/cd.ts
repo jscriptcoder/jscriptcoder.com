@@ -37,7 +37,6 @@ export const createCdCommand = (context: CdContext): Command => ({
     const { resolvePath, getNode, setCurrentPath, getUserType, getHomePath } = context;
     const userType = getUserType();
 
-    // cd with no args goes to home directory
     const targetPath = path ? resolvePath(path) : getHomePath();
     const node = getNode(targetPath);
 
@@ -49,12 +48,11 @@ export const createCdCommand = (context: CdContext): Command => ({
       throw new Error(`cd: ${path}: Not a directory`);
     }
 
-    // Check read permission (need to be able to enter the directory)
     if (!node.permissions.read.includes(userType)) {
       throw new Error(`cd: ${path}: Permission denied`);
     }
 
     setCurrentPath(targetPath);
-    return undefined; // cd doesn't print output
+    return undefined;
   },
 });

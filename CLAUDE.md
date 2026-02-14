@@ -49,6 +49,7 @@ CTF design (network, machines, filesystems): @.claude/docs/ctf-design.md
 ### Command Execution Flow
 
 User input flows through `Terminal.tsx`:
+
 1. Checked for variable operations (`const`/`let`) via `useVariables` hook
 2. Otherwise executed as command via `new Function()` with commands/variables injected into scope
 
@@ -61,6 +62,7 @@ User input flows through `Terminal.tsx`:
 ### Command Restrictions
 
 Commands are tiered by user type (`src/commands/permissions.ts`):
+
 - **guest**: help, man, echo, whoami, pwd, ls, cd, cat, su, clear, author
 - **user**: All guest + ifconfig, ping, nmap, nslookup, ssh, ftp, nc, curl, strings, output, resolve, exit, nano, node
 - **root**: All user + decrypt
@@ -68,6 +70,7 @@ Commands are tiered by user type (`src/commands/permissions.ts`):
 ### Content Encoding (Anti-Cheat)
 
 Filesystem content is XOR+Base64 encoded at build time to prevent finding `FLAG{` in the JS bundle.
+
 - `npm run encode` generates `src/filesystem/machines/__encoded.ts` (gitignored)
 - `predev`/`prebuild` hooks auto-run encode
 - `machineFileSystems.ts` imports from `__encoded.ts`, not source machine files
@@ -77,12 +80,14 @@ Filesystem content is XOR+Base64 encoded at build time to prevent finding `FLAG{
 ### Special Output Types
 
 Commands return objects with `__type` for custom rendering (see `src/components/Terminal/types.ts`):
+
 - `'clear'`, `'author'`, `'password_prompt'`, `'nano_open'`, `'async'`
 - `AsyncOutput` streams lines with delays for network commands (ping, nmap, ssh, nslookup)
 
 ### Persistence
 
 Session and filesystem state persist to IndexedDB (`jshack-db` database):
+
 - `storageCache.ts` pre-loads data before React mounts (sync cache for `useState` initializers)
 - `SessionContext` and `FileSystemContext` write updates via `useEffect` (async, fire-and-forget)
 - Filesystem uses a patches approach — only diffs from base filesystem are stored

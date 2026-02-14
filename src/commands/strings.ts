@@ -10,11 +10,9 @@ type StringsContext = {
 
 const MIN_STRING_LENGTH = 4;
 
-// Check if a character is printable ASCII (space through tilde, plus newline/tab)
 const isPrintable = (charCode: number): boolean =>
   (charCode >= 32 && charCode <= 126) || charCode === 10 || charCode === 9;
 
-// Extract printable ASCII strings from content (like Unix strings command)
 const extractStrings = (
   content: string,
   minLength: number = MIN_STRING_LENGTH,
@@ -35,7 +33,6 @@ const extractStrings = (
     }
   }
 
-  // Don't forget the last string if content ends with printable chars
   if (current.length >= minLength) {
     results.push(current.trim());
   }

@@ -1,6 +1,7 @@
 import type { Command, AsyncOutput } from '../components/Terminal/types';
 import type { RemoteMachine } from '../network/types';
 import { isValidIP } from '../utils/network';
+import { createCancellationToken } from '../utils/asyncCommand';
 
 type PingContext = {
   readonly getMachine: (ip: string) => RemoteMachine | undefined;
@@ -8,16 +9,11 @@ type PingContext = {
   readonly getLocalIP: () => string;
 };
 
-const generateLatency = (): number => {
-  // Generate realistic LAN latency (0.5ms to 5ms)
-  return Math.random() * 4.5 + 0.5;
-};
+const generateLatency = (): number => Math.random() * 4.5 + 0.5;
 
-const formatPingResponse = (ip: string, seq: number, ttl: number, time: number): string => {
-  return `64 bytes from ${ip}: icmp_seq=${seq} ttl=${ttl} time=${time.toFixed(2)} ms`;
-};
+const formatPingResponse = (ip: string, seq: number, ttl: number, time: number): string =>
+  `64 bytes from ${ip}: icmp_seq=${seq} ttl=${ttl} time=${time.toFixed(2)} ms`;
 
-// Delay between ping responses (simulates real network timing)
 const PING_DELAY_MS = 800;
 
 export const createPingCommand = (context: PingContext): Command => ({
@@ -54,7 +50,6 @@ export const createPingCommand = (context: PingContext): Command => ({
     const localIP = getLocalIP();
     const isLocalhost = host === 'localhost' || host === '127.0.0.1' || host === localIP;
 
-    // Find machine by IP or hostname
     const machines = getMachines();
     let targetMachine: RemoteMachine | undefined;
     let targetIP: string;
@@ -71,15 +66,12 @@ export const createPingCommand = (context: PingContext): Command => ({
         targetIP = targetMachine?.ip ?? host;
       }
 
-      // Check for unknown host (not localhost, not a known machine)
       if (!targetMachine && !isValidIP(host)) {
         throw new Error(`ping: ${host}: Name or service not known`);
       }
     }
 
-    // Track if cancelled
-    let cancelled = false;
-    const timeoutIds: ReturnType<typeof setTimeout>[] = [];
+    const token = createCancellationToken();
 
     return {
       __type: 'async',
@@ -88,17 +80,14 @@ export const createPingCommand = (context: PingContext): Command => ({
         let totalTime = 0;
         let received = 0;
 
-        // Show header immediately
         onLine(`PING ${host} (${targetIP}): 56 data bytes`);
 
-        // Determine if host is reachable (localhost or known machine)
         const isReachable = isLocalhost || targetMachine !== undefined;
 
-        // Schedule ping responses
         for (let i = 0; i < count; i++) {
-          const timeoutId = setTimeout(
+          token.schedule(
             () => {
-              if (cancelled) return;
+              if (token.isCancelled()) return;
 
               if (isReachable) {
                 const time = isLocalhost ? generateLatency() * 0.1 : generateLatency();
@@ -107,12 +96,10 @@ export const createPingCommand = (context: PingContext): Command => ({
                 received++;
                 onLine(formatPingResponse(targetIP, i + 1, 64, time));
               }
-              // else: packet lost, no output for this ping
 
-              // After last ping, show statistics
               if (i === count - 1) {
-                const statsTimeoutId = setTimeout(() => {
-                  if (cancelled) return;
+                token.schedule(() => {
+                  if (token.isCancelled()) return;
 
                   onLine('');
                   onLine(`--- ${host} ping statistics ---`);
@@ -133,18 +120,13 @@ export const createPingCommand = (context: PingContext): Command => ({
 
                   onComplete();
                 }, 200);
-                timeoutIds.push(statsTimeoutId);
               }
             },
             (i + 1) * PING_DELAY_MS,
           );
-          timeoutIds.push(timeoutId);
         }
       },
-      cancel: () => {
-        cancelled = true;
-        timeoutIds.forEach((id) => clearTimeout(id));
-      },
+      cancel: token.cancel,
     };
   },
 });

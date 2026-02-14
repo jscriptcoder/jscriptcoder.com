@@ -83,12 +83,18 @@ export type SpecialOutput =
   | NanoOpenData
   | AsyncOutput;
 
-export type OutputLine = {
-  readonly id: number;
-  readonly type: 'command' | 'result' | 'error' | 'banner' | 'author';
-  readonly content: string | AuthorData;
-  readonly prompt?: string;
-};
+export type OutputLine =
+  | {
+      readonly id: number;
+      readonly type: 'command' | 'result' | 'error' | 'banner';
+      readonly content: string;
+      readonly prompt?: string;
+    }
+  | {
+      readonly id: number;
+      readonly type: 'author';
+      readonly content: AuthorData;
+    };
 
 export type CommandArgument = {
   readonly name: string;

@@ -35,6 +35,26 @@ const AuthorCard = ({ data }: { data: AuthorData }) => (
   </div>
 );
 
+const renderLine = (line: OutputLine) => {
+  switch (line.type) {
+    case 'banner':
+      return <div className="text-amber-400">{line.content}</div>;
+    case 'command':
+      return (
+        <div className="text-amber-400">
+          <span className="text-amber-300">{line.prompt} </span>
+          {line.content}
+        </div>
+      );
+    case 'result':
+      return <div className="text-amber-500 pl-4">{line.content || '\u00A0'}</div>;
+    case 'error':
+      return <div className="text-red-500 pl-4">{line.content}</div>;
+    case 'author':
+      return <AuthorCard data={line.content} />;
+  }
+};
+
 export const TerminalOutput = ({ lines }: TerminalOutputProps) => {
   return (
     <div className="flex-1 overflow-y-auto p-4">
@@ -49,20 +69,7 @@ export const TerminalOutput = ({ lines }: TerminalOutputProps) => {
                 : 'whitespace-pre-wrap break-all'
           }
         >
-          {line.type === 'banner' && <div className="text-amber-400">{line.content as string}</div>}
-          {line.type === 'command' && (
-            <div className="text-amber-400">
-              <span className="text-amber-300">{line.prompt} </span>
-              {line.content as string}
-            </div>
-          )}
-          {line.type === 'result' && (
-            <div className="text-amber-500 pl-4">{(line.content as string) || '\u00A0'}</div>
-          )}
-          {line.type === 'error' && (
-            <div className="text-red-500 pl-4">{line.content as string}</div>
-          )}
-          {line.type === 'author' && <AuthorCard data={line.content as AuthorData} />}
+          {renderLine(line)}
         </div>
       ))}
     </div>

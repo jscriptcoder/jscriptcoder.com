@@ -5,12 +5,19 @@ import type { OutputLine, AuthorData } from './types';
 
 // --- Factory Functions ---
 
-const createOutputLine = (
-  overrides: Partial<OutputLine> & Pick<OutputLine, 'type'>,
+const createTextLine = (
+  overrides?: Partial<{ id: number; type: 'command' | 'result' | 'error' | 'banner'; content: string; prompt: string }>,
 ): OutputLine => ({
   id: 1,
+  type: 'result',
   content: 'test content',
   ...overrides,
+});
+
+const createAuthorLine = (content: AuthorData, id = 1): OutputLine => ({
+  id,
+  type: 'author',
+  content,
 });
 
 const createAuthorData = (overrides?: Partial<AuthorData>): AuthorData => ({
@@ -30,7 +37,7 @@ const createAuthorData = (overrides?: Partial<AuthorData>): AuthorData => ({
 describe('TerminalOutput', () => {
   describe('banner lines', () => {
     it('should render banner content', () => {
-      const lines = [createOutputLine({ type: 'banner', content: 'Welcome to JSHACK.ME' })];
+      const lines = [createTextLine({ type: 'banner', content: 'Welcome to JSHACK.ME' })];
 
       render(<TerminalOutput lines={lines} />);
 
@@ -38,7 +45,7 @@ describe('TerminalOutput', () => {
     });
 
     it('should preserve whitespace in banner', () => {
-      const lines = [createOutputLine({ type: 'banner', content: 'ASCII ART' })];
+      const lines = [createTextLine({ type: 'banner', content: 'ASCII ART' })];
 
       const { container } = render(<TerminalOutput lines={lines} />);
 
@@ -51,7 +58,7 @@ describe('TerminalOutput', () => {
   describe('command lines', () => {
     it('should render command with prompt', () => {
       const lines = [
-        createOutputLine({
+        createTextLine({
           type: 'command',
           content: 'ls()',
           prompt: 'jshacker@localhost>',
@@ -66,7 +73,7 @@ describe('TerminalOutput', () => {
 
     it('should render prompt in different color than command', () => {
       const lines = [
-        createOutputLine({
+        createTextLine({
           type: 'command',
           content: 'pwd()',
           prompt: 'root@localhost>',
@@ -82,7 +89,7 @@ describe('TerminalOutput', () => {
 
   describe('result lines', () => {
     it('should render result content', () => {
-      const lines = [createOutputLine({ type: 'result', content: '/home/jshacker' })];
+      const lines = [createTextLine({ type: 'result', content: '/home/jshacker' })];
 
       render(<TerminalOutput lines={lines} />);
 
@@ -90,7 +97,7 @@ describe('TerminalOutput', () => {
     });
 
     it('should render result with indentation', () => {
-      const lines = [createOutputLine({ type: 'result', content: 'output text' })];
+      const lines = [createTextLine({ type: 'result', content: 'output text' })];
 
       render(<TerminalOutput lines={lines} />);
 
@@ -99,7 +106,7 @@ describe('TerminalOutput', () => {
     });
 
     it('should render empty result as non-breaking space', () => {
-      const lines = [createOutputLine({ type: 'result', content: '' })];
+      const lines = [createTextLine({ type: 'result', content: '' })];
 
       const { container } = render(<TerminalOutput lines={lines} />);
 
@@ -110,7 +117,7 @@ describe('TerminalOutput', () => {
     });
 
     it('should apply amber-500 color to results', () => {
-      const lines = [createOutputLine({ type: 'result', content: 'some output' })];
+      const lines = [createTextLine({ type: 'result', content: 'some output' })];
 
       render(<TerminalOutput lines={lines} />);
 
@@ -121,7 +128,7 @@ describe('TerminalOutput', () => {
 
   describe('error lines', () => {
     it('should render error content', () => {
-      const lines = [createOutputLine({ type: 'error', content: 'Permission denied' })];
+      const lines = [createTextLine({ type: 'error', content: 'Permission denied' })];
 
       render(<TerminalOutput lines={lines} />);
 
@@ -129,7 +136,7 @@ describe('TerminalOutput', () => {
     });
 
     it('should render error in red', () => {
-      const lines = [createOutputLine({ type: 'error', content: 'File not found' })];
+      const lines = [createTextLine({ type: 'error', content: 'File not found' })];
 
       render(<TerminalOutput lines={lines} />);
 
@@ -138,7 +145,7 @@ describe('TerminalOutput', () => {
     });
 
     it('should render error with indentation', () => {
-      const lines = [createOutputLine({ type: 'error', content: 'Error message' })];
+      const lines = [createTextLine({ type: 'error', content: 'Error message' })];
 
       render(<TerminalOutput lines={lines} />);
 
@@ -150,7 +157,7 @@ describe('TerminalOutput', () => {
   describe('author card', () => {
     it('should render author name', () => {
       const authorData = createAuthorData({ name: 'Francisco Ramos' });
-      const lines = [createOutputLine({ type: 'author', content: authorData })];
+      const lines = [createAuthorLine(authorData)];
 
       render(<TerminalOutput lines={lines} />);
 
@@ -159,7 +166,7 @@ describe('TerminalOutput', () => {
 
     it('should render author description', () => {
       const authorData = createAuthorData({ description: ['Software Engineer'] });
-      const lines = [createOutputLine({ type: 'author', content: authorData })];
+      const lines = [createAuthorLine(authorData)];
 
       render(<TerminalOutput lines={lines} />);
 
@@ -171,7 +178,7 @@ describe('TerminalOutput', () => {
         name: 'Test User',
         avatar: 'https://example.com/photo.jpg',
       });
-      const lines = [createOutputLine({ type: 'author', content: authorData })];
+      const lines = [createAuthorLine(authorData)];
 
       render(<TerminalOutput lines={lines} />);
 
@@ -186,7 +193,7 @@ describe('TerminalOutput', () => {
           { label: 'LinkedIn', url: 'https://linkedin.com/in/testuser' },
         ],
       });
-      const lines = [createOutputLine({ type: 'author', content: authorData })];
+      const lines = [createAuthorLine(authorData)];
 
       render(<TerminalOutput lines={lines} />);
 
@@ -199,7 +206,7 @@ describe('TerminalOutput', () => {
 
     it('should open links in new tab', () => {
       const authorData = createAuthorData();
-      const lines = [createOutputLine({ type: 'author', content: authorData })];
+      const lines = [createAuthorLine(authorData)];
 
       render(<TerminalOutput lines={lines} />);
 

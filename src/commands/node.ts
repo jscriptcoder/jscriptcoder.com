@@ -66,7 +66,6 @@ export const createNodeCommand = (context: NodeContext): Command => ({
 
     const executionContext = getExecutionContext();
 
-    // Wrap echo to collect output lines during execution
     const mutableBuffer: string[] = [];
     const wrappedContext = {
       ...executionContext,
@@ -84,7 +83,6 @@ export const createNodeCommand = (context: NodeContext): Command => ({
     const contextKeys = Object.keys(wrappedContext);
     const contextValues = Object.values(wrappedContext);
 
-    // Try as expression first (single-expression files), fall back to statements
     let result: unknown;
     try {
       const fn = new Function(...contextKeys, `return (${content})`);
@@ -94,7 +92,6 @@ export const createNodeCommand = (context: NodeContext): Command => ({
       result = fn(...contextValues);
     }
 
-    // If echo was called, return collected output
     if (mutableBuffer.length > 0) {
       return mutableBuffer.join('\n');
     }

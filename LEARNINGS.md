@@ -279,6 +279,19 @@
 - **Example**: `const x = output(cat("f"))` → string; `const y = output(ping("h"))` → Promise
 - **Trade-off**: Inconsistent API, but creates educational "aha" moment when user discovers Promises
 
+### CancellationToken utility for async commands
+
+- **What**: Shared `createCancellationToken()` in `src/utils/asyncCommand.ts` replaces duplicated `let cancelled = false; const timeoutIds = []` pattern
+- **Why it works**: 9 async commands (ping, ssh, ftp, nc, nslookup, nmap, curl, decrypt, resolve) all had identical mutable cancellation boilerplate. The utility encapsulates the mutation in one place: `token.schedule(fn, delay)` and `cancel: token.cancel`
+- **Key insight**: When the same mutable pattern appears across many files, extract it into a single utility that owns the mutation — callers become purely declarative
+
+### Discriminated unions eliminate type assertions
+
+- **What**: `OutputLine` was `{ type: string; content: string | AuthorData }` — a flat union on `content` that forced `as string` / `as AuthorData` casts everywhere. Refactored to a proper discriminated union on `type`: when `'author'` then `content: AuthorData`, otherwise `content: string`
+- **Why it works**: TypeScript narrows `content` automatically in switch/if blocks — zero casts needed in `TerminalOutput.tsx`
+- **Trade-off**: Construction sites need separate paths — `Terminal.tsx` split `addLine` into `addLine` (text) and `addAuthorLine` (author) since a generic function can't produce a narrowed union variant
+- **Key insight**: If you find yourself casting after checking a discriminant field, the union type definition is wrong — fix the type, not the usage
+
 ### Readonly types throughout
 
 - **What**: All type properties marked `readonly`, arrays as `readonly T[]`

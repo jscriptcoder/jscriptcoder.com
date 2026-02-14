@@ -38,8 +38,6 @@ export type NcSession = {
   readonly currentPath: string;
 };
 
-// --- Persistence ---
-
 export type PersistedState = {
   readonly session: Session;
   readonly sessionStack: readonly SessionSnapshot[];
@@ -50,49 +48,61 @@ export type PersistedState = {
 const isValidUserType = (value: unknown): value is UserType =>
   value === 'root' || value === 'user' || value === 'guest';
 
-const isValidSession = (value: unknown): value is Session =>
-  typeof value === 'object' &&
-  value !== null &&
-  typeof (value as Session).username === 'string' &&
-  typeof (value as Session).machine === 'string' &&
-  typeof (value as Session).currentPath === 'string' &&
-  isValidUserType((value as Session).userType);
+const asRecord = (value: unknown): Record<string, unknown> | null =>
+  typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : null;
+
+const isValidSession = (value: unknown): value is Session => {
+  const obj = asRecord(value);
+  if (!obj) return false;
+  return (
+    typeof obj.username === 'string' &&
+    typeof obj.machine === 'string' &&
+    typeof obj.currentPath === 'string' &&
+    isValidUserType(obj.userType)
+  );
+};
 
 const isValidSessionSnapshot = (value: unknown): value is SessionSnapshot => isValidSession(value);
 
-const isValidFtpSession = (value: unknown): value is FtpSession =>
-  typeof value === 'object' &&
-  value !== null &&
-  typeof (value as FtpSession).remoteMachine === 'string' &&
-  typeof (value as FtpSession).remoteUsername === 'string' &&
-  typeof (value as FtpSession).remoteCwd === 'string' &&
-  typeof (value as FtpSession).originMachine === 'string' &&
-  typeof (value as FtpSession).originUsername === 'string' &&
-  typeof (value as FtpSession).originCwd === 'string' &&
-  isValidUserType((value as FtpSession).remoteUserType) &&
-  isValidUserType((value as FtpSession).originUserType);
+const isValidFtpSession = (value: unknown): value is FtpSession => {
+  const obj = asRecord(value);
+  if (!obj) return false;
+  return (
+    typeof obj.remoteMachine === 'string' &&
+    typeof obj.remoteUsername === 'string' &&
+    typeof obj.remoteCwd === 'string' &&
+    typeof obj.originMachine === 'string' &&
+    typeof obj.originUsername === 'string' &&
+    typeof obj.originCwd === 'string' &&
+    isValidUserType(obj.remoteUserType) &&
+    isValidUserType(obj.originUserType)
+  );
+};
 
-const isValidNcSession = (value: unknown): value is NcSession =>
-  typeof value === 'object' &&
-  value !== null &&
-  typeof (value as NcSession).targetIP === 'string' &&
-  typeof (value as NcSession).targetPort === 'number' &&
-  typeof (value as NcSession).service === 'string' &&
-  typeof (value as NcSession).username === 'string' &&
-  typeof (value as NcSession).currentPath === 'string' &&
-  isValidUserType((value as NcSession).userType);
+const isValidNcSession = (value: unknown): value is NcSession => {
+  const obj = asRecord(value);
+  if (!obj) return false;
+  return (
+    typeof obj.targetIP === 'string' &&
+    typeof obj.targetPort === 'number' &&
+    typeof obj.service === 'string' &&
+    typeof obj.username === 'string' &&
+    typeof obj.currentPath === 'string' &&
+    isValidUserType(obj.userType)
+  );
+};
 
-export const isValidPersistedState = (value: unknown): value is PersistedState =>
-  typeof value === 'object' &&
-  value !== null &&
-  isValidSession((value as PersistedState).session) &&
-  Array.isArray((value as PersistedState).sessionStack) &&
-  (value as PersistedState).sessionStack.every(isValidSessionSnapshot) &&
-  ((value as PersistedState).ftpSession === null ||
-    isValidFtpSession((value as PersistedState).ftpSession)) &&
-  ((value as PersistedState).ncSession === null ||
-    (value as PersistedState).ncSession === undefined ||
-    isValidNcSession((value as PersistedState).ncSession));
+export const isValidPersistedState = (value: unknown): value is PersistedState => {
+  const obj = asRecord(value);
+  if (!obj) return false;
+  return (
+    isValidSession(obj.session) &&
+    Array.isArray(obj.sessionStack) &&
+    (obj.sessionStack as unknown[]).every(isValidSessionSnapshot) &&
+    (obj.ftpSession === null || isValidFtpSession(obj.ftpSession)) &&
+    (obj.ncSession === null || obj.ncSession === undefined || isValidNcSession(obj.ncSession))
+  );
+};
 
 type SessionContextValue = {
   readonly session: Session;
@@ -106,13 +116,11 @@ type SessionContextValue = {
   readonly pushSession: () => void;
   readonly popSession: () => SessionSnapshot | null;
   readonly canReturn: () => boolean;
-  // FTP session methods
   readonly enterFtpMode: (ftpSession: FtpSession) => void;
   readonly exitFtpMode: () => FtpSession | null;
   readonly updateFtpRemoteCwd: (cwd: string) => void;
   readonly updateFtpOriginCwd: (cwd: string) => void;
   readonly isInFtpMode: () => boolean;
-  // NC session methods
   readonly enterNcMode: (ncSession: NcSession) => void;
   readonly exitNcMode: () => NcSession | null;
   readonly isInNcMode: () => boolean;
@@ -148,7 +156,6 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
   const [ftpSession, setFtpSession] = useState<FtpSession | null>(initialState.ftpSession);
   const [ncSession, setNcSession] = useState<NcSession | null>(initialState.ncSession);
 
-  // Persist state changes to IndexedDB
   useEffect(() => {
     const db = getDatabase();
     if (db) {

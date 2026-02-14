@@ -1,5 +1,6 @@
 import type { Command, AsyncOutput, NcPromptData } from '../components/Terminal/types';
-import type { RemoteMachine, DnsRecord } from '../network/types';
+import type { RemoteMachine, DnsRecord, Port } from '../network/types';
+import { createCancellationToken } from '../utils/asyncCommand';
 
 type NcContext = {
   readonly getMachine: (ip: string) => RemoteMachine | undefined;
@@ -10,7 +11,6 @@ type NcContext = {
 const NC_CONNECT_DELAY_MS = 400;
 const NC_BANNER_DELAY_MS = 300;
 
-// Service banners for different port types (null means interactive mode)
 const SERVICE_BANNERS: Readonly<Record<string, string | null>> = {
   ssh: 'SSH-2.0-OpenSSH_8.9p1 Ubuntu-3ubuntu0.1',
   http: 'HTTP/1.1 400 Bad Request\r\nConnection: close',
@@ -18,13 +18,9 @@ const SERVICE_BANNERS: Readonly<Record<string, string | null>> = {
   https: '(binary SSL/TLS data)',
   ftp: '220 FTP server ready.',
   mysql: '(binary MySQL protocol data)',
-  elite: null, // Special handling - enters interactive mode
+  elite: null,
 };
 
-// Interactive services have an owner defined in the port config
-import type { Port } from '../network/types';
-
-// Check if port is interactive (has an owner)
 const isInteractivePort = (port: Port): boolean => port.owner !== undefined;
 
 export const createNcCommand = (context: NcContext): Command => ({
@@ -64,7 +60,6 @@ export const createNcCommand = (context: NcContext): Command => ({
       throw new Error('nc: port must be between 1 and 65535');
     }
 
-    // Resolve hostname to IP if needed
     let targetIP = host;
     if (!host.match(/^\d+\.\d+\.\d+\.\d+$/)) {
       const record = resolveDomain(host);
@@ -74,43 +69,38 @@ export const createNcCommand = (context: NcContext): Command => ({
       targetIP = record.ip;
     }
 
-    // Check if trying to connect to localhost
     const localIP = getLocalIP();
     if (targetIP === localIP || targetIP === '127.0.0.1' || host === 'localhost') {
       throw new Error('nc: connect to localhost: Connection refused');
     }
 
-    // Check if machine exists
     const machine = getMachine(targetIP);
     if (!machine) {
       throw new Error(`nc: connect to ${targetIP} port ${port}: Connection timed out`);
     }
 
-    // Check if port is open
     const targetPort = machine.ports.find((p) => p.port === port);
     if (!targetPort || !targetPort.open) {
       throw new Error(`nc: connect to ${targetIP} port ${port}: Connection refused`);
     }
 
-    let cancelled = false;
-    const timeoutIds: ReturnType<typeof setTimeout>[] = [];
+    const token = createCancellationToken();
 
     return {
       __type: 'async',
       start: (onLine, onComplete) => {
         onLine(`Connecting to ${targetIP}:${port}...`);
 
-        const connectTimeoutId = setTimeout(() => {
-          if (cancelled) return;
+        token.schedule(() => {
+          if (token.isCancelled()) return;
 
           onLine(`Connected to ${targetIP}.`);
 
-          const bannerTimeoutId = setTimeout(() => {
-            if (cancelled) return;
+          token.schedule(() => {
+            if (token.isCancelled()) return;
 
             const service = targetPort.service;
 
-            // Check if this is an interactive port (has owner)
             if (isInteractivePort(targetPort) && targetPort.owner) {
               const { username, userType, homePath } = targetPort.owner;
 
@@ -118,7 +108,6 @@ export const createNcCommand = (context: NcContext): Command => ({
               onLine(`# ${port} #`);
               onLine('');
 
-              // Return nc prompt data to enter interactive mode
               const ncPrompt: NcPromptData = {
                 __type: 'nc_prompt',
                 targetIP,
@@ -131,7 +120,6 @@ export const createNcCommand = (context: NcContext): Command => ({
 
               onComplete(ncPrompt);
             } else {
-              // Non-interactive service - just show banner and close
               const banner = SERVICE_BANNERS[service] ?? `Connected to ${service} service`;
               onLine(banner);
               onLine('');
@@ -139,16 +127,9 @@ export const createNcCommand = (context: NcContext): Command => ({
               onComplete();
             }
           }, NC_BANNER_DELAY_MS);
-
-          timeoutIds.push(bannerTimeoutId);
         }, NC_CONNECT_DELAY_MS);
-
-        timeoutIds.push(connectTimeoutId);
       },
-      cancel: () => {
-        cancelled = true;
-        timeoutIds.forEach((id) => clearTimeout(id));
-      },
+      cancel: token.cancel,
     };
   },
 });

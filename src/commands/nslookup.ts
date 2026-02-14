@@ -1,12 +1,12 @@
 import type { Command, AsyncOutput } from '../components/Terminal/types';
 import type { DnsRecord } from '../network/types';
+import { createCancellationToken } from '../utils/asyncCommand';
 
 type NslookupContext = {
   readonly resolveDomain: (domain: string) => DnsRecord | undefined;
   readonly getGateway: () => string;
 };
 
-// Delay to simulate DNS lookup
 const DNS_LOOKUP_DELAY_MS = 600;
 
 export const createNslookupCommand = (context: NslookupContext): Command => ({
@@ -35,22 +35,19 @@ export const createNslookupCommand = (context: NslookupContext): Command => ({
       throw new Error('nslookup: domain must be a string');
     }
 
-    let cancelled = false;
-    const timeoutIds: ReturnType<typeof setTimeout>[] = [];
+    const token = createCancellationToken();
 
     return {
       __type: 'async',
       start: (onLine, onComplete) => {
         const dnsServer = getGateway();
 
-        // Show server info immediately
         onLine(`Server:  ${dnsServer}`);
         onLine(`Address: ${dnsServer}#53`);
         onLine('');
 
-        // Simulate DNS lookup delay
-        const lookupTimeoutId = setTimeout(() => {
-          if (cancelled) return;
+        token.schedule(() => {
+          if (token.isCancelled()) return;
 
           const record = resolveDomain(domain);
 
@@ -64,13 +61,8 @@ export const createNslookupCommand = (context: NslookupContext): Command => ({
 
           onComplete();
         }, DNS_LOOKUP_DELAY_MS);
-
-        timeoutIds.push(lookupTimeoutId);
       },
-      cancel: () => {
-        cancelled = true;
-        timeoutIds.forEach((id) => clearTimeout(id));
-      },
+      cancel: token.cancel,
     };
   },
 });

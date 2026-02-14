@@ -48,6 +48,7 @@ Session stack enables SSH nesting — `pushSession()` saves state before connect
 ## Persistence Architecture
 
 Three-layer system:
+
 1. **`storage.ts`** — Low-level IndexedDB wrapper (`jshack-db`, stores: `session`, `filesystem`)
 2. **`storageCache.ts`** — Pre-load cache, called in `main.tsx` before React mounts. Bridges async IndexedDB with sync `useState` initializers. Handles one-time localStorage migration.
 3. **Contexts** — Read from cache (sync), write to IndexedDB via `useEffect` (async)

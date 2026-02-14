@@ -1,12 +1,12 @@
 import type { Command, AsyncOutput, SshPromptData } from '../components/Terminal/types';
 import type { RemoteMachine } from '../network/types';
+import { createCancellationToken } from '../utils/asyncCommand';
 
 type SshContext = {
   readonly getMachine: (ip: string) => RemoteMachine | undefined;
   readonly getLocalIP: () => string;
 };
 
-// Delays for SSH connection simulation
 const SSH_CONNECT_DELAY_MS = 800;
 const SSH_HANDSHAKE_DELAY_MS = 600;
 
@@ -40,50 +40,43 @@ export const createSshCommand = (context: SshContext): Command => ({
       throw new Error('ssh: missing host\nUsage: ssh("user", "host")');
     }
 
-    // Check if trying to SSH to localhost
     const localIP = getLocalIP();
     if (host === localIP || host === '127.0.0.1' || host === 'localhost') {
       throw new Error('ssh: cannot connect to localhost via SSH');
     }
 
-    // Check if machine exists
     const machine = getMachine(host);
     if (!machine) {
       throw new Error(`ssh: connect to host ${host} port 22: Connection refused`);
     }
 
-    // Check if SSH port is open
     const sshPort = machine.ports.find((p) => p.port === 22 && p.service === 'ssh');
     if (!sshPort || !sshPort.open) {
       throw new Error(`ssh: connect to host ${host} port 22: Connection refused`);
     }
 
-    // Check if user exists on remote machine
     const remoteUser = machine.users.find((u) => u.username === user);
     if (!remoteUser) {
       throw new Error(`ssh: ${user}@${host}: Permission denied (publickey,password)`);
     }
 
-    let cancelled = false;
-    const timeoutIds: ReturnType<typeof setTimeout>[] = [];
+    const token = createCancellationToken();
 
     return {
       __type: 'async',
       start: (onLine, onComplete) => {
-        // Show connection progress
         onLine(`Connecting to ${host}...`);
 
-        const connectTimeoutId = setTimeout(() => {
-          if (cancelled) return;
+        token.schedule(() => {
+          if (token.isCancelled()) return;
 
           onLine(`SSH-2.0-OpenSSH_8.9`);
 
-          const handshakeTimeoutId = setTimeout(() => {
-            if (cancelled) return;
+          token.schedule(() => {
+            if (token.isCancelled()) return;
 
             onLine(`Authenticating as ${user}...`);
 
-            // Complete with SSH prompt data to trigger password mode
             const sshPrompt: SshPromptData = {
               __type: 'ssh_prompt',
               targetUser: user,
@@ -92,16 +85,9 @@ export const createSshCommand = (context: SshContext): Command => ({
 
             onComplete(sshPrompt);
           }, SSH_HANDSHAKE_DELAY_MS);
-
-          timeoutIds.push(handshakeTimeoutId);
         }, SSH_CONNECT_DELAY_MS);
-
-        timeoutIds.push(connectTimeoutId);
       },
-      cancel: () => {
-        cancelled = true;
-        timeoutIds.forEach((id) => clearTimeout(id));
-      },
+      cancel: token.cancel,
     };
   },
 });

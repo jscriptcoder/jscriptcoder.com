@@ -11,13 +11,15 @@ export const createHelpCommand = (getCommands: () => Command[]): Command => ({
   },
   fn: () => {
     const commands = getCommands();
-    const lines = ['Available commands:', ''];
-
     const sortedCommands = [...commands].sort((a, b) => a.name.localeCompare(b.name));
 
-    sortedCommands.forEach((cmd) => {
-      lines.push(` ${cmd.manual?.synopsis ?? cmd.name + '()'} - ${cmd.description}`);
-    });
+    const lines = [
+      'Available commands:',
+      '',
+      ...sortedCommands.map(
+        (cmd) => ` ${cmd.manual?.synopsis ?? cmd.name + '()'} - ${cmd.description}`,
+      ),
+    ];
 
     return lines.join('\n');
   },

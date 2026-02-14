@@ -1,6 +1,7 @@
 import type { Command, AsyncOutput } from '../components/Terminal/types';
 import type { RemoteMachine } from '../network/types';
 import { isValidIP, parseIPRange } from '../utils/network';
+import { createCancellationToken } from '../utils/asyncCommand';
 
 type NmapContext = {
   readonly getMachine: (ip: string) => RemoteMachine | undefined;
@@ -8,9 +9,8 @@ type NmapContext = {
   readonly getLocalIP: () => string;
 };
 
-// Delay constants for realistic scanning simulation
-const SCAN_DELAY_MS = 150; // Delay per IP in range scan
-const PORT_SCAN_DELAY_MS = 300; // Delay per port in port scan
+const SCAN_DELAY_MS = 150;
+const PORT_SCAN_DELAY_MS = 300;
 
 export const createNmapCommand = (context: NmapContext): Command => ({
   name: 'nmap',
@@ -40,14 +40,11 @@ export const createNmapCommand = (context: NmapContext): Command => ({
       throw new Error('nmap: missing target specification');
     }
 
-    let cancelled = false;
-    const timeoutIds: ReturnType<typeof setTimeout>[] = [];
-
-    // Check if it's a range scan
     const range = parseIPRange(target);
 
     if (range) {
-      // Range scan - discover hosts with delays
+      const token = createCancellationToken();
+
       return {
         __type: 'async',
         start: (onLine, onComplete) => {
@@ -55,7 +52,6 @@ export const createNmapCommand = (context: NmapContext): Command => ({
           const localIP = getLocalIP();
           const totalIPs = range.end - range.start + 1;
 
-          // Show header immediately
           onLine(`Starting Nmap scan on ${target}`);
           onLine(`Scanning ${totalIPs} hosts...`);
           onLine('');
@@ -63,21 +59,18 @@ export const createNmapCommand = (context: NmapContext): Command => ({
           const foundHosts: string[] = [];
           let scannedCount = 0;
 
-          // Check each IP in range with delays
           for (let i = range.start; i <= range.end; i++) {
             const index = i - range.start;
-            const timeoutId = setTimeout(() => {
-              if (cancelled) return;
+            token.schedule(() => {
+              if (token.isCancelled()) return;
 
               const ip = `${range.baseIP}.${i}`;
               scannedCount++;
 
-              // Check if it's localhost
               if (ip === localIP) {
                 foundHosts.push(`${ip} - localhost (this machine)`);
                 onLine(`Host discovered: ${ip} (localhost)`);
               } else {
-                // Check if it's a known machine
                 const machine = machines.find((m) => m.ip === ip);
                 if (machine) {
                   const openPorts = machine.ports.filter((p) => p.open);
@@ -87,10 +80,9 @@ export const createNmapCommand = (context: NmapContext): Command => ({
                 }
               }
 
-              // After last IP, show summary
               if (scannedCount === totalIPs) {
-                const summaryTimeoutId = setTimeout(() => {
-                  if (cancelled) return;
+                token.schedule(() => {
+                  if (token.isCancelled()) return;
 
                   onLine('');
                   if (foundHosts.length === 0) {
@@ -105,34 +97,28 @@ export const createNmapCommand = (context: NmapContext): Command => ({
                   );
                   onComplete();
                 }, 300);
-                timeoutIds.push(summaryTimeoutId);
               }
             }, index * SCAN_DELAY_MS);
-            timeoutIds.push(timeoutId);
           }
         },
-        cancel: () => {
-          cancelled = true;
-          timeoutIds.forEach((id) => clearTimeout(id));
-        },
+        cancel: token.cancel,
       };
     }
 
-    // Single IP scan - port scan
     if (!isValidIP(target)) {
       throw new Error(`nmap: invalid target: ${target}`);
     }
 
     const localIP = getLocalIP();
+    const token = createCancellationToken();
 
     return {
       __type: 'async',
       start: (onLine, onComplete) => {
-        // Check if scanning localhost
         if (target === localIP || target === '127.0.0.1') {
           onLine(`Starting Nmap scan on ${target}`);
-          const timeoutId = setTimeout(() => {
-            if (cancelled) return;
+          token.schedule(() => {
+            if (token.isCancelled()) return;
             onLine('');
             onLine(`Nmap scan report for localhost (${target})`);
             onLine('Host is up.');
@@ -140,18 +126,16 @@ export const createNmapCommand = (context: NmapContext): Command => ({
             onLine('All scanned ports are closed on this machine.');
             onComplete();
           }, 500);
-          timeoutIds.push(timeoutId);
           return;
         }
 
         const machine = getMachine(target);
 
         if (!machine) {
-          // Check if it's in a valid subnet
           if (target.startsWith('192.168.1.')) {
             onLine(`Starting Nmap scan on ${target}`);
-            const timeoutId = setTimeout(() => {
-              if (cancelled) return;
+            token.schedule(() => {
+              if (token.isCancelled()) return;
               onLine('');
               onLine(`Nmap scan report for ${target}`);
               onLine('Host seems down.');
@@ -159,64 +143,52 @@ export const createNmapCommand = (context: NmapContext): Command => ({
               onLine('Note: Host may be blocking ping probes.');
               onComplete();
             }, 800);
-            timeoutIds.push(timeoutId);
             return;
           }
           throw new Error(`nmap: failed to resolve "${target}"`);
         }
 
-        // Port scan with delays
         const openPorts = machine.ports.filter((p) => p.open);
 
         onLine(`Starting Nmap scan on ${target}`);
         onLine('Scanning ports...');
 
-        // Show header after initial delay
-        const headerTimeoutId = setTimeout(() => {
-          if (cancelled) return;
+        token.schedule(() => {
+          if (token.isCancelled()) return;
           onLine('');
           onLine(`Nmap scan report for ${machine.hostname} (${machine.ip})`);
           onLine('Host is up.');
           onLine('');
           onLine('PORT      STATE  SERVICE');
         }, 400);
-        timeoutIds.push(headerTimeoutId);
 
         if (openPorts.length === 0) {
-          const noPortsTimeoutId = setTimeout(() => {
-            if (cancelled) return;
+          token.schedule(() => {
+            if (token.isCancelled()) return;
             onLine('All scanned ports are closed.');
             onComplete();
           }, 600);
-          timeoutIds.push(noPortsTimeoutId);
         } else {
-          // Show each port with delay
           openPorts.forEach((port, index) => {
-            const portTimeoutId = setTimeout(
+            token.schedule(
               () => {
-                if (cancelled) return;
+                if (token.isCancelled()) return;
                 const portStr = `${port.port}/tcp`.padEnd(10);
                 onLine(`${portStr}open   ${port.service}`);
 
-                // After last port, complete
                 if (index === openPorts.length - 1) {
-                  const completeTimeoutId = setTimeout(() => {
-                    if (cancelled) return;
+                  token.schedule(() => {
+                    if (token.isCancelled()) return;
                     onComplete();
                   }, 200);
-                  timeoutIds.push(completeTimeoutId);
                 }
               },
               500 + (index + 1) * PORT_SCAN_DELAY_MS,
             );
-            timeoutIds.push(portTimeoutId);
           });
         }
       },
-      cancel: () => {
-        cancelled = true;
-        timeoutIds.forEach((id) => clearTimeout(id));
-      },
+      cancel: token.cancel,
     };
   },
 });

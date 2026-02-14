@@ -1,4 +1,29 @@
-import type { Command } from '../components/Terminal/types';
+import type { Command, CommandManual } from '../components/Terminal/types';
+
+const buildManualLines = (manual: CommandManual): readonly string[] => [
+  'SYNOPSIS',
+  `    ${manual.synopsis}`,
+  '',
+  'DESCRIPTION',
+  `    ${manual.description}`,
+  '',
+  ...(manual.arguments && manual.arguments.length > 0
+    ? [
+        'ARGUMENTS',
+        ...manual.arguments.flatMap((arg) => [
+          `    ${arg.name}${arg.required ? ' (required)' : ' (optional)'}`,
+          `        ${arg.description}`,
+        ]),
+        '',
+      ]
+    : []),
+  ...(manual.examples && manual.examples.length > 0
+    ? [
+        'EXAMPLES',
+        ...manual.examples.flatMap((ex) => [`    ${ex.command}`, `        ${ex.description}`, '']),
+      ]
+    : []),
+];
 
 export const createManCommand = (getCommands: () => Map<string, Command>): Command => ({
   name: 'man',
@@ -29,52 +54,16 @@ export const createManCommand = (getCommands: () => Map<string, Command>): Comma
       throw new Error(`man: no manual entry for '${cmdName}'`);
     }
 
-    const lines: string[] = [];
-
-    // Header
-    lines.push(`${cmd.name.toUpperCase()}(1)`);
-    lines.push('');
-
-    // Name section
-    lines.push('NAME');
-    lines.push(`    ${cmd.name} - ${cmd.description}`);
-    lines.push('');
-
-    if (cmd.manual) {
-      // Synopsis
-      lines.push('SYNOPSIS');
-      lines.push(`    ${cmd.manual.synopsis}`);
-      lines.push('');
-
-      // Description
-      lines.push('DESCRIPTION');
-      lines.push(`    ${cmd.manual.description}`);
-      lines.push('');
-
-      // Arguments
-      if (cmd.manual.arguments && cmd.manual.arguments.length > 0) {
-        lines.push('ARGUMENTS');
-        cmd.manual.arguments.forEach((arg) => {
-          const required = arg.required ? ' (required)' : ' (optional)';
-          lines.push(`    ${arg.name}${required}`);
-          lines.push(`        ${arg.description}`);
-        });
-        lines.push('');
-      }
-
-      // Examples
-      if (cmd.manual.examples && cmd.manual.examples.length > 0) {
-        lines.push('EXAMPLES');
-        cmd.manual.examples.forEach((ex) => {
-          lines.push(`    ${ex.command}`);
-          lines.push(`        ${ex.description}`);
-          lines.push('');
-        });
-      }
-    } else {
-      lines.push('No detailed manual available for this command.');
-      lines.push('');
-    }
+    const lines = [
+      `${cmd.name.toUpperCase()}(1)`,
+      '',
+      'NAME',
+      `    ${cmd.name} - ${cmd.description}`,
+      '',
+      ...(cmd.manual
+        ? buildManualLines(cmd.manual)
+        : ['No detailed manual available for this command.', '']),
+    ];
 
     return lines.join('\n');
   },

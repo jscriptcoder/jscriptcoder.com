@@ -3,6 +3,7 @@ import type { RemoteMachine, DnsRecord } from '../network/types';
 import type { MachineId } from '../filesystem/machineFileSystems';
 import type { UserType } from '../session/SessionContext';
 import { isValidIP } from '../utils/network';
+import { createCancellationToken } from '../utils/asyncCommand';
 
 type CurlContext = {
   readonly getMachine: (ip: string) => RemoteMachine | undefined;
@@ -167,6 +168,8 @@ const formatResponse = (response: HttpResponse, includeHeaders: boolean): string
   return `HTTP/1.1 ${response.statusCode} ${response.statusText}\n${headerLines}\n\n${response.body}`;
 };
 
+const isHttpService = (service: string): boolean => HTTP_SERVICES.some((s) => s === service);
+
 export const createCurlCommand = (context: CurlContext): Command => ({
   name: 'curl',
   description: 'Transfer data from or to a server',
@@ -239,26 +242,21 @@ export const createCurlCommand = (context: CurlContext): Command => ({
     }
 
     const port = machine.ports.find((p) => p.port === parsed.port);
-    if (
-      !port ||
-      !port.open ||
-      !HTTP_SERVICES.includes(port.service as (typeof HTTP_SERVICES)[number])
-    ) {
+    if (!port || !port.open || !isHttpService(port.service)) {
       throw new Error(
         `curl: Failed to connect to ${parsed.host} port ${parsed.port}: Connection refused`,
       );
     }
 
-    let cancelled = false;
-    const timeoutIds: ReturnType<typeof setTimeout>[] = [];
+    const token = createCancellationToken();
 
     return {
       __type: 'async',
       start: (onLine, onComplete) => {
         const delay = Math.random() * 200 + 400;
 
-        const timeoutId = setTimeout(() => {
-          if (cancelled) return;
+        token.schedule(() => {
+          if (token.isCancelled()) return;
 
           const response = isPost
             ? handlePost(context, targetIP as MachineId, parsed.path)
@@ -269,13 +267,8 @@ export const createCurlCommand = (context: CurlContext): Command => ({
 
           onComplete();
         }, delay);
-
-        timeoutIds.push(timeoutId);
       },
-      cancel: () => {
-        cancelled = true;
-        timeoutIds.forEach((id) => clearTimeout(id));
-      },
+      cancel: token.cancel,
     };
   },
 });

@@ -83,7 +83,6 @@ export const createOutputCommand = (context: OutputContext): Command => ({
   fn: (value: unknown, filePath?: unknown): string | Promise<string> => {
     const filePathStr = filePath as string | undefined;
 
-    // Handle async output (ping, nmap, decrypt, etc.)
     if (isAsyncOutput(value)) {
       return collectAsyncOutput(value).then((content) => {
         if (filePathStr) {
@@ -93,7 +92,6 @@ export const createOutputCommand = (context: OutputContext): Command => ({
       });
     }
 
-    // Handle sync output
     const content = stringify(value);
 
     if (filePathStr) {

@@ -32,7 +32,6 @@ export const NanoEditor = ({
     textareaRef.current?.focus();
   }, []);
 
-  // Restore cursor position after content update (e.g. Tab insertion)
   useLayoutEffect(() => {
     if (pendingCursorPos.current !== null && textareaRef.current) {
       textareaRef.current.selectionStart = pendingCursorPos.current;
@@ -41,7 +40,6 @@ export const NanoEditor = ({
     }
   });
 
-  // Auto-clear status messages
   useEffect(() => {
     if (statusMessage) {
       const timer = setTimeout(() => setStatusMessage(''), 3000);

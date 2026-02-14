@@ -15,7 +15,6 @@ export type VariableResult = {
   readonly error?: string;
 };
 
-// Regex patterns for variable declarations and assignments
 const CONST_DECLARATION = /^const\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*=\s*(.+)$/;
 const LET_DECLARATION = /^let\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*=\s*(.+)$/;
 const REASSIGNMENT = /^([a-zA-Z_$][a-zA-Z0-9_$]*)\s*=\s*(.+)$/;
@@ -31,7 +30,7 @@ export const useVariables = () => {
     [variables],
   );
 
-  const getVariableNames = useCallback((): string[] => {
+  const getVariableNames = useCallback((): readonly string[] => {
     return Object.keys(variables);
   }, [variables]);
 
@@ -49,12 +48,10 @@ export const useVariables = () => {
     (input: string, executionContext: Record<string, unknown>): VariableResult | null => {
       const trimmed = input.trim();
 
-      // Check for const declaration
       const constMatch = trimmed.match(CONST_DECLARATION);
       if (constMatch) {
         const [, name, expression] = constMatch;
 
-        // Check if variable already exists
         if (variables[name] !== undefined) {
           return {
             success: false,
@@ -63,7 +60,6 @@ export const useVariables = () => {
         }
 
         try {
-          // Create context that includes existing variables
           const fullContext = { ...executionContext, ...getVariables() };
           const value = parseExpression(expression, fullContext);
 
@@ -81,12 +77,10 @@ export const useVariables = () => {
         }
       }
 
-      // Check for let declaration
       const letMatch = trimmed.match(LET_DECLARATION);
       if (letMatch) {
         const [, name, expression] = letMatch;
 
-        // Check if variable already exists
         if (variables[name] !== undefined) {
           return {
             success: false,
@@ -112,18 +106,14 @@ export const useVariables = () => {
         }
       }
 
-      // Check for reassignment (no const/let keyword)
       const reassignMatch = trimmed.match(REASSIGNMENT);
       if (reassignMatch) {
         const [, name, expression] = reassignMatch;
 
-        // Check if variable exists
         if (variables[name] === undefined) {
-          // Not a variable reassignment, let normal execution handle it
           return null;
         }
 
-        // Check if it's a const
         if (variables[name].isConst) {
           return {
             success: false,
@@ -149,7 +139,6 @@ export const useVariables = () => {
         }
       }
 
-      // Not a variable operation
       return null;
     },
     [variables, getVariables, parseExpression],

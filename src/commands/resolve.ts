@@ -1,5 +1,6 @@
 import type { Command, AsyncOutput } from '../components/Terminal/types';
 import { stringify } from '../utils/stringify';
+import { createCancellationToken } from '../utils/asyncCommand';
 
 const RESOLVE_DELAY_MS = 100;
 
@@ -37,14 +38,12 @@ export const createResolveCommand = (): Command => ({
     ],
   },
   fn: (value: unknown): AsyncOutput => {
-    let cancelled = false;
-    const timeoutIds: ReturnType<typeof setTimeout>[] = [];
+    const token = createCancellationToken();
 
     return {
       __type: 'async',
       start: (onLine, onComplete) => {
         if (!isPromise(value)) {
-          // Not a Promise, just display the value
           onLine(stringify(value));
           onComplete();
           return;
@@ -52,31 +51,26 @@ export const createResolveCommand = (): Command => ({
 
         onLine('Resolving...');
 
-        const timeoutId = setTimeout(() => {
-          if (cancelled) return;
+        token.schedule(() => {
+          if (token.isCancelled()) return;
 
           value
             .then((resolved) => {
-              if (cancelled) return;
+              if (token.isCancelled()) return;
               onLine('');
               onLine(stringify(resolved));
               onComplete();
             })
             .catch((error: unknown) => {
-              if (cancelled) return;
+              if (token.isCancelled()) return;
               onLine('');
               const errorMessage = error instanceof Error ? error.message : String(error);
               onLine(`Error: ${errorMessage}`);
               onComplete();
             });
         }, RESOLVE_DELAY_MS);
-
-        timeoutIds.push(timeoutId);
       },
-      cancel: () => {
-        cancelled = true;
-        timeoutIds.forEach((id) => clearTimeout(id));
-      },
+      cancel: token.cancel,
     };
   },
 });

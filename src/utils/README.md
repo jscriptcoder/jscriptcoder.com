@@ -12,6 +12,7 @@ Shared utility modules used across the application. Each module is self-containe
 | `stringify.ts`    | Value-to-string conversion (used by `echo`, `output`, `resolve`)                    |
 | `storage.ts`      | IndexedDB wrapper — open, read, write, clear for `session` and `filesystem` stores  |
 | `storageCache.ts` | Pre-load cache that bridges async IndexedDB with sync React `useState` initializers |
+| `asyncCommand.ts` | Cancellation token for async commands — encapsulates `setTimeout` scheduling and cleanup |
 
 ## Persistence Stack
 

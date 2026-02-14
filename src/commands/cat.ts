@@ -8,11 +8,9 @@ type CatContext = {
   readonly getUserType: () => UserType;
 };
 
-// Detect binary content by checking for null bytes or control characters
 const isBinaryContent = (content: string): boolean => {
   for (let i = 0; i < Math.min(content.length, 512); i++) {
     const charCode = content.charCodeAt(i);
-    // Null byte or control chars (except newline, tab, carriage return)
     if (charCode === 0 || (charCode < 32 && charCode !== 9 && charCode !== 10 && charCode !== 13)) {
       return true;
     }
@@ -58,14 +56,12 @@ export const createCatCommand = (context: CatContext): Command => ({
       throw new Error(`cat: ${path}: Is a directory`);
     }
 
-    // Check read permission
     if (!node.permissions.read.includes(userType)) {
       throw new Error(`cat: ${path}: Permission denied`);
     }
 
     const content = node.content ?? '';
 
-    // Warn about binary files
     if (isBinaryContent(content)) {
       return `cat: ${path}: Binary file (use strings() to extract text)`;
     }

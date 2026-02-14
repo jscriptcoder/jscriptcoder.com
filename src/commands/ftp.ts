@@ -1,5 +1,6 @@
 import type { Command, AsyncOutput, FtpPromptData } from '../components/Terminal/types';
 import type { RemoteMachine, DnsRecord } from '../network/types';
+import { createCancellationToken } from '../utils/asyncCommand';
 
 type FtpContext = {
   readonly getMachine: (ip: string) => RemoteMachine | undefined;
@@ -36,7 +37,6 @@ export const createFtpCommand = (context: FtpContext): Command => ({
       throw new Error('ftp: missing host\nUsage: ftp("host")');
     }
 
-    // Resolve hostname to IP if needed
     let targetIP = host;
     if (!host.match(/^\d+\.\d+\.\d+\.\d+$/)) {
       const record = resolveDomain(host);
@@ -46,43 +46,38 @@ export const createFtpCommand = (context: FtpContext): Command => ({
       targetIP = record.ip;
     }
 
-    // Check if trying to FTP to localhost
     const localIP = getLocalIP();
     if (targetIP === localIP || targetIP === '127.0.0.1' || host === 'localhost') {
       throw new Error('ftp: cannot connect to localhost via FTP');
     }
 
-    // Check if machine exists
     const machine = getMachine(targetIP);
     if (!machine) {
       throw new Error(`ftp: connect to ${targetIP} port 21: Connection refused`);
     }
 
-    // Check if FTP port is open
     const ftpPort = machine.ports.find((p) => p.port === 21 && p.service === 'ftp');
     if (!ftpPort || !ftpPort.open) {
       throw new Error(`ftp: connect to ${targetIP} port 21: Connection refused`);
     }
 
-    let cancelled = false;
-    const timeoutIds: ReturnType<typeof setTimeout>[] = [];
+    const token = createCancellationToken();
 
     return {
       __type: 'async',
       start: (onLine, onComplete) => {
         onLine(`Connecting to ${targetIP}...`);
 
-        const connectTimeoutId = setTimeout(() => {
-          if (cancelled) return;
+        token.schedule(() => {
+          if (token.isCancelled()) return;
 
           onLine(`Connected to ${targetIP}.`);
 
-          const bannerTimeoutId = setTimeout(() => {
-            if (cancelled) return;
+          token.schedule(() => {
+            if (token.isCancelled()) return;
 
             onLine(`220 Welcome to ${machine.hostname} FTP server.`);
 
-            // Return FTP prompt data to trigger username/password flow
             const ftpPrompt: FtpPromptData = {
               __type: 'ftp_prompt',
               targetIP,
@@ -90,16 +85,9 @@ export const createFtpCommand = (context: FtpContext): Command => ({
 
             onComplete(ftpPrompt);
           }, FTP_BANNER_DELAY_MS);
-
-          timeoutIds.push(bannerTimeoutId);
         }, FTP_CONNECT_DELAY_MS);
-
-        timeoutIds.push(connectTimeoutId);
       },
-      cancel: () => {
-        cancelled = true;
-        timeoutIds.forEach((id) => clearTimeout(id));
-      },
+      cancel: token.cancel,
     };
   },
 });

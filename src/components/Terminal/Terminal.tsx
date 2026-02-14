@@ -42,13 +42,11 @@ const BANNER = `
   Type help() for available commands
 `;
 
-const getInitialLines = (): OutputLine[] => [
-  { id: 0, type: 'banner' as OutputLine['type'], content: BANNER },
-];
+const getInitialLines = (): readonly OutputLine[] => [{ id: 0, type: 'banner', content: BANNER }];
 
 export const Terminal = () => {
   const [input, setInput] = useState('');
-  const [lines, setLines] = useState<OutputLine[]>(getInitialLines);
+  const [lines, setLines] = useState<readonly OutputLine[]>(getInitialLines);
   const [passwordMode, setPasswordMode] = useState(false);
   const [targetUser, setTargetUser] = useState<string | null>(null);
   const [sshTargetIP, setSshTargetIP] = useState<string | null>(null);
@@ -89,7 +87,6 @@ export const Terminal = () => {
   const { readFile, getNode, writeFile, createFile, getDefaultHomePath } = useFileSystem();
   const { getMachine, config: networkConfig } = useNetwork();
 
-  // Use special commands for autocomplete when in FTP or NC mode
   const activeCommandNames =
     isInFtpMode() && ftpCommands
       ? Array.from(ftpCommands.keys())
@@ -98,7 +95,6 @@ export const Terminal = () => {
         : commandNames;
   const { getCompletions } = useAutoComplete(activeCommandNames, getVariableNames());
 
-  // Auto-scroll to bottom when new output is added
   useEffect(() => {
     if (outputRef.current) {
       outputRef.current.scrollTop = outputRef.current.scrollHeight;
@@ -106,11 +102,15 @@ export const Terminal = () => {
   }, [lines]);
 
   const addLine = useCallback(
-    (type: OutputLine['type'], content: string | AuthorData, prompt?: string) => {
+    (type: 'command' | 'result' | 'error' | 'banner', content: string, prompt?: string) => {
       setLines((prev) => [...prev, { id: lineIdRef.current++, type, content, prompt }]);
     },
     [],
   );
+
+  const addAuthorLine = useCallback((content: AuthorData) => {
+    setLines((prev) => [...prev, { id: lineIdRef.current++, type: 'author' as const, content }]);
+  }, []);
 
   const clearLines = useCallback(() => {
     setLines([]);
@@ -121,18 +121,13 @@ export const Terminal = () => {
       const trimmedCommand = command.trim();
       if (!trimmedCommand) return;
 
-      // Add command to output with current prompt
       addLine('command', trimmedCommand, getPrompt());
-
-      // Add to history
       addCommand(trimmedCommand);
 
       try {
-        // Check if this is a variable operation (declaration or assignment)
         const variableResult = handleVariableOperation(trimmedCommand, executionContext);
 
         if (variableResult !== null) {
-          // This was a variable operation
           if (!variableResult.success) {
             addLine('error', `Error: ${variableResult.error}`);
           } else if (variableResult.value !== undefined) {
@@ -145,8 +140,6 @@ export const Terminal = () => {
           return;
         }
 
-        // Not a variable operation, execute as normal command
-        // Use special commands when in FTP/NC mode, otherwise use normal commands
         const activeContext =
           isInFtpMode() && ftpCommands
             ? Object.fromEntries(Array.from(ftpCommands.entries()).map(([k, v]) => [k, v.fn]))
@@ -154,23 +147,16 @@ export const Terminal = () => {
               ? Object.fromEntries(Array.from(ncCommands.entries()).map(([k, v]) => [k, v.fn]))
               : executionContext;
 
-        // Combine commands and variables into execution context
         const variables = getVariables();
         const context = { ...activeContext, ...variables };
 
-        // Build function with context variables
         const contextKeys = Object.keys(context);
         const contextValues = Object.values(context);
 
-        // Create a function that has access to all commands and variables
         const fn = new Function(...contextKeys, `return ${trimmedCommand}`);
-
-        // Execute and get result
         const result = fn(...contextValues);
 
-        // Display result if not undefined
         if (result !== undefined) {
-          // Check for special result types using type guards
           if (isClearOutput(result)) {
             clearLines();
             return;
@@ -182,7 +168,6 @@ export const Terminal = () => {
             }
             const snapshot = popSession();
             if (snapshot) {
-              // popSession already restores machine, username, userType, and currentPath
               addLine('result', 'Connection closed.');
             }
             return;
@@ -202,7 +187,7 @@ export const Terminal = () => {
             return;
           }
           if (isAuthorData(result)) {
-            addLine('author', result);
+            addAuthorLine(result);
             return;
           }
           if (isPasswordPrompt(result)) {
@@ -216,16 +201,13 @@ export const Terminal = () => {
             asyncCancelRef.current = result.cancel ?? null;
 
             result.start(
-              // onLine callback
               (line: string) => {
                 addLine('result', line);
               },
-              // onComplete callback with optional follow-up
               (followUp?: AsyncFollowUp) => {
                 setAsyncRunning(false);
                 asyncCancelRef.current = null;
 
-                // Handle SSH prompt follow-up
                 if (isSshPrompt(followUp)) {
                   setTargetUser(followUp.targetUser);
                   setSshTargetIP(followUp.targetIP);
@@ -233,14 +215,12 @@ export const Terminal = () => {
                   addLine('result', `${followUp.targetUser}@${followUp.targetIP}'s password:`);
                 }
 
-                // Handle FTP prompt follow-up
                 if (isFtpPrompt(followUp)) {
                   setFtpTargetIP(followUp.targetIP);
                   setFtpUsernameMode(true);
                   addLine('result', `Name (${followUp.targetIP}:anonymous):`);
                 }
 
-                // Handle NC prompt follow-up (interactive service)
                 if (isNcPrompt(followUp)) {
                   const newNcSession: NcSession = {
                     targetIP: followUp.targetIP,
@@ -301,7 +281,6 @@ export const Terminal = () => {
     (password: string): boolean => {
       if (!targetUser) return false;
 
-      // SSH mode: validate against remote machine's users
       if (sshTargetIP) {
         const machine = getMachine(sshTargetIP);
         if (!machine) return false;
@@ -313,7 +292,6 @@ export const Terminal = () => {
         return remoteUser.passwordHash === inputHash;
       }
 
-      // FTP mode: validate against remote machine's users
       if (ftpTargetIP) {
         const machine = getMachine(ftpTargetIP);
         if (!machine) return false;
@@ -325,21 +303,16 @@ export const Terminal = () => {
         return remoteUser.passwordHash === inputHash;
       }
 
-      // Local su mode: Read passwd file as root to get hashes
       const passwdContent = readFile('/etc/passwd', 'root');
       if (!passwdContent) return false;
 
-      // Parse passwd file to find user's hash
-      const lines = passwdContent.split('\n');
-      for (const line of lines) {
-        const parts = line.split(':');
-        if (parts[0] === targetUser && parts[1]) {
-          const storedHash = parts[1];
-          const inputHash = md5(password);
-          return storedHash === inputHash;
-        }
-      }
-      return false;
+      const entry = passwdContent.split('\n').find((line) => line.split(':')[0] === targetUser);
+      if (!entry) return false;
+
+      const storedHash = entry.split(':')[1];
+      if (!storedHash) return false;
+
+      return storedHash === md5(password);
     },
     [targetUser, sshTargetIP, ftpTargetIP, readFile, getMachine],
   );
@@ -350,7 +323,6 @@ export const Terminal = () => {
     const username = input.trim() || 'anonymous';
     addLine('command', username, `Name (${ftpTargetIP}:anonymous):`);
 
-    // Check if user exists on remote machine
     const machine = getMachine(ftpTargetIP);
     if (!machine) {
       addLine('error', '530 Login incorrect.');
@@ -369,7 +341,6 @@ export const Terminal = () => {
       return;
     }
 
-    // Username valid, prompt for password
     addLine('result', '331 Please specify the password.');
     setTargetUser(username);
     setFtpUsernameMode(false);
@@ -378,7 +349,6 @@ export const Terminal = () => {
   }, [input, ftpTargetIP, getMachine, addLine]);
 
   const handlePasswordSubmit = useCallback(() => {
-    // Show masked password in output
     const maskedPassword = '*'.repeat(input.length);
     const promptLabel = ftpTargetIP
       ? 'Password:'
@@ -388,8 +358,9 @@ export const Terminal = () => {
     addLine('command', maskedPassword, promptLabel);
 
     if (validatePassword(input)) {
+      if (!targetUser) return;
+
       if (ftpTargetIP) {
-        // FTP mode: enter FTP session
         const machine = getMachine(ftpTargetIP);
         const remoteUser = machine?.users.find((u) => u.username === targetUser);
         const userType: UserType = remoteUser?.userType ?? 'user';
@@ -397,7 +368,7 @@ export const Terminal = () => {
 
         const newFtpSession: FtpSession = {
           remoteMachine: ftpTargetIP,
-          remoteUsername: targetUser!,
+          remoteUsername: targetUser,
           remoteUserType: userType,
           remoteCwd: remoteHomePath,
           originMachine: session.machine,
@@ -409,23 +380,19 @@ export const Terminal = () => {
         enterFtpMode(newFtpSession);
         addLine('result', '230 Login successful.');
       } else if (sshTargetIP) {
-        // SSH mode: save current session and switch to remote machine
         pushSession();
 
         const machine = getMachine(sshTargetIP);
         const remoteUser = machine?.users.find((u) => u.username === targetUser);
         const userType: UserType = remoteUser?.userType ?? 'user';
-        const homePath = getDefaultHomePath(sshTargetIP, targetUser!);
+        const homePath = getDefaultHomePath(sshTargetIP, targetUser);
 
-        setUsername(targetUser!, userType);
+        setUsername(targetUser, userType);
         setMachine(sshTargetIP);
         setCurrentPath(homePath);
         addLine('result', `Connected to ${sshTargetIP}`);
         addLine('result', `Welcome to ${machine?.hostname ?? sshTargetIP}!`);
       } else {
-        // Local su mode — look up actual userType from machine config.
-        // getMachine only finds machines reachable FROM the current machine,
-        // which excludes the machine itself. Search all configs as fallback.
         const machine = getMachine(session.machine);
         const machineUser =
           machine?.users.find((u) => u.username === targetUser) ??
@@ -438,7 +405,7 @@ export const Terminal = () => {
           (targetUser === 'root' ? 'root' : targetUser === 'guest' ? 'guest' : 'user');
         const homePath = userType === 'root' ? '/root' : `/home/${targetUser}`;
 
-        setUsername(targetUser!, userType);
+        setUsername(targetUser, userType);
         setCurrentPath(homePath);
         addLine('result', `Switched to user: ${targetUser}`);
       }
@@ -452,7 +419,6 @@ export const Terminal = () => {
       }
     }
 
-    // Exit password mode
     setPasswordMode(false);
     setTargetUser(null);
     setSshTargetIP(null);
@@ -521,10 +487,7 @@ export const Terminal = () => {
     setInput(value);
   }, []);
 
-  // Focus terminal on click
-  const handleTerminalClick = useCallback(() => {
-    // Input will be focused by TerminalInput's click handler
-  }, []);
+  const handleTerminalClick = useCallback(() => {}, []);
 
   return (
     <div

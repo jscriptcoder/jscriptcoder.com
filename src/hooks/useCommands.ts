@@ -36,26 +36,17 @@ export const useCommands = (): UseCommandsResult => {
     if (session.machine === 'localhost') {
       return LOCAL_USERS;
     }
-    // Search all machine configs — getMachine only searches machines reachable
-    // FROM the current machine, which doesn't include the machine itself
-    const allConfigs = Object.values(config.machineConfigs);
-    for (const mc of allConfigs) {
-      const found = mc.machines.find((m) => m.ip === session.machine);
-      if (found) {
-        return found.users.map((u) => u.username);
-      }
-    }
-    return [];
+    const found = Object.values(config.machineConfigs)
+      .flatMap((mc) => mc.machines)
+      .find((m) => m.ip === session.machine);
+    return found ? found.users.map((u) => u.username) : [];
   }, [session.machine, config.machineConfigs]);
 
   return useMemo(() => {
-    // Mutable ref for circular dependency: node needs the execution context
-    // which includes node itself. Set after building the full context.
     let resolvedExecutionContext: Record<string, (...args: unknown[]) => unknown> = {};
 
     const commands = new Map<string, Command>();
 
-    // Static commands
     commands.set('echo', echoCommand);
     commands.set('author', authorCommand);
     commands.set('clear', clearCommand);
@@ -63,11 +54,9 @@ export const useCommands = (): UseCommandsResult => {
     commands.set('resolve', createResolveCommand());
     commands.set('reset', createResetCommand({ getDatabase }));
 
-    // User commands (depends on current machine)
     const suCommand = createSuCommand({ getUsers });
     commands.set('su', suCommand);
 
-    // Node command (uses lazy getter for execution context)
     commands.set(
       'node',
       createNodeCommand({
@@ -78,13 +67,9 @@ export const useCommands = (): UseCommandsResult => {
       }),
     );
 
-    // Filesystem commands
     fileSystemCommands.forEach((cmd, name) => commands.set(name, cmd));
-
-    // Network commands
     networkCommands.forEach((cmd, name) => commands.set(name, cmd));
 
-    // Create help with filtered commands (only shows accessible ones)
     const getAccessibleCommands = () => {
       const accessible = getAccessibleCommandNames(Array.from(commands.keys()), session.userType);
       return accessible
@@ -92,7 +77,6 @@ export const useCommands = (): UseCommandsResult => {
         .filter((cmd): cmd is Command => cmd !== undefined);
     };
 
-    // Create man with all commands (can look up any command for learning)
     const getCommandsMap = () => commands;
 
     const helpCommand = createHelpCommand(getAccessibleCommands);
@@ -101,18 +85,14 @@ export const useCommands = (): UseCommandsResult => {
     commands.set('help', helpCommand);
     commands.set('man', manCommand);
 
-    // Apply command restrictions (wraps restricted fns with permission check)
     const restrictedCommands = applyCommandRestrictions(commands, session.userType);
 
-    // Build execution context from restricted commands
     const executionContext: Record<string, (...args: unknown[]) => unknown> = Object.fromEntries(
       Array.from(restrictedCommands.entries()).map(([name, cmd]) => [name, cmd.fn]),
     );
 
-    // Resolve the execution context for node command's lazy getter
     resolvedExecutionContext = executionContext;
 
-    // Only show accessible commands in autocomplete
     const commandNames = getAccessibleCommandNames(Array.from(commands.keys()), session.userType);
 
     return { executionContext, commandNames };
