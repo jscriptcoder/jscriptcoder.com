@@ -19,7 +19,10 @@ type StorageCache = {
   readonly db: IDBDatabase | null;
 };
 
-// Module-level cache — written once before React mounts, read-only thereafter
+// Module-level cache — bridges async IndexedDB with sync React useState initializers.
+// initializeStorage() populates this once in main.tsx BEFORE React mounts, so
+// getCachedSessionState() and getCachedFilesystemPatches() can be called synchronously
+// inside useState(() => ...) initializer functions. After that, it's read-only.
 let cache: StorageCache = {
   sessionState: null,
   filesystemPatches: [],
@@ -57,7 +60,9 @@ export const initializeStorage = async (): Promise<void> => {
     let sessionState = await loadSessionState(db);
     let filesystemPatches = await loadFilesystemPatches(db);
 
-    // Migrate from localStorage if IndexedDB is empty
+    // One-time migration: v0 stored state in localStorage, v1 uses IndexedDB.
+    // If IndexedDB is empty but localStorage has data, migrate it over and clean up.
+    // This code can be removed once all users have migrated (no expiry date set).
     if (!sessionState) {
       const fromLS = loadSessionFromLocalStorage();
       if (fromLS) {

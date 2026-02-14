@@ -100,6 +100,7 @@ export const isValidPersistedState = (value: unknown): value is PersistedState =
     Array.isArray(obj.sessionStack) &&
     (obj.sessionStack as unknown[]).every(isValidSessionSnapshot) &&
     (obj.ftpSession === null || isValidFtpSession(obj.ftpSession)) &&
+    // ncSession was added after v0 — old persisted data may have it as undefined (missing key)
     (obj.ncSession === null || obj.ncSession === undefined || isValidNcSession(obj.ncSession))
   );
 };
@@ -138,6 +139,7 @@ const SessionContext = createContext<SessionContextValue | null>(null);
 
 const getInitialState = (): PersistedState => {
   const persisted = getCachedSessionState();
+  // Normalize undefined → null for ncSession (old persisted data may lack this field)
   if (persisted) return { ...persisted, ncSession: persisted.ncSession ?? null };
   return {
     session: defaultSession,

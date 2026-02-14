@@ -62,7 +62,9 @@ export const saveSessionState = async (db: IDBDatabase, state: PersistedState): 
   try {
     await setValue(db, SESSION_STORE, SESSION_KEY, state);
   } catch {
-    // Ignore write errors
+    // Write failures are non-critical — the app still works in-memory, the user
+    // just loses persistence on refresh. Logging would clutter the console in
+    // environments where IndexedDB is restricted (e.g. some privacy modes).
   }
 };
 
@@ -86,7 +88,7 @@ export const saveFilesystemPatches = async (
   try {
     await setValue(db, FILESYSTEM_STORE, FILESYSTEM_KEY, [...patches]);
   } catch {
-    // Ignore write errors
+    // Non-critical — see saveSessionState comment above
   }
 };
 

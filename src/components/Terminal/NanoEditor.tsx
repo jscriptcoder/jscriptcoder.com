@@ -26,6 +26,10 @@ export const NanoEditor = ({
   const [cursorLine, setCursorLine] = useState(1);
   const [cursorCol, setCursorCol] = useState(1);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  // Deferred cursor positioning: when Tab inserts spaces, React re-renders the textarea
+  // with new content, which resets the cursor to the end. We store the desired position
+  // in this ref, then restore it in useLayoutEffect (which runs after DOM update but
+  // before paint) so the cursor never visibly jumps.
   const pendingCursorPos = useRef<number | null>(null);
 
   useEffect(() => {

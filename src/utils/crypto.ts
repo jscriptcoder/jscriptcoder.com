@@ -30,7 +30,7 @@ export const encryptContent = async (plaintext: string, keyHex: string): Promise
   const encoder = new TextEncoder();
   const data = encoder.encode(plaintext);
 
-  // Generate random 12-byte IV
+  // 12 bytes is the standard IV size for AES-GCM (96 bits, per NIST SP 800-38D)
   const iv = crypto.getRandomValues(new Uint8Array(12));
 
   // Import the key

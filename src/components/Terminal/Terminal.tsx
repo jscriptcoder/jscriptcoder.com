@@ -517,6 +517,8 @@ export const Terminal = () => {
           onCreate={(content) => createFile(editorState.filePath, content, session.userType)}
           onClose={() => {
             setEditorState(null);
+            // Defer focus until after React unmounts the NanoEditor overlay,
+            // otherwise the input element may not be interactive yet
             setTimeout(() => terminalInputRef.current?.focus(), 0);
           }}
         />

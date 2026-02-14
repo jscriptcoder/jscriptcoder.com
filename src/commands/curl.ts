@@ -70,6 +70,7 @@ const parseUrl = (urlStr: string): ParsedUrl | null => {
     };
   }
 
+  // Shorthand: "hostname/path" without protocol — defaults to HTTP (like real curl)
   const shortMatch = urlStr.match(/^([^:/]+)(\/.*)?$/);
   if (shortMatch) {
     const [, host, path] = shortMatch;

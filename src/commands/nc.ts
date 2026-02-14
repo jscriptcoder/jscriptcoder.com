@@ -11,6 +11,9 @@ type NcContext = {
 const NC_CONNECT_DELAY_MS = 400;
 const NC_BANNER_DELAY_MS = 300;
 
+// Banners displayed when nc connects to a non-interactive port.
+// null means the service has no banner (silent connection — e.g. "elite" port 31337
+// is a backdoor that drops straight into an interactive shell instead).
 const SERVICE_BANNERS: Readonly<Record<string, string | null>> = {
   ssh: 'SSH-2.0-OpenSSH_8.9p1 Ubuntu-3ubuntu0.1',
   http: 'HTTP/1.1 400 Bad Request\r\nConnection: close',
@@ -21,6 +24,8 @@ const SERVICE_BANNERS: Readonly<Record<string, string | null>> = {
   elite: null,
 };
 
+// Ports with an `owner` field represent backdoor shells — connecting via nc
+// drops you into a restricted shell as that user (instead of just showing a banner)
 const isInteractivePort = (port: Port): boolean => port.owner !== undefined;
 
 export const createNcCommand = (context: NcContext): Command => ({

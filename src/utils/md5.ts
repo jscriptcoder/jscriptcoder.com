@@ -1,5 +1,7 @@
-// Simple MD5 implementation for password hashing
-// Based on public domain implementation
+// MD5 hash implementation per RFC 1321 (https://www.ietf.org/rfc/rfc1321.txt).
+// Used for password hashing in the virtual /etc/passwd files.
+// The magic constants (sine-derived integers), shift amounts, and initial state
+// values below are all defined by the RFC — they are NOT arbitrary.
 
 const md5cycle = (x: number[], k: number[]) => {
   let a = x[0],
@@ -102,6 +104,8 @@ const ii = (a: number, b: number, c: number, d: number, x: number, s: number, t:
   return cmn(c ^ (b | ~d), a, b, x, s, t);
 };
 
+// Packs a 64-byte string into 16 little-endian 32-bit words.
+// i >> 2 divides by 4 (4 bytes per word), << 8/16/24 positions each byte in the word.
 const md5blk = (s: string) => {
   const md5blks: number[] = [];
   for (let i = 0; i < 64; i += 4) {
@@ -120,6 +124,7 @@ const add32 = (a: number, b: number) => {
 
 const md5core = (s: string) => {
   const n = s.length;
+  // Initial hash state (A, B, C, D) defined by RFC 1321 §3.3
   const state = [1732584193, -271733879, -1732584194, 271733878];
   let i: number;
 
@@ -132,6 +137,9 @@ const md5core = (s: string) => {
   for (i = 0; i < s.length; i++) {
     tail[i >> 2] |= s.charCodeAt(i) << ((i % 4) << 3);
   }
+  // MD5 padding: append a 1-bit after the message, then zeros, then the
+  // original message length in bits as a 64-bit little-endian value.
+  // If the message fills past byte 55, we need an extra block for the length.
   tail[i >> 2] |= 0x80 << ((i % 4) << 3);
   if (i > 55) {
     md5cycle(state, tail);
@@ -142,6 +150,8 @@ const md5core = (s: string) => {
   return state;
 };
 
+// Converts a 32-bit word to 8 hex chars in little-endian byte order.
+// Each byte is split into high nibble (>> i*8+4) and low nibble (>> i*8), masked to 4 bits.
 const hex = (x: number) => {
   const chars = '0123456789abcdef';
   let s = '';

@@ -32,6 +32,10 @@ export const TerminalInput = ({
   const inputRef = externalInputRef ?? internalRef;
   const [cursorPosition, setCursorPosition] = useState(0);
   const [isFocused, setIsFocused] = useState(false);
+  // Tracks whether the current value change originated from user typing (vs. external
+  // updates like history navigation or autocomplete). When false, the useEffect below
+  // moves the cursor to the end. Reset to false after every check so external changes
+  // are the default assumption — only handleChange sets it true before calling onChange.
   const isUserInput = useRef(false);
   const { getPrompt } = useSession();
 
@@ -83,7 +87,8 @@ export const TerminalInput = ({
         if (!isPromptMode) onTab();
         break;
       default:
-        // Update cursor position after the key event is processed
+        // setTimeout(fn, 0) defers until after the browser processes the keystroke
+        // and updates selectionStart — reading it synchronously would get the old value
         setTimeout(updateCursorPosition, 0);
     }
   };
@@ -117,7 +122,9 @@ export const TerminalInput = ({
     >
       {prompt && <span className="text-amber-300 mr-2">{prompt}</span>}
       <div className="flex-1 relative">
-        {/* Hidden input for capturing keystrokes */}
+        {/* Hidden native input captures keystrokes and clipboard events while a custom
+            rendered cursor (the amber block below) provides the retro CRT aesthetic.
+            Native caret styling can't achieve an animated block cursor. */}
         <input
           ref={inputRef}
           type="text"

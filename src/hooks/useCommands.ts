@@ -18,6 +18,8 @@ import { useNetwork } from '../network';
 import { useFileSystem } from '../filesystem';
 import { getDatabase } from '../utils/storageCache';
 
+// Hardcoded localhost users — localhost doesn't exist in the network config like remote
+// machines do, so its users can't be dynamically looked up via getMachine()
 const LOCAL_USERS = ['root', 'jshacker', 'guest'] as const;
 
 type UseCommandsResult = {
@@ -43,6 +45,10 @@ export const useCommands = (): UseCommandsResult => {
   }, [session.machine, config.machineConfigs]);
 
   return useMemo(() => {
+    // Circular dependency workaround: node(path) needs the full execution context
+    // (which includes node itself). We declare this mutable ref first, pass a lazy
+    // getter to createNodeCommand, then assign the real context after building it.
+    // The getter is only called at execution time, so the assignment always happens first.
     let resolvedExecutionContext: Record<string, (...args: unknown[]) => unknown> = {};
 
     const commands = new Map<string, Command>();

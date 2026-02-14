@@ -198,8 +198,12 @@ export const FileSystemProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [patches]);
 
+  // session.machine is typed as string but always holds a valid MachineId at runtime
+  // (set by SSH/session logic). The assertion avoids threading MachineId through SessionContext.
   const currentMachine = session.machine as MachineId;
   const currentPath = session.currentPath;
+  // Fallback to localhost as a safety net — in practice currentMachine always matches
+  // a key in fileSystems because SSH only connects to known machines
   const fileSystem = fileSystems[currentMachine] ?? fileSystems['localhost'];
 
   const normalizePath = useCallback((path: string): string => {

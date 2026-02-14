@@ -8,6 +8,7 @@ type StringsContext = {
   readonly getUserType: () => UserType;
 };
 
+// Matches the default minimum length of the real Unix `strings` command
 const MIN_STRING_LENGTH = 4;
 
 const isPrintable = (charCode: number): boolean =>
@@ -98,6 +99,8 @@ export const createStringsCommand = (context: StringsContext): Command => ({
       throw new Error(`strings: ${filePath}: Is a directory`);
     }
 
+    // Root bypass: root isn't always listed in file permission arrays (some machines
+    // define restrictive permissions), but root should always have access
     if (!node.permissions.read.includes(userType) && userType !== 'root') {
       throw new Error(`strings: ${filePath}: Permission denied`);
     }

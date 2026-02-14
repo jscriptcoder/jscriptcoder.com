@@ -9,8 +9,10 @@ type PingContext = {
   readonly getLocalIP: () => string;
 };
 
+// Simulates realistic LAN latency: 0.5–5.0ms (typical for local network hops)
 const generateLatency = (): number => Math.random() * 4.5 + 0.5;
 
+// Mimics real `ping` output format. 64 bytes = default ICMP packet size (56 data + 8 header).
 const formatPingResponse = (ip: string, seq: number, ttl: number, time: number): string =>
   `64 bytes from ${ip}: icmp_seq=${seq} ttl=${ttl} time=${time.toFixed(2)} ms`;
 

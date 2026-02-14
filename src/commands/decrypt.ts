@@ -23,6 +23,7 @@ const hexToBytes = (hex: string): Uint8Array => {
 const decryptContent = async (encryptedBase64: string, keyHex: string): Promise<string> => {
   const encryptedData = Uint8Array.from(atob(encryptedBase64), (c) => c.charCodeAt(0));
 
+  // First 12 bytes are the IV (AES-GCM standard: 96-bit IV per NIST SP 800-38D)
   const iv = encryptedData.slice(0, 12);
   const ciphertext = encryptedData.slice(12);
 
@@ -88,6 +89,7 @@ export const createDecryptCommand = (context: DecryptContext): Command => ({
     }
 
     const cleanKey = key.replace(/\s/g, '');
+    // 64 hex chars = 256 bits = AES-256 key length
     if (!/^[0-9a-fA-F]{64}$/.test(cleanKey)) {
       throw new Error(
         'decrypt: invalid key format\nKey must be 64 hexadecimal characters (256 bits)',

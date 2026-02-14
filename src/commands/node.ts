@@ -66,6 +66,10 @@ export const createNodeCommand = (context: NodeContext): Command => ({
 
     const executionContext = getExecutionContext();
 
+    // Captures echo() output during script execution so multiple echo calls
+    // can be joined into a single return value (instead of only returning the last one).
+    // Uses bracket assignment instead of push() to satisfy the no-mutation linter rule
+    // on arrays — push() mutates in place, but bracket access on a local is tolerated.
     const mutableBuffer: string[] = [];
     const wrappedContext = {
       ...executionContext,
@@ -83,6 +87,9 @@ export const createNodeCommand = (context: NodeContext): Command => ({
     const contextKeys = Object.keys(wrappedContext);
     const contextValues = Object.values(wrappedContext);
 
+    // Try expression-first (wrapped in parens) so single-expression scripts return
+    // their value. If that fails (e.g. multi-statement code), fall back to executing
+    // as statements where the return value comes from the mutableBuffer or is undefined.
     let result: unknown;
     try {
       const fn = new Function(...contextKeys, `return (${content})`);
