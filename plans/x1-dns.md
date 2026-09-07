@@ -1,11 +1,10 @@
 # Plan: X1 — DNS, `nslookup` and `dig`
 
-**Status**: Active — **slice 1 has SHIPPED** (v0.206.0, #487) and **slice 2 is DONE and ready for
-its PR** on `feat/x1-a-box-answers`, cut from trunk at v0.206.0. All ten increments green
-(4433 tests), the mutation gate run, and the browser close-out complete — it confirmed the whole
-beat live on a deep name server and surfaced one write-gate finding (below, logged to the backlog).
-Slices 3-4 are grilled but unplanned. This is the first door of **Phase 2 — discovery**, and the
-first whose world legacy could not hand over.
+**Status**: Active — **slices 1 and 2 have SHIPPED** (slice 1: v0.206.0, #487; slice 2: v0.207.0,
+#488). Slice 2's ten increments went green (4433 tests), its mutation gate ran, and its browser
+close-out confirmed the whole beat live on a deep name server, surfacing one write-gate finding
+(below, logged to the backlog). Slices 3-4 are grilled but unplanned; **slice 3 is next**. This is
+the first door of **Phase 2 — discovery**, and the first whose world legacy could not hand over.
 **Epic**: [`legacy-parity-epic.md`](legacy-parity-epic.md) → "X1 — resolved scope & decisions
 (grill-me, 2026-09-04)", fourteen locked decisions.
 
@@ -20,12 +19,12 @@ first whose world legacy could not hand over.
    (`generateDnsZoneContent`, `generateDnsNamedConf`) ports for the FILE format. Legacy's
    `resolveDomain`/`dnsRecords` do **not** port — they are mission scaffolding for a mechanic v2
    does not have.
-3. **The next action is to open slice 2's PR** (`feat/x1-a-box-answers` → trunk). The whole gate is
-   done: typecheck, lint, 4433 tests, v0.207.0, four scoped mutation batteries, and a live browser
-   close-out — all recorded under "Pre-PR gate" below, including the deep-terminal-NPC write-gate
-   FINDING the close-out surfaced. Increments 0-9 are committed; the per-increment record is under
-   "RED-GREEN increments — as run". Read slice 1's as-built too — the resolver it left behind is
-   what the zone is written against, and its `lanZoneName` is the zone's own origin.
+3. **The next action is to plan slice 3 — the zone transfers** (`dig @<server> axfr`), then cut its
+   branch off an up-to-date `main`. Slice 2 has SHIPPED (#488, v0.207.0): its whole gate — typecheck,
+   lint, 4433 tests, v0.207.0, four scoped mutation batteries, and a live browser close-out — is
+   recorded under "Pre-PR gate" below, including the deep-terminal-NPC write-gate FINDING the
+   close-out surfaced. Read slice 1's as-built too — the resolver it left behind is what the zone is
+   written against, and its `lanZoneName` is the zone's own origin.
 4. Cut a fresh `feat/…` branch per slice off an up-to-date `main` — check `git status -sb` for
    ahead/behind, per conventions §8, which distinguishes ahead from level where
    `git pull --ff-only` does not.
@@ -66,7 +65,7 @@ them.
 | # | Slice | Observable | Status |
 |---|-------|-----------|--------|
 | 1 | a name resolves | `nslookup web-04` answers, and `ssh root@web-04` lands | ✅ **SHIPPED** v0.206.0 (#487) |
-| 2 | a box answers as a name server | `nmap` finds `53 open`; rooting it and `cat`-ing the zone shows the deep layers | ✅ **DONE** — gate + live close-out complete, ready for PR |
+| 2 | a box answers as a name server | `nmap` finds `53 open`; rooting it and `cat`-ing the zone shows the deep layers | ✅ **SHIPPED** v0.207.0 (#488) |
 | 3 | the zone transfers | `dig @<server> axfr` hands over the whole address plan | — |
 | 4 | the transfer leaves a trace | `named.log` names whoever transferred it | — |
 
@@ -258,7 +257,7 @@ gateway — its prompt reading `root@192.168.167.1's password:`, the same as the
 
 ---
 
-## Slice 2: a box answers as a name server
+## Slice 2: a box answers as a name server — ✅ SHIPPED (v0.207.0, #488)
 
 **Value**: A player sweeping a network they have just cracked finds one host answering
 `53/tcp open domain`. They root it, `cat /etc/bind/zones/db.<slug>.lan`, and read addresses on
