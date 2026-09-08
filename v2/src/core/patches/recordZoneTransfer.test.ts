@@ -156,6 +156,55 @@ describe('handleRecordZoneTransfer', () => {
     );
 
     expect(result.status).toBeGreaterThanOrEqual(400);
+    // The refusal names why, so the caller is not left guessing whether the wire or
+    // the box turned them away.
+    expect(result.body).toHaveProperty('error');
+    expect(upsertPatch).not.toHaveBeenCalled();
+  });
+
+  it('refuses a request whose payload forges a player_key, and writes nothing', async () => {
+    // The wire may say WHICH network and WHICH server, and nothing else. A payload that
+    // carries an identity field is refused outright, not quietly honoured: the source is
+    // the verified key, so a line a visitor could address to someone else is never
+    // written — that is the whole of why the log is evidence.
+    const { deps, upsertPatch } = makeDeps();
+    const forged = signRequest(generateIdentity(), 'recordZoneTransfer', {
+      essid: GRAD_ESSID,
+      server_ip: GRAD_NS_IP,
+      player_key: generateIdentity().publicKeyHex,
+    });
+
+    const result = await handleRecordZoneTransfer(forged, deps);
+
+    expect(result.status).toBeGreaterThanOrEqual(400);
+    expect(upsertPatch).not.toHaveBeenCalled();
+  });
+
+  it('refuses a request whose payload forges a writer_key, and writes nothing', async () => {
+    // The other half of the same guard: neither the player key nor the row's writer key
+    // is the caller's to assert.
+    const { deps, upsertPatch } = makeDeps();
+    const forged = signRequest(generateIdentity(), 'recordZoneTransfer', {
+      essid: GRAD_ESSID,
+      server_ip: GRAD_NS_IP,
+      writer_key: generateIdentity().publicKeyHex,
+    });
+
+    const result = await handleRecordZoneTransfer(forged, deps);
+
+    expect(result.status).toBeGreaterThanOrEqual(400);
+    expect(upsertPatch).not.toHaveBeenCalled();
+  });
+
+  it('refuses a request that names no target server, and writes nothing', async () => {
+    // essid + server_ip are the whole of what the caller supplies; a request missing one
+    // is malformed, not a transfer of the empty string against a box that does not exist.
+    const { deps, upsertPatch } = makeDeps();
+    const envelope = signRequest(generateIdentity(), 'recordZoneTransfer', { essid: GRAD_ESSID });
+
+    const result = await handleRecordZoneTransfer(envelope, deps);
+
+    expect(result.status).toBeGreaterThanOrEqual(400);
     expect(upsertPatch).not.toHaveBeenCalled();
   });
 });
