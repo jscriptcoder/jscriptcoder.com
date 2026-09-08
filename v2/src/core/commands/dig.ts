@@ -113,6 +113,12 @@ const transferZone = (env: CommandEnv, server: string | undefined): CommandResul
     return error(`dig: ${server}: no DNS service on target`);
   }
 
+  // A real transfer or a real refusal — a name server stands here either way — so tell
+  // it, and it leaves a `/var/log/named.log` line naming whoever ran this. Fire-and-
+  // forget and best-effort: the payout below is byte-for-byte the same whether the
+  // trace lands or the notify fails, and an ordinary lookup never reaches this branch.
+  void env.scan.recordZoneTransfer({ essid, serverIp: server }).catch(() => undefined);
+
   const zone = lanZoneName(essid);
   const records = zoneRecordsFor(essid);
   const open = allowsZoneTransfer(essid, server);
