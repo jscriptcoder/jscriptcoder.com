@@ -91,12 +91,12 @@ const asRecord = ({ hostname, ip }: LanHost): ZoneRecord => ({ name: hostname, i
  * administrator configured — that is infrastructure however the role dice named it,
  * and it is the intelligence a player crosses a network to get.
  *
- * Walked through `chainLinks`, which is the network's ONE traversal — the pivot scan's
- * vantage and the deep write target come off the same walk. A second one here would be
- * a second opinion about the shape of the network, free to disagree with the scan a
- * player checks the zone against.
+ * Walked through `chainLinks`, the network's ONE traversal — the pivot scan's vantage,
+ * the deep write target, the zone's deep records and a transfer's target check all come
+ * off this walk. A second one would be a second opinion about the shape of the network,
+ * free to disagree with the scan a player checks the zone against.
  */
-const deepRecordsFor = (essid: string): readonly ZoneRecord[] =>
+const deepHostsFor = (essid: string): readonly LanHost[] =>
   chainLinks(essid).flatMap((link) =>
     hostsOnLayer(
       generateDeepLayer(
@@ -104,8 +104,13 @@ const deepRecordsFor = (essid: string): readonly ZoneRecord[] =>
         { machineId: link.machineId, kind: link.host.kind },
         { hangsChild: link.hangsChild },
       ),
-    ).map(asRecord),
+    ),
   );
+
+/** The deep layers as zone records — every deep host's name and address, in chain
+ *  order. */
+const deepRecordsFor = (essid: string): readonly ZoneRecord[] =>
+  deepHostsFor(essid).map(asRecord);
 
 /**
  * Every record the zone for `essid` carries: the home LAN's configured half first, then
@@ -228,6 +233,25 @@ const TRANSFER_OPEN_CHANCE = 0.75;
  */
 export const allowsZoneTransfer = (essid: string, ip: Ipv4): boolean =>
   createPrng(`dns-axfr-${essid}-${ip}`).next() < TRANSFER_OPEN_CHANCE;
+
+/**
+ * Whether a name server stands at `ip` on `essid`'s network — the box a transfer is
+ * aimed at, whether it sits on the home LAN or a layer behind it.
+ *
+ * A dns-role MACHINE, and only that: a router sharing the address serves the LAN, not
+ * names, and a zone belongs to the box that answers for it. Reuses the same home-LAN
+ * scan and deep walk the zone itself is built from, so the servers a transfer answers
+ * for and the network the zone describes cannot drift apart. It is what keeps
+ * `dig @<anything> axfr` from handing back the current network's zone for an address no
+ * name server holds.
+ */
+export const nameServerStandsAt = (essid: string, ip: Ipv4): boolean => {
+  const isNameServerAt = (host: LanHost): boolean =>
+    host.kind === 'machine' && host.ip === ip && roleOfHostname(host.hostname) === 'dns';
+  return (
+    generateHomeLan(essid).hosts.some(isNameServerAt) || deepHostsFor(essid).some(isNameServerAt)
+  );
+};
 
 /**
  * The `named.conf` a name server publishes about itself.

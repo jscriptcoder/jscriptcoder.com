@@ -12,6 +12,7 @@ import {
 import { buildColdStartConnectivity, type ConnectivityState } from '../network/interfaces';
 import { assignHomeNetwork } from '../network/homeNetwork';
 import { generateHomeLan, type LanHost } from '../generation/generateHomeLan';
+import { zoneRecordsFor } from '../generation/generateDnsZone';
 import type { OccupantProjection } from '../network/resolveOccupants';
 import { asEpochMs, asPlayerKeyHex } from '../types';
 
@@ -188,6 +189,127 @@ describe('dig', () => {
     const { lines, exitCode } = await drain(await dig.execute(env, ['gw-main'], new Map()));
 
     expect(lines).toEqual(['dig: network is unreachable — connect to a network first']);
+    expect(exitCode).toBe(1);
+  });
+});
+
+/**
+ * `dig @<server> axfr` — the zone transfer. A name server hands its WHOLE zone to
+ * anyone who asks: every configured host on the LAN and every host on the layers
+ * behind it, addresses included — unless an admin closed `allow-transfer`. The zone is
+ * generated from the ESSID, so the transfer reads it client-side and answers at once,
+ * the same way `dig <name>` resolves without a round-trip.
+ *
+ * The fixtures are real, not convenient inventions. The whole generated world has
+ * exactly two name servers that allow a transfer and both are DEEP: `ns-116` on
+ * GRAD-STUDENT-WIFI, three hops in at 10.165.42.116, is one. Both Layer-1 name servers
+ * happen to be locked, so OSCORP-GUEST's `bind-224` at 192.168.118.224 is the refusal.
+ */
+
+const GRAD_ESSID = 'GRAD-STUDENT-WIFI';
+const GRAD_SLUG = 'grad-student-wifi';
+/** ns-116 — a deep name server on GRAD-STUDENT-WIFI, transfer OPEN. */
+const GRAD_NS_IP = '10.165.42.116';
+/** router01, the LAN gateway on GRAD-STUDENT-WIFI — a real host, but not a name
+ *  server, so a transfer aimed at it has no zone to hand over. */
+const GRAD_NON_NS_IP = '192.168.112.1';
+
+/** bind-224 — a Layer-1 name server on OSCORP-GUEST whose `allow-transfer` is closed. */
+const OSCORP_ESSID = 'OSCORP-GUEST';
+const OSCORP_NS_IP = '192.168.118.224';
+
+const axfrEnv = (essid: string) =>
+  mockCommandEnv({
+    identity: mockIdentity({ publicKeyHex: asPlayerKeyHex(PUBKEY) }),
+    network: mockNetworkViewFromConnectivity(onlineConnectivity(essid)),
+    scan: mockScanApi({ resolveOccupants: async () => [] }),
+    now: () => asEpochMs(NOW),
+  });
+
+const transfer = async (essid: string, ...args: readonly string[]) =>
+  drain(await dig.execute(axfrEnv(essid), args, new Map()));
+
+/** One transferred record in the shape `dig` prints it: the fully qualified name,
+ *  then TTL, class, type and address — the same columns `dig <name>` uses for a single
+ *  answer. Written from the format here, so a build that re-rendered a record has to
+ *  disagree with this line rather than agree with itself. */
+const axfrRecordLine = ({ name, ip }: { readonly name: string; readonly ip: string }): string =>
+  `${`${name}.${GRAD_SLUG}.lan.`.padEnd(23)} 3600  IN    A     ${ip}`;
+
+/** The A lines a transfer emits — every one, and nothing else. */
+const answerRecords = (lines: readonly string[]): readonly string[] =>
+  lines.filter((line) => line.includes(' IN    A     '));
+
+describe('dig — zone transfer', () => {
+  it('hands the whole zone over, line for line, when the server allows it', async () => {
+    const { lines, exitCode } = await transfer(GRAD_ESSID, `@${GRAD_NS_IP}`, 'axfr');
+
+    // The records come from the zone (the authority); the columns, the footer and the
+    // seeded time are pinned here. Every configured LAN host and every deep-layer host,
+    // in the zone file's own order.
+    const records = zoneRecordsFor(GRAD_ESSID).map(axfrRecordLine);
+
+    expect(lines).toEqual([
+      `; <<>> DiG 9.16.0 <<>> AXFR @${GRAD_NS_IP}`,
+      ';; global options: +cmd',
+      '',
+      ';; ANSWER SECTION:',
+      ...records,
+      '',
+      `;; XFR size: ${records.length} records`,
+      // Seeded off (essid, ip): a build that stopped seeding still prints A number,
+      // and a shimmering one would read as noise where this reads as the transfer's.
+      ';; Query time: 2 msec',
+      `;; SERVER: ${GRAD_NS_IP}#53`,
+      ';; WHEN: Fri Jan 05 09:07:03 UTC 2024',
+    ]);
+    expect(exitCode).toBe(0);
+    // The zone spans layers: a 192.168 host the player could scan, and a 10.x host on a
+    // segment behind a gateway they have not rooted. Knowing it is not reaching it.
+    expect(records.some((line) => / 192\.168\./.test(line))).toBe(true);
+    expect(records.some((line) => / 10\.\d/.test(line))).toBe(true);
+  });
+
+  it('refuses, and says so, when the name server locks the transfer down', async () => {
+    const { lines, exitCode } = await transfer(OSCORP_ESSID, `@${OSCORP_NS_IP}`, 'axfr');
+
+    expect(answerRecords(lines)).toEqual([]);
+    expect(lines).not.toContain(';; ANSWER SECTION:');
+    expect(lines).toContain('; Transfer failed.');
+    expect(exitCode).toBe(1);
+  });
+
+  it('refuses a target that is not a name server on this network', async () => {
+    // A transfer aimed at the LAN gateway has no zone to hand over. Without this the
+    // command would answer with the current network's zone for ANY address typed.
+    const { lines, exitCode } = await transfer(GRAD_ESSID, `@${GRAD_NON_NS_IP}`, 'axfr');
+
+    expect(lines).toEqual([`dig: ${GRAD_NON_NS_IP}: no DNS service on target`]);
+    expect(exitCode).toBe(1);
+  });
+
+  it('reads the server and the keyword in any order and any case', async () => {
+    const canonical = await transfer(GRAD_ESSID, `@${GRAD_NS_IP}`, 'axfr');
+    const reversed = await transfer(GRAD_ESSID, 'axfr', `@${GRAD_NS_IP}`);
+    const shouted = await transfer(GRAD_ESSID, `@${GRAD_NS_IP}`, 'AXFR');
+
+    expect(reversed).toEqual(canonical);
+    expect(shouted).toEqual(canonical);
+  });
+
+  it('reports the same transfer every run, for every occupant of the network', async () => {
+    // The gate and the query time are seeded off (network, server) and nothing about
+    // who ran it, so two players on one access point read one answer and a find repeats.
+    const first = await transfer(GRAD_ESSID, `@${GRAD_NS_IP}`, 'axfr');
+    const second = await transfer(GRAD_ESSID, `@${GRAD_NS_IP}`, 'axfr');
+
+    expect(second).toEqual(first);
+  });
+
+  it('reports usage when asked to transfer from nowhere', async () => {
+    const { lines, exitCode } = await transfer(GRAD_ESSID, 'axfr');
+
+    expect(lines).toEqual(['dig: usage: dig @<server> axfr']);
     expect(exitCode).toBe(1);
   });
 });
