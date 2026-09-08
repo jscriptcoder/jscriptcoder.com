@@ -19,8 +19,11 @@ the first door of **Phase 2 — discovery**, and the first whose world legacy co
    (`generateDnsZoneContent`, `generateDnsNamedConf`) ports for the FILE format. Legacy's
    `resolveDomain`/`dnsRecords` do **not** port — they are mission scaffolding for a mechanic v2
    does not have.
-3. **The next action is to plan slice 3 — the zone transfers** (`dig @<server> axfr`), then cut its
-   branch off an up-to-date `main`. Slice 2 has SHIPPED (#488, v0.207.0): its whole gate — typecheck,
+3. **The next action is to start slice 3 — the zone transfers** (`dig @<server> axfr`), now PLANNED
+   below: cut `feat/x1-the-zone-transfers` off an up-to-date `main` and begin increment 1. The read
+   path is decided (client-side generation, no `api/`; zone-edit reflection deferred to a follow-on)
+   and its ten acceptance criteria await the owner's confirmation before code. Slice 2 has SHIPPED
+   (#488, v0.207.0): its whole gate — typecheck,
    lint, 4433 tests, v0.207.0, four scoped mutation batteries, and a live browser close-out — is
    recorded under "Pre-PR gate" below, including the deep-terminal-NPC write-gate FINDING the
    close-out surfaced. Read slice 1's as-built too — the resolver it left behind is what the zone is
@@ -66,7 +69,7 @@ them.
 |---|-------|-----------|--------|
 | 1 | a name resolves | `nslookup web-04` answers, and `ssh root@web-04` lands | ✅ **SHIPPED** v0.206.0 (#487) |
 | 2 | a box answers as a name server | `nmap` finds `53 open`; rooting it and `cat`-ing the zone shows the deep layers | ✅ **SHIPPED** v0.207.0 (#488) |
-| 3 | the zone transfers | `dig @<server> axfr` hands over the whole address plan | — |
+| 3 | the zone transfers | `dig @<server> axfr` hands over the whole address plan | 📋 **PLANNED** — client-side, no `api/`; edits deferred |
 | 4 | the transfer leaves a trace | `named.log` names whoever transferred it | — |
 
 Plan each slice when its predecessor lands. **Slices 1 and 2 are independent** — the resolver needs
@@ -745,3 +748,156 @@ same run succeeded precisely because a gateway DOES match an arm.
   a Layer-1 NPC name server (only `bind-224`/OSCORP-GUEST and `resolver-69`/DEFCON-VILLAGE
   world-wide) IS writable via the LAN-NPC arm. Depth alone decides it. Logged to the
   backlog in `conventions-and-gotchas.md` as a candidate, since it is broader than DNS.
+
+---
+
+## Slice 3: the zone transfers
+
+**Value**: A player who has found `53/tcp open` on a name server — a box they may never
+root — types one command and reads the whole address plan: every configured host on the
+LAN, and every NPC and gateway on the deep layers behind gateways they have not reached.
+`nmap` gives them a deep layer only by rooting each fronting gateway in turn, in order, all
+the way down; the transfer hands over the addresses for free. Two of the fifty crackable
+networks carry the name server on **Layer 1** — there the transfer is the jackpot, deep
+intelligence from the LAN a player just cracked; on the other four it is deep already, so
+the payout is close to the pivot scan they took to get there (epic §"Grounding"). The
+`~1-in-4` locked box that answers `; Transfer failed.` is what makes the open ones worth the
+sweep. Knowing an address is still not reaching it — the route and the credential are the
+pivot chain's price, untouched (decision 1) — so the reward is recon, bounded by
+construction.
+
+**Path**: `dig @<server> axfr` (equally `dig axfr @<server>` or `dig @<server> AXFR` — order
+and case are free) → the shared resolve step is skipped because `@<server>` is already an
+address → confirm a name server stands at that IP on this network (home LAN **or** a deep
+layer) → `allowsZoneTransfer(essid, ip)` → open: `zoneRecordsFor(essid)` printed as A records
+then `;; XFR size: N records`; closed: `; Transfer failed.` → `;; SERVER: <ip>#53`, `;; WHEN`,
+instant with a reported `;; Query time`. No `nano`, no session on the box, no server
+round-trip.
+
+**Class**: behavior change — one new FORM of an existing command. `dig <name>` (shipped in
+slice 1) is untouched; `dig @<server> axfr` is added beside it.
+
+**Delivery**: independent PR against trunk, cut from an up-to-date `main` as
+`feat/x1-the-zone-transfers`. Depends on slice 2 (the zone generator it reads); nothing
+depends on it but slice 4.
+
+**Required implementation skills**: `tdd`, `testing`; `mutation-testing` at the PR-readiness
+gate. `refactoring` only if the argument parse wants tidying — the plan expects a small
+additive classifier over `args`, not a restructure of `execute`.
+
+**Reduction program**: `N/A` — no mechanism retired.
+
+**Wire-check**: `N/A`. The read path is client-side (below), so there is no `api/` change and
+nothing to prove against `vercel dev` + supabase. **Slice 4 remains the door's only `api/`
+work.**
+
+### The read path — decided 2026-09-08: client-side generation, edits deferred
+
+`dig @<server> axfr` has to answer two questions about the target box: *may I transfer?*
+(its `named.conf` `allow-transfer` line) and *what is the zone?* (its `db.<slug>.lan`). Both
+files are **pure functions of the ESSID and the box's IP** already — `formatNamedConf` /
+`allowsZoneTransfer(essid, ip)` and `zoneRecordsFor(essid)` — so the common case needs no
+round-trip: the transfer regenerates exactly the bytes slice 2 placed on the box.
+
+The fork is what happens once a player **roots the box and edits those files**. Decision 9
+(a poisoned zone is what the next player's transfer returns) and decision 6 (an owner
+restricts transfer by editing `named.conf`) both want the box's **edited** files to be
+authoritative. In v2 an edit persists to the shared patch journal keyed by `machine_id`
+(`cross-player-architecture.md` §1) and is only visible through a **signed read endpoint** —
+which is exactly how the D5 forward mechanic works (`resolveInnerGateway` reads the edited
+`rules.v4` from the journal). Reflecting zone edits at transfer time is therefore an `api/`
+endpoint, and it collides with "slice 4 is the only `api/` work in the door".
+
+**Owner decision (2026-09-08): slice 3 reads client-side; edit-reflection is deferred, not
+dropped.** Slice 3 ships the full recon payout and the locked-box refusal deterministically
+and instantly, with no `api/`. The generated zone is authoritative for the overwhelming
+common case (a box no one has rooted), which is what `dig <name>` already does — it answers
+from generation, never from a live file read, so the whole door stays consistent about where
+a DNS answer comes from. Poisoning and self-restrict become a named follow-on (below).
+
+### The decisions this plan made that the epic left open to slice 3
+
+- **The DNS box's own zone does NOT contribute to resolution.** The epic left this "one line
+  either way, picked deliberately in slice 3" (§"Open for planning"). Resolution stays wholly
+  the gateway's (decision 2): `dig <name>` and `nslookup` already answer every name on every
+  network through `resolveName`, with or without a DNS box, so wiring the zone into resolution
+  would add a second resolver for zero observable change — and it would let a lie in the zone
+  misdirect `ssh`, which decision 9 refuses ("a lie in the zone misleads whoever reads the
+  zone, not the resolver"). The zone file is authoritative for the TRANSFER only.
+- **Records print in the zone file's order, not re-sorted.** Home-LAN hosts by ascending
+  address first, the `10.x` deep block last — the same order `zoneRecordsFor` fixes and a
+  player reads with `cat`. Legacy sorted its AXFR output numerically by octet; kept as an
+  option in the epic, it is REFUSED here, because `10.x < 192.168.x` would float the deep
+  hosts to the top and bury the file's whole argument. One ordering, and it is the file's.
+- **A records only, in `dig <name>`'s existing 23-column shape.** The SOA/NS header lives in
+  the file a player can `cat` (decision 14); the transfer output reuses `dig`'s `answerLine`
+  (`name.` padded to 23, `TTL  IN    A     ip`) so the two forms of the command speak one
+  format. `;; XFR size: N records` reports the count; nothing paces (decision 12).
+- **`@<server>` means a server to TRANSFER FROM, and nothing else.** It is required for `axfr`
+  and carries no meaning for a plain `dig <name>`, which keeps the gateway resolver. A bare
+  `dig @X <name>` is out of scope for this slice (the epic did not ask for choosing a resolver);
+  planning will either ignore `@X` on a plain lookup, as legacy did, or reject it — a small
+  wording call for RED, not a behavior the slice owes.
+- **The target is validated against generation, not a reachability gate.** A name server at
+  the IP on this network (home LAN or deep chain, `roleOfHostname(...) === 'dns'`, the same
+  test slice 2 places files by) → transfer; otherwise the legacy refusal
+  `dig: <ip>: no DNS service on target`. No separate "have you scanned this segment" check: a
+  Layer-1 box's transfer revealing deep layers a player has NOT reached is the point, and a
+  deep box's IP is one they only learned by pivoting to it.
+
+### Acceptance criteria — to confirm with the owner before any code
+
+1. On a network whose name server at `S` allows transfer, `dig @S axfr` prints one A record
+   per zoned host — every home-LAN server role plus every deep-layer NPC and gateway — and
+   ends with `;; XFR size: N records` where `N` equals the record count.
+2. That output includes at least one `10.x` deep-layer address the player could not have
+   reached from their own segment without rooting a gateway first — the payout.
+3. Record order matches the box's zone file: home-LAN hosts by ascending address, the `10.x`
+   deep block last. Transferring `S` and `cat`-ing `db.<slug>.lan` on `S` list the same
+   addresses in the same order.
+4. On a name server whose `named.conf` says `allow-transfer { none; }`, `dig @S axfr` prints
+   `; Transfer failed.`, no records, and exits non-zero.
+5. `dig @S axfr`, `dig axfr @S`, and `dig @S AXFR` produce identical results — flexible order,
+   case-insensitive keyword, `@` prefix stripped.
+6. `dig @X axfr` where no name server stands at `X` on this network refuses with
+   `dig: <ip>: no DNS service on target` and exits non-zero.
+7. The command is instant (no pacing) and prints `;; Query time: N msec` seeded stably from
+   `(essid, ip)` and `;; SERVER: <ip>#53`.
+8. `dig <name>` — slice 1's plain lookup — is unchanged: still resolves through the gateway
+   resolver and prints its single A record.
+9. Two occupants of one ESSID transferring the same `S` get identical output, verdict
+   included — the gate carries no identity, so a find repeats.
+10. The open/closed verdict a transfer reports equals the `allow-transfer { any/none; }` line
+    in the box's generated `named.conf`, so the gate and the file a rooted player can `cat`
+    never disagree (for the unedited box slice 3 reads).
+
+### RED-GREEN increments (planned, subject to the confirmed ACs)
+
+1. **A transfer answers.** RED: `dig @S axfr` against an open Layer-1 name server returns the
+   zone's A records. Wire the argument classifier (`@`/`axfr`/address) beside the plain path;
+   emit `zoneRecordsFor` through `dig`'s answer-line formatter.
+2. **The deep layers land** (AC-2/AC-3): assert a `10.x` record appears and the order matches
+   `zoneRecordsFor`.
+3. **The locked box refuses** (AC-4): a `none` server → `; Transfer failed.`, exit 1.
+4. **A non-name-server is refused** (AC-6).
+5. **Order and case are free** (AC-5).
+6. **The provenance footer** (AC-7): `XFR size`, seeded `Query time`, `SERVER: <ip>#53`,
+   `WHEN`.
+7. **The plain lookup is untouched** (AC-8) — a characterization assertion guarding the slice-1
+   path.
+8. Refactor pass if the classifier wants extracting; otherwise `N/A`.
+
+Then the PR-readiness mutation gate over `dig.ts` and any new helper, scoped as slices 1-2
+were (a throwaway vitest config narrowing `include` to the covering tests, carrying
+`setupFiles`, `define: { __APP_VERSION__ }`, and `solid({ hot: false })`).
+
+### Deferred follow-on — the zone that answers back (poisoning + self-restrict)
+
+Decisions 9 and 6 are preserved, not dropped: a rooted player CAN already edit or delete
+records and rewrite the `allow-transfer` line, and `cat` shows the edit. What is deferred is
+making an **edited** zone/`named.conf` change what a **transfer** returns — cross-player and
+for the editor themselves — because that needs the signed journal-read endpoint above. It
+rides most naturally with or just after slice 4 (the door's `api/` slice, which is already
+opening `named.log` on the box) and mirrors `resolveInnerGateway`: resolve the target IP to
+its `machine_id`, fetch its journal, replay `named.conf` + the zone file, and let the replayed
+files win over generation. Recorded here so it is not lost, and NOT this slice's scope.
