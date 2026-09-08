@@ -165,12 +165,13 @@ is legacy parity **minus missions**; missions are a post-ship epic.
 
 **🏁 PHASE 1 (the doors) IS COMPLETE at v0.205.0.** Every door in the locked order has shipped —
 web, hydra, ftp, scp, daemons, nc, machine kinds, mysql, redis, snmp, node, and the terminal
-itself. **Phase 2 — discovery is now IN PROGRESS**: X1 (DNS) is grilled to fourteen decisions with
-its first slice shipped at v0.206.0; X2 (`findit.io` and networks a player was never told about) is
-still ungrilled.
+itself. **Phase 2 — discovery** opened and closed its first door: X1 (DNS) SHIPPED COMPLETE
+(v0.206.0–v0.209.0, #487–#490). X2 (`findit.io` and networks a player was never told about) is
+**deferred by decision** — Phase 3 (vulnerabilities) is the priority — and stays ungrilled.
 
-- **X1 (a name resolves) 🚧 IN PROGRESS — slice 1 shipped (v0.206.0, #487).** Plan and per-slice
-  status in `plans/x1-dns.md`; the fourteen decisions are in the epic. The durable shape:
+- **X1 (a name resolves) ✅ SHIPPED COMPLETE — all four slices (v0.206.0–v0.209.0, #487–#490).** The
+  fourteen decisions and the as-built per-slice record live in the epic (the per-slice plan file was
+  retired at close-out). The durable shape:
   - **A name is an address everywhere an address was.** `core/network/resolveName.ts` owns it:
     `resolveLanName` is pure over `generateHomeLan`, `resolveName` adds the fellow-occupant step,
     and `addressForTarget` is the ONE call `ssh`, `curl`, `nmap`, `ftp`, `nc` and `scp` each make

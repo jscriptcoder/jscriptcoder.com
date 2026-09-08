@@ -383,12 +383,12 @@ PHASE 1 — THE DOORS  (near-term focus)
       D10 slice 4 permissions change hands   ✔ SHIPPED — chmod
       D10 slice 5 a file nobody else can read ✔ SHIPPED — gpg -c / -d
 PHASE 2 — DISCOVERY
-  X1  DNS + nslookup / dig                            📋 GRILLED — 4 slices, slice 1 planned
-      X1 slice 1 a name resolves                      — dnsutils, nslookup, names as targets
-      X1 slice 2 a box answers as a name server       — dns row + named.conf/zone generation
-      X1 slice 3 the zone transfers                   — dig, dig @server axfr
-      X1 slice 4 the transfer leaves a trace          — named.log + wire-check
-  X2  findit.io + common website-bearing networks
+  X1  DNS + nslookup / dig                            ✔ SHIPPED — all 4 slices (#487-#490)
+      X1 slice 1 a name resolves                      ✅ SHIPPED v0.206.0 (#487)
+      X1 slice 2 a box answers as a name server       ✅ SHIPPED v0.207.0 (#488)
+      X1 slice 3 the zone transfers                   ✅ SHIPPED v0.208.0 (#489)
+      X1 slice 4 the transfer leaves a trace          ✅ SHIPPED v0.209.0 (#490)
+  X2  findit.io + common website-bearing networks     ⏸ DEFERRED — Phase 3 prioritized
 PHASE 3 — VULNERABILITIES
   V1  service versions (dpkg + nmap -sV)
   V2  msfconsole + the vulnerability model
@@ -423,7 +423,7 @@ POST-SHIP — MISSIONS
 | # | Slice | Includes | Acceptance |
 |---|---|---|---|
 | **X1** ✅ | **A player resolves a name to an address** — **SHIPPED v0.206.0–v0.209.0 (#487–#490); all four slices closed.** Grilled 2026-09-04, fourteen locked decisions in ["X1 — resolved scope & decisions"](#x1--resolved-scope--decisions-grill-me-2026-09-04); four slices | `apt install dnsutils`; the AP gateway as every network's resolver (its own LAN) + an occupant fallback; a name accepted anywhere an address is, through ONE shared client-side resolve step; a `dns` catalog row at `53/tcp` with `named` on the rare (3%) dns-role box; generated `named.conf` (`allow-transfer` open ~3 in 4) and a zone file spanning the WHOLE network — Layer 1's servers and infrastructure plus every deep layer; `nslookup`; `dig` + `dig @<server> axfr` reading that file as the authority; `/var/log/named.log` on transfers | Public/world domains (→ X2, which inherits a per-network name to index); a zone authoritative for RESOLUTION (poisoning `ssh`) — refused, it needs a round-trip per lookup; occupants in the zone; MX/CNAME/TXT; `dig -x`; `host`; dual-protocol port rows | `nslookup web-04` → IP on any network, and `ssh root@web-04` lands without the player ever reading an address; `nmap` finds `53 open` on `ns-12`, `dig @192.168.4.12 axfr` returns the zone — including `10.x` hosts on layers behind gateways the player has never rooted — and the box's `named.log` names them for whoever roots it next |
-| **X2** | **A player finds a network they were never told about** | `world_networks` + themed-network registry; **common networks that run websites** (the owner's shape — they are findable *because* they serve something); `findit.io` search handler over peer networks' metadata; registration/indexing | `curl "http://findit.io?q=<term>"` → ranked results → `nmap` that network → real ports. The player never learned the address out-of-band |
+| **X2** ⏸ | **A player finds a network they were never told about** — **DEFERRED: Phase 3 (vulnerabilities) is prioritized over Phase 2's second door; X2 stays ungrilled.** | `world_networks` + themed-network registry; **common networks that run websites** (the owner's shape — they are findable *because* they serve something); `findit.io` search handler over peer networks' metadata; registration/indexing | `curl "http://findit.io?q=<term>"` → ranked results → `nmap` that network → real ports. The player never learned the address out-of-band |
 
 ## Phase 3 — vulnerabilities
 
@@ -3565,13 +3565,75 @@ are now resolved. **A door is not proven by its wire-checks alone** — the wire
 green and could not see any of this, because the defects live in the one vantage no endpoint
 answers. One session's browsing produced four findings, three of them invisible to a green suite.
 
-**➡️ NEXT: X1 slice 1 — a name resolves (`apt install dnsutils`, `nslookup`, and a name accepted
-anywhere an address is). GRILLED 2026-09-04 — fourteen locked decisions and a four-slice spine in
-["X1 — resolved scope & decisions"](#x1--resolved-scope--decisions-grill-me-2026-09-04), PLANNED in
-[`x1-dns.md`](x1-dns.md), branch cut. The first slice of Phase 2, and the first door whose world
-legacy could not hand over — its DNS was mission scaffolding, so the commands port and the world
-behind them is designed. X2 (`findit.io` and networks a player was never told about) is still
-ungrilled.**
+**➡️ NEXT: Phase 3 — vulnerabilities.** X1 closed Phase 2's first door (below). X2 (`findit.io` and
+networks a player was never told about) is **deferred by decision** — Phase 3 is the priority — and
+stays ungrilled; see the X2 rows in the spine and the acceptance table.
+
+**X1 slice 1 SHIPPED at v0.206.0 (PR #487)** — a name resolves. `apt install dnsutils` installs
+`nslookup` and `dig`, and a name is now accepted anywhere an address was, through ONE shared
+client-side step: `core/network/resolveName.ts` — `resolveLanName` pure over `generateHomeLan`,
+`resolveName` adding the fellow-occupant fallback, and `addressForTarget` the single call `ssh`,
+`curl`, `nmap`, `ftp`, `nc` and `scp` each make before their existing address path. An unresolvable
+name passes through unchanged, so each command reaches its own unknown-target answer — no seventh
+error message, and `ssh` exits 255 there rather than 1. **`dig` shipped here rather than in slice
+3** (owner's call, mid-build: installing `/usr/bin/dig` with no command behind it for two slices
+would have answered `command not found` with the binary in plain sight), leaving slice 3 to add only
+`@<server> axfr`. The mutation gate (313 mutants) found a real defect: the occupant fallback matched
+on PRESENCE rather than the name, so a typo would have handed the player somebody else's box. One
+world-generation wart surfaced and was left alone — two routers on one LAN can draw the same
+`ROUTER_HOSTNAMES` name (8 of the 50 crackable networks); `nmap` already prints both, and the lookup
+answers with the lower octet. Wire-check `N/A`. Proven live on SHINRA-5G: both tools `command not
+found` until `apt install dnsutils`, then `nslookup warehouse-28` → `192.168.167.28`, a foreign slug
+→ NXDOMAIN, and `nslookup loot-rig` resolving a real fellow player's box through the occupant
+fallback.
+
+**X1 slice 2 SHIPPED at v0.207.0 (PR #488)** — a box answers as a name server. A `dns` catalog row
+at `53/tcp` with `named` runs on the rare (3%) dns-role box; a generated `named.conf` (its
+`allow-transfer` line open ~3 in 4) and a zone file at `/etc/bind/zones/db.<slug>.lan` span the
+WHOLE network — Layer-1 servers and infrastructure plus every deep layer, addresses included. **The
+payout lands before `dig` exists**: the zone is a file, and a rooted box's files already read. Five
+config templates were deleted (content the generated file replaces, not a mechanism retired), and
+increment 0 was a preparatory pure refactor breaking an import cycle. Two-thirds of the name servers
+sit deep, which is why the door's demo needs a pivot. Wire-check `N/A` — the zone is generated
+client-side from the ESSID like every other file. Proven live on GRAD-STUDENT-WIFI: swept a cracked
+network, found `53/tcp open domain` on a deep box reached through a NAT forward the player writes on
+the gateway, rooted it, and read both files — the deep records agreeing with a live pivot-scan of
+that segment rather than by a shared seed, and `systemctl stop named` closing the port while the
+files stood.
+
+**X1 slice 3 SHIPPED at v0.208.0 (PR #489)** — the zone transfers. `dig @<server> axfr` hands the
+whole address plan over, reading the zone as its authority: a client-side round-trip that
+regenerates exactly the bytes slice 2 placed on the box, gated on the `allow-transfer` line. Proven
+live byte-exact on GRAD-STUDENT-WIFI's deep `ns-116`: eight records in the zone's own order —
+including `portal-244` and `workstation-46` on segments never reached — with `;; XFR size: 8
+records` identical to the unit test's whole-file vector; a closed Layer-1 box answering `Transfer
+failed.`; and a non-DNS machine answering `no DNS service on target`. One bounded, pre-existing
+finding was logged to the backlog: a Layer-1 dns box does not advertise `53/domain` in `nmap`
+(home-LAN NPCs draw generic ports), but both open-transfer name servers are deep and correctly
+discoverable, and `dig` is role-based regardless. Wire-check `N/A`.
+
+**X1 SHIPPED COMPLETE at v0.209.0 (`30f6b7f1`, PR #490)** — four slices, #487–#490, and the first
+door of Phase 2 (discovery). Slice 4 gave the door its trace: a zone transfer runs entirely
+client-side, so the name server would otherwise learn nothing — `recordZoneTransfer` is how the
+transfer leaves its mark, writing a BIND-format line to `/var/log/named.log`. The client says only
+WHICH network and WHICH server; the server derives the source IP from the caller's verified key
+(degrading to `unknown`, never guessing), stamps its own clock, and recomputes the verdict
+(handed-over vs refused) from generation — a defender's log a visitor could author is not evidence.
+It is the door's ONLY `api/` work, so it carries the door's only **wire-check (5/5 live)**: no-DNS
+writes nothing, an open transfer lands the AXFR-ended line, a forged source is ignored, transfers
+accrete, and a closed box logs the denial. The trace is the fifth cross-player log (scan→kern.log,
+login/su→auth.log, ftp→vsftpd.log, transfer→named.log). Proven live end to end on GRAD-STUDENT-WIFI:
+`dig @10.165.42.116 axfr` fired the real notify and a second transfer accreted a second line; then a
+deep pivot — forward `2222` on `router01`, `hydra -p 2222` cracked the deep guest, `ssh -p 2222`
+landed on `ns-116` — where `cat /var/log/named.log` rendered both accreted lines from the attacker's
+own home public IP `203.71.168.235`, server-derived, oldest-first. The whole attacker/defender loop
+— transfer → server-written trace → deep pivot → rooted read — runs in the shipped UI.
+
+**X1 ✅ COMPLETE — v0.206.0–v0.209.0 (#487–#490), closed out 2026-09-08.** Fourteen locked decisions
+at the grill in ["X1 — resolved scope & decisions"](#x1--resolved-scope--decisions-grill-me-2026-09-04);
+the per-slice plan file was retired at close-out and the as-built lives in this record. The first
+door whose world legacy could not hand over — its DNS was mission scaffolding — so the commands port
+and the world behind them was designed here.
 
 **🏁 PHASE 1 IS COMPLETE.** Every door in the locked order has shipped: web, hydra, ftp, scp,
 daemons, nc, machine kinds, mysql, redis, snmp, node and the terminal itself.
