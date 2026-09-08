@@ -1,12 +1,14 @@
 # Plan: X1 — DNS, `nslookup` and `dig`
 
-**Status**: Active — **slices 1 and 2 have SHIPPED** (slice 1: v0.206.0, #487; slice 2: v0.207.0,
-#488) and **slice 3 has SHIPPED** (v0.208.0, #489):
+**Status**: ✅ **COMPLETE — all four slices SHIPPED; X1 (DNS) is closed.** **Slices 1 and 2 SHIPPED**
+(slice 1: v0.206.0, #487; slice 2: v0.207.0, #488), **slice 3 SHIPPED** (v0.208.0, #489):
 `dig @<server> axfr` transfers a zone client-side, its scoped mutation battery is green, and the
 live close-out confirmed a byte-exact payout on the deep `ns-116` plus the locked-box refusal —
 surfacing one bounded finding (Layer-1 dns boxes don't advertise `53`, logged to the backlog).
-Slice 4's gate is green at v0.209.0 (RED-GREEN as run, 83/85 scoped mutation with the two survivors
-proven equivalent, and a 5/5 live wire-check) — PR pending. This is the first door of **Phase 2 —
+**Slice 4 SHIPPED** (v0.209.0, #490): the transfer leaves a `/var/log/named.log` trace — proven by an
+83/85 scoped mutation battery (two survivors proven equivalent), a 5/5 live wire-check, and a full
+browser close-out (a real `dig @ns-116 axfr`, the deep pivot, and a rooted `cat` of both accreted
+lines). This is the first door of **Phase 2 —
 discovery**, and the first whose world legacy could not hand over.
 **Epic**: [`legacy-parity-epic.md`](legacy-parity-epic.md) → "X1 — resolved scope & decisions
 (grill-me, 2026-09-04)", fourteen locked decisions.
@@ -74,7 +76,7 @@ them.
 | 1 | a name resolves | `nslookup web-04` answers, and `ssh root@web-04` lands | ✅ **SHIPPED** v0.206.0 (#487) |
 | 2 | a box answers as a name server | `nmap` finds `53 open`; rooting it and `cat`-ing the zone shows the deep layers | ✅ **SHIPPED** v0.207.0 (#488) |
 | 3 | the zone transfers | `dig @<server> axfr` hands over the whole address plan | ✅ **SHIPPED** v0.208.0 (#489) |
-| 4 | the transfer leaves a trace | `named.log` names whoever transferred it | 🔧 **gate green** (v0.209.0) — PR pending |
+| 4 | the transfer leaves a trace | `named.log` names whoever transferred it | ✅ **SHIPPED** v0.209.0 (#490) |
 
 Plan each slice when its predecessor lands. **Slices 1 and 2 are independent** — the resolver needs
 no DNS box, the DNS box needs no resolver — so if slice 2 turns out to be the more interesting
