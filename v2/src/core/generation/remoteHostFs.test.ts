@@ -2694,5 +2694,42 @@ describe('buildRemoteHostFs', () => {
         expect(dnsFilesOf(buildRemoteHostFs(ESSID, namedHost('ns', octet))).pooled).toBeUndefined();
       }
     });
+
+    it('plants /var/log/named.log empty on a name-server box (the transfer line appends there)', () => {
+      const node = fileAt(buildRemoteHostFs(ESSID, namedHost('ns', 42)), 'var', 'log', 'named.log');
+      if (node === undefined) throw new Error('missing /var/log/named.log');
+      expect(node.content).toBe('');
+      expect(node.owner).toBe('root');
+      // Readable by anyone who gets ON the box, writable only by the daemon's account:
+      // the whole point of the trace is that the player it names cannot edit it away.
+      expect(node.perms.read).toEqual(['root', 'user', 'guest']);
+      expect(node.perms.write).toEqual(['root']);
+    });
+
+    it('plants it on a name server whose daemon is stopped too, because the file follows the role', () => {
+      // The trace is written whenever the box IS a name server, exactly as its config
+      // and zone are placed by role rather than by a running daemon: `systemctl stop
+      // named` closes the port and leaves the log where the server still appends to it.
+      const stopped = boxesOn('ns').find((box) => box.pidfile === undefined);
+      const fs = buildRemoteHostFs(ESSID, namedHost('ns', stopped?.octet ?? 2));
+
+      expect(readOpenPorts(fs).some(({ port }) => port === 53)).toBe(false);
+      expect(fileAt(fs, 'var', 'log', 'named.log')?.content).toBe('');
+    });
+
+    it('plants it on a name server DEEP in the chain too, where the better zones stand', () => {
+      const deep = buildDeepHostFs(ESSID, { ip: '10.52.186.29', hostname: 'ns-29', kind: 'machine' });
+
+      expect(fileAt(deep, 'var', 'log', 'named.log')?.content).toBe('');
+    });
+
+    it('plants no named.log on a box that is not a name server', () => {
+      // It follows the dns role exactly as access.log follows http: a box no zone
+      // transfer can name never has a line written, so an empty file there would be
+      // furniture claiming the box once answered on 53.
+      const fs = buildRemoteHostFs(ESSID, namedHost('www', 42));
+
+      expect(dirAt(fs, 'var', 'log').entries.has('named.log')).toBe(false);
+    });
   });
 });

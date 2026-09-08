@@ -78,6 +78,7 @@ import { AUTH_LOG_PERMISSIONS } from '../logging/authLog';
 import { KERN_LOG_PERMISSIONS } from '../logging/kernLog';
 import { MYSQL_LOG_PERMISSIONS } from '../logging/mysqlLog';
 import { REDIS_LOG_PERMISSIONS } from '../logging/redisLog';
+import { NAMED_LOG_PERMISSIONS } from '../logging/namedLog';
 import type { Directory, FileEntry } from '../filesystem/types';
 import type { LanHost } from './generateHomeLan';
 
@@ -430,6 +431,13 @@ export const buildRemoteHostFs = (essid: string, host: LanHost): Directory => {
               ...(redisService === undefined
                 ? {}
                 : { 'redis.log': file('', REDIS_LOG_PERMISSIONS) }),
+              // Follows the name-server ROLE, not a running daemon — placed by the same
+              // signal as its /etc/bind config beside it, so a box whose `named` is
+              // stopped still keeps the file the zone-transfer trace appends to. A zone
+              // transfer is recorded whenever the box IS authoritative, and an empty
+              // named.log is honest furniture on any name server: BIND opens it before
+              // anyone has crossed the network to read the zone.
+              ...(nameServer === null ? {} : { 'named.log': file('', NAMED_LOG_PERMISSIONS) }),
             },
             TRAVERSABLE_DIR,
           ),
