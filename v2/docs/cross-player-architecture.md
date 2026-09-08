@@ -1,10 +1,11 @@
 # Cross-player architecture (as-built)
 
 How one player (B) scans, enters, reads, and modifies another player's (A's) machine.
-This is the core of v2's multiplayer. It covers the shipped model — Stories 1–3 of the
-multiplayer/cross-player epic. Design intent lives in
-`v2/docs/rewrite-blueprint/sections/05-shared-world-and-cross-player.md`; the in-flight epic
-(remaining Stories 4–7) lives in `plans/multiplayer-crossplayer-epic.md` while active.
+This is the core of v2's multiplayer. It covers the shipped model — the whole
+multiplayer/cross-player epic, which is complete. Design intent lives in
+`v2/docs/rewrite-blueprint/sections/05-shared-world-and-cross-player.md`; the epic's plan file
+was retired on close-out and what it deliberately deferred is in
+`conventions-and-gotchas.md` §9 under "Cross-player / multiplayer deferred".
 
 ## The gate this design crosses
 
@@ -412,9 +413,10 @@ observable attacker/defender loop. Confirmed live (agent-browser + per-slice wir
 `scripts/testCrossPlayer{Scan,Connection,Su}Trace.ts`). Decision 8: a cross-player ssh leaves both a
 scan and an auth trace (no silent recon).
 
-Next: **Story 7** (same-wifi shared-LAN occupancy). Deferred: **5b** (multi-layer generated target
-networks), the **pivot / operate-from-a-hop** vantage (its own story — the source-IP derivation is
-already shaped for it). See `plans/multiplayer-crossplayer-epic.md`.
+Since shipped: **Story 7** (same-wifi shared-LAN occupancy) and **5b** (multi-layer generated
+target networks). Still deferred: the **pivot / operate-from-a-hop** vantage (its own story — the
+source-IP derivation above is already shaped for it, so it needs no logging rework). See
+`conventions-and-gotchas.md` §9 under "Cross-player / multiplayer deferred".
 
 **Known accepted gap (deferred to an L3 smart-server):** a client with a valid keypair can
 mint an `effect_one_shot`/root session via `createSession` and call the read/reset effects

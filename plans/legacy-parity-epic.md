@@ -104,8 +104,10 @@ a **post-ship epic** — the infrastructure this epic builds is what makes them 
 
 ## Why this epic exists
 
-The [multiplayer/cross-player epic](./multiplayer-crossplayer-epic.md) is **complete** — the
-hard part, the part legacy never solved because of React, is done and proven live. What v2
+The multiplayer/cross-player epic is **complete** — the hard part, the part legacy never solved
+because of React, is done and proven live (as-built:
+[`cross-player-architecture.md`](../v2/docs/cross-player-architecture.md); its plan file was
+retired on close-out and its deferred tail is in `conventions-and-gotchas.md` §9). What v2
 lacks is the part legacy *did* get right: **the breadth of ways to reach a machine.**
 
 Legacy shipped ~14 access vectors. v2 has **one** (`ssh`), and it only opens with a password no

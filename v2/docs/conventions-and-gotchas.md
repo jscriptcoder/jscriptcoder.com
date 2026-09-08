@@ -25,8 +25,8 @@ Shipped so far (each milestone is in git history + its as-built doc/plan):
   su root → rm /boot/vmlinuz → reboot`, after which A is **permanently bricked** (a `/boot`
   tombstone on the shared journal — `core/boot/bootFiles.ts` `canBoot`, journal-derived, no
   recovery) and **dark to everyone**. Stories 5 (cross-player home NAT), 6 (scan/connect/su
-  traces), 7 (same-wifi shared-LAN occupancy) all shipped. Deferred tail →
-  `plans/multiplayer-crossplayer-epic.md` §"Remaining work / deferred follow-ups".
+  traces), 7 (same-wifi shared-LAN occupancy) all shipped. The epic's plan file was retired on
+  close-out; its deferred tail lives in §9 under "Cross-player / multiplayer deferred".
 - **Story 5b — multi-layer generated networks ✅ COMPLETE (v0.85.0).** A home has a deep
   gateway **chain** behind its inner gateway: `inner → L2 → L3 …` (`seedNetworkDepth` 1–3,
   a max), keyed by the fronting gateway's `machine_id`. Each chain door is reachable
@@ -41,8 +41,8 @@ Shipped so far (each milestone is in git history + its as-built doc/plan):
   ports). ⚠️ Two claims here were **superseded by shared-network reconciliation** (below):
   the **octet reservation** in `mergeLanOccupants` is gone (Slice 4), and depth is no longer
   per-player — chains are **ESSID-shared** (Slice 5), so the "cross-player depth deferred"
-  note no longer applies. A fixed-IP mission catalog is still deferred (epic doc), as is
-  pivot **source-IP masking** — see `plans/multiplayer-crossplayer-epic.md`.
+  note no longer applies. A fixed-IP mission catalog is still deferred, as is pivot
+  **source-IP masking** — both in §9 under "Cross-player / multiplayer deferred".
 
 - **Unique public-IP allocation ✅ COMPLETE (v0.87.0).** A network's WAN address is now
   **server-issued and stored**, not derived: `network_public_ips(essid PK, public_ip UNIQUE)`
@@ -2555,14 +2555,60 @@ Forward-looking direction not yet built (preserved as pointers; design when actu
   drop the failure detail.** Redirect the whole thing (`npx vitest run > suite.log 2>&1`) and grep
   the FILE. A summary line is the one part of the output that is worthless when something fails.
 
-**Story-5b / multiplayer deferred** (detail in `plans/multiplayer-crossplayer-epic.md`
-§"Remaining work"):
+**Cross-player / multiplayer deferred.** The cross-player epic shipped every enumerated story
+(1–7, plus 5b, unique public-IP allocation and shared-network reconciliation) and its plan file
+was retired here on close-out — this group is now the sole owner of what it deliberately left
+undone. As-built for everything shipped: `cross-player-architecture.md` + §1/§7. Nothing below
+blocks the live PvP loop; each was a scoped owner decision, not a gap.
 
 - **Story-7 reconciliation** — DONE except WiFi density and presence/TTL, which stay deferred.
   Shipped v0.88.0 → v0.96.0: unique per-ESSID public-IP allocation, collision-free LAN leases,
   one shared AP gateway per ESSID, ESSID-seeded shared NPCs and deep chains, and the removal of
   the store whose last-writer-wins PK caused the collisions. As-built in §7 and
-  `cross-player-architecture.md`; the plan file was deleted on close-out.
+  `cross-player-architecture.md`; the plan file was deleted on close-out. **What stays deferred**:
+  **WiFi-strength = density** (signal strength as a proxy for how many occupants a network holds);
+  **presence / TTL heartbeat** (occupancy is connection-state-based today, with no last-seen, so a
+  player who closes the tab stays an occupant until they disconnect); and **matchmaking** beyond
+  the rendezvous note in the procedural-expansion item below.
+
+- **Procedural world expansion — GRILLED & RESOLVED 2026-07-29, no open questions; needs only
+  `planning` to become slices.** Split deliberately out of shared-network reconciliation, which
+  depends on the ESSID being the seed and not on the world being big — and doing reconciliation
+  first was cheaper to VERIFY, since today's 50-entry pool plus `INJECT_MAX = 3` makes encounters
+  frequent enough to exercise the shared-LAN behaviour live. Expanding the world first would have
+  made encounters rare *before* the code handling them was proven.
+  - **The ESSID space becomes procedurally generated and LARGE.** Today `generateWifi` draws every
+    player's scan from one 50-entry `crackableEssidPool` — so the world contains exactly **50
+    networks total, shared by all players**. Combined with permanent bricks and the whole LAN as
+    shared world objects, that world is fully consumable: a late-joining player could find all 50
+    stripped and dark. Owner call: the world should be **much bigger than 50 and procedurally
+    generated**, with the chance of landing on another player's LAN **small**. The current 50
+    become naming TEMPLATES rather than fixed world objects. Realism argues the same way — a fixed
+    catalog of 50 is the least realistic element in the design, and against an effectively
+    unbounded AP space permanent destruction becomes *more* plausible, not less. It costs little
+    infrastructure: public-IP allocation explicitly rejected pre-seeding so the allocator would
+    cover injected/dynamic/future-themed ESSIDs, and the DHCP lease table inherits that lazy shape.
+    Also the natural substrate for the deferred themed/mission networks. Periodic world reset was
+    considered and **rejected** (it destroys the persistence that makes PvP damage meaningful).
+  - **The deferred fixed-IP mission catalog rides on this.** Themed/mission networks — a
+    hand-authored network reachable at a known address — have no home while the world is a fixed
+    50-entry pool whose every address derives from the ESSID. Procedural generation plus the
+    already-lazy public-IP and DHCP allocators (both built to cover injected/dynamic/future-themed
+    ESSIDs) are the substrate they need, so the catalog stays deferred until this lands.
+  - **The occupied-ESSID injector is tuned DOWN hard.** `generateWifi` currently injects up to
+    `INJECT_MAX = 3` occupied ESSIDs into EVERY scan — built to manufacture encounters in a
+    50-ESSID world, and now pulling directly against "collisions should be small". Drop to a low
+    roll (a few percent of scans, one at a time). Deleting the injector outright was **rejected**:
+    it would make encounters not merely rare but impossible, leaving the fully-shared-LAN work with
+    no live consumer to keep it honest.
+  - **Deliberate rendezvous is the eventual shape** — you are *led* to an occupied network via
+    intel (a trace, a findit.io lookup) rather than stumbling onto it. Best fit for the realism
+    principle, but it depends on a discovery surface that does not exist yet; revisit when
+    findit.io lands.
+  - **Consequence to hold onto: the PUBLIC IP remains the primary cross-player attack surface**,
+    and the shared LAN is the rare special case. Reconciliation was still worth doing — it fixed
+    the `machine_id` aliasing bug, made the rare encounter correct, and built the themed/mission
+    substrate — but it is not the headline PvP path. `nmap <public IP>` is.
 - **The patch-error map is written seven times.** `{ no_session: 'Permission denied',
   permission_denied: 'Permission denied', network_error: 'I/O error', modified_since_open: … }`
   appears verbatim in `daemon.ts`, `ftpShell.ts`, `mkdir.ts`, `rm.ts`, `touch.ts`, `systemctl.ts`
@@ -3019,12 +3065,33 @@ Forward-looking direction not yet built (preserved as pointers; design when actu
   lands; or re-validate lazily on the next authorized action (preferred — server-authoritative,
   no fan-out or background job, and it matches how the public scan already asks `canBoot` at
   scan time rather than precomputing darkness). Decide the behaviour before writing RED.
-- **Pivot / operate-from-a-hop** beyond what 5b shipped; ssh-from-a-pivot.
-- **Replay/nonce store** — built then REVERTED (ship-first): narrow value in this threat
-  model (TLS wire + player holds the key → just re-signs with a fresh nonce; only blocks
-  byte-identical resubmit; idempotency + per-request authz carry the real guarantee). Keep
-  `noopNonceStore` everywhere; revisit at multiplayer-hardening (design preserved in the
-  epic).
+- **Pivot / operate-from-a-hop — source-IP masking only; ssh-from-a-pivot.** Still needs its own
+  `grill-me`; the REACHABILITY half already shipped in 5b, which lets a player pivot a
+  scan/connect *through* a hopped inner gateway or switch into their own deeper layers, with the
+  deep traces sourced from the fronting gateway's `.1`. What stays deferred is **cross-player
+  source-IP masking**: making a command's execution vantage adopt a *foreign* hopped machine, so
+  `nmap <A>` run from a compromised box N originates from N — N's network for reachability, N's IP
+  as A's logged source. Today `ssh.ts`/`nmap.ts` still run in B's HOME vantage for cross-player
+  ops and `resolveLogSourceIP` is ported-but-unwired. The Story-6 source-IP path was deliberately
+  shaped to extend into this **with no logging rework** (`cross-player-architecture.md` §8).
+  Substantial — it needs a vantage switch plus another player's box or foreign nets to pivot
+  through. Owner wants it POSSIBLE; deferred to its own story.
+- **Replay/nonce store** — built (#294, with a 7.2.0b retrofit + lazy prune) then REVERTED on the
+  owner's call (ship-first): narrow value in this threat model (TLS wire + the adversary is the
+  player's own key-holding client → an authorized player just re-signs with a fresh nonce, so it
+  only blocks *byte-identical* resubmission — captured-envelope reuse by a non-key-holder plus
+  duplicate non-idempotent effects; idempotent upserts + per-request re-authorization
+  (L1/L2/`canBoot`/tier) carry the real guarantee). Keep `noopNonceStore` everywhere; **revisit at
+  multiplayer-hardening**, where it becomes load-bearing if envelopes ever become shareable. The
+  legacy-parity epic takes the same posture for its wordlist obfuscation, so the two revisit
+  together. **Preserved re-add design** (cheap to reinstate): `createSupabaseNonceStore(db)` over a
+  `nonces` table (`nonce` PK, `created_at` + index, RLS service-role-only);
+  `.upsert({nonce},{onConflict:'nonce',ignoreDuplicates:true}).select()` → inserted row ⇒ fresh,
+  conflict ⇒ replay; **fail-open** on DB error (degrade to timestamp-window-only); **lazy
+  fire-and-forget prune** of rows older than `REPLAY_WINDOW_MS` after each insert (self-cleaning,
+  no cron). Wire it at the `verifySignedRequest` seam in `api/patches.ts` (×5), `api/network.ts`
+  (×3) and `api/sessions.ts` (×6). Prove it with a `scripts/testNonceReplay.ts` wire-check
+  (replay → 401 `replay`).
 - **Is the hand-rolled tree walk's mutation noise a house-wide cost or a local one?** Six
   modules reach a known path by walking `entries.get()` a directory at a time, each guarding
   every level with `x === undefined || x.kind !== 'directory'`: `sessions/passwdAccount.ts`,
