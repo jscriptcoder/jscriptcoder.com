@@ -2407,6 +2407,22 @@ Forward-looking direction not yet built (preserved as pointers; design when actu
   (the daemon-stop mechanism itself is proven in `generatedBoxDoors.test.ts` against a box's own
   journal).
 
+- **A Layer-1 (home-LAN) dns box does not advertise `53/domain` in `nmap` — only DEEP dns boxes
+  do.** A same-LAN NPC's scanned ports come from `resolveLanHostIdentity(host, essid).baseFs`
+  (via `remoteHostFs`), whose ports ignore the drawn role — a mailserver scans `80/http`, a
+  fileserver `21/ftp` — so `bind-224`, a dns-role box on OSCORP-GUEST at `192.168.118.224`, scans
+  `2121/ftp` and never `53`. The dns FILES are still placed (`remoteHostFs` writes `named.conf` +
+  the zone for any `role === 'dns'` host), and the DEEP path gets the port right —
+  `buildDeepHostFs` gives `ns-116`/`ns-196` a real `53/domain` alongside `22/ssh`. So the split is
+  positional: decision 7's "nmap reports `53 open`, which is HOW a player finds the box" holds for
+  the four deep dns boxes and fails for the two Layer-1 ones. Impact on X1 is low — both
+  OPEN-transfer name servers are deep and correctly discoverable, and `dig` is role-based (the
+  transfer works whether or not `53` shows), so only the two CLOSED Layer-1 dns boxes are
+  unfindable-as-DNS, and they refuse anyway. Found at X1 slice 3's browser close-out; not
+  slice-3's own (its `dig` is correct). Decide, when a home-LAN name server should be
+  discoverable, whether to route Layer-1 role services (at least the `dns` row) through the same
+  placement the deep path uses.
+
 - **`snmpd` is a daemon nobody can run by name.** `apt install snmp` lays it in `/usr/sbin`
   and typing `snmpd` answers `command not found` — the binary is right there. Every other
   daemon in `DAEMONS` is registered as a command; only this one is not, so it is reachable

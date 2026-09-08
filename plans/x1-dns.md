@@ -1,10 +1,12 @@
 # Plan: X1 — DNS, `nslookup` and `dig`
 
 **Status**: Active — **slices 1 and 2 have SHIPPED** (slice 1: v0.206.0, #487; slice 2: v0.207.0,
-#488). Slice 2's ten increments went green (4433 tests), its mutation gate ran, and its browser
-close-out confirmed the whole beat live on a deep name server, surfacing one write-gate finding
-(below, logged to the backlog). Slices 3-4 are grilled but unplanned; **slice 3 is next**. This is
-the first door of **Phase 2 — discovery**, and the first whose world legacy could not hand over.
+#488) and **slice 3 is DONE and ready for its PR** on `feat/x1-the-zone-transfers` (v0.208.0):
+`dig @<server> axfr` transfers a zone client-side, its scoped mutation battery is green, and the
+live close-out confirmed a byte-exact payout on the deep `ns-116` plus the locked-box refusal —
+surfacing one bounded finding (Layer-1 dns boxes don't advertise `53`, logged to the backlog).
+Slice 4 is grilled but unplanned. This is the first door of **Phase 2 — discovery**, and the first
+whose world legacy could not hand over.
 **Epic**: [`legacy-parity-epic.md`](legacy-parity-epic.md) → "X1 — resolved scope & decisions
 (grill-me, 2026-09-04)", fourteen locked decisions.
 
@@ -19,11 +21,11 @@ the first door of **Phase 2 — discovery**, and the first whose world legacy co
    (`generateDnsZoneContent`, `generateDnsNamedConf`) ports for the FILE format. Legacy's
    `resolveDomain`/`dnsRecords` do **not** port — they are mission scaffolding for a mechanic v2
    does not have.
-3. **The next action is to start slice 3 — the zone transfers** (`dig @<server> axfr`), now PLANNED
-   below: cut `feat/x1-the-zone-transfers` off an up-to-date `main` and begin increment 1. The read
-   path is decided (client-side generation, no `api/`; zone-edit reflection deferred to a follow-on)
-   and its ten acceptance criteria await the owner's confirmation before code. Slice 2 has SHIPPED
-   (#488, v0.207.0): its whole gate — typecheck,
+3. **The next action is to open slice 3's PR** (`feat/x1-the-zone-transfers` → trunk), then plan
+   slice 4 (the transfer's `named.log` trace — the door's only `api/` work). Slice 3 is DONE: its
+   whole record — the read-path decision, ten ACs, RED-GREEN increments, the scoped mutation gate,
+   and the live close-out with the Layer-1-`53` finding — is under "Slice 3" below. Slice 2 has
+   SHIPPED (#488, v0.207.0): its whole gate — typecheck,
    lint, 4433 tests, v0.207.0, four scoped mutation batteries, and a live browser close-out — is
    recorded under "Pre-PR gate" below, including the deep-terminal-NPC write-gate FINDING the
    close-out surfaced. Read slice 1's as-built too — the resolver it left behind is what the zone is
@@ -69,7 +71,7 @@ them.
 |---|-------|-----------|--------|
 | 1 | a name resolves | `nslookup web-04` answers, and `ssh root@web-04` lands | ✅ **SHIPPED** v0.206.0 (#487) |
 | 2 | a box answers as a name server | `nmap` finds `53 open`; rooting it and `cat`-ing the zone shows the deep layers | ✅ **SHIPPED** v0.207.0 (#488) |
-| 3 | the zone transfers | `dig @<server> axfr` hands over the whole address plan | 📋 **PLANNED** — client-side, no `api/`; edits deferred |
+| 3 | the zone transfers | `dig @<server> axfr` hands over the whole address plan | ✅ **DONE** — gate + live close-out complete, ready for PR |
 | 4 | the transfer leaves a trace | `named.log` names whoever transferred it | — |
 
 Plan each slice when its predecessor lands. **Slices 1 and 2 are independent** — the resolver needs
@@ -901,3 +903,64 @@ rides most naturally with or just after slice 4 (the door's `api/` slice, which 
 opening `named.log` on the box) and mirrors `resolveInnerGateway`: resolve the target IP to
 its `machine_id`, fetch its journal, replay `named.conf` + the zone file, and let the replayed
 files win over generation. Recorded here so it is not lost, and NOT this slice's scope.
+
+### Pre-PR gate — mutation + live close-out (2026-09-08)
+
+**RED-GREEN increments as run.** Increment 1 (walking skeleton) RED — `dig @<ip> axfr` fell
+through to the name path and answered NXDOMAIN — then GREEN with the full `transferZone`
+(parse, gate, records, footer). Increments 2-7 followed as a single coherent implementation
+(the transfer envelope is one thing), pinned by six behavior tests: the whole-zone golden
+vector, the locked-box `; Transfer failed.`, the non-name-server refusal, order/case
+flexibility, per-occupant determinism, and usage. `dig <name>` (slice 1) stayed green
+throughout — AC-8 is the eight existing tests, untouched.
+
+**Mutation gate.** One scoped Stryker battery (throwaway vitest config narrowing `include` to
+`dig.test.ts` + `generateDnsZone.test.ts`, carrying `setupFiles` / `__APP_VERSION__` /
+`solid({ hot: false })`; `--mutate` = all of `dig.ts` plus the two changed spans of
+`generateDnsZone.ts`). First run: 133 killed / 27 survived. Triage found three real holes and
+one equivalent:
+
+- The non-server test aimed at a GATEWAY, whose kind already fails the guard, so
+  `roleOfHostname === 'dns'` could be mutated to `true` unnoticed. Re-aimed at a database
+  MACHINE (`warehouse-241`) — a host that exists and answers, just not for names.
+- `dig <ip> axfr` was never tried without its `@`, so the prefix strip could break for a bare
+  address and every test still passed. Added the bare-address case.
+- No transfer ran while offline, so `transferZone`'s unreachable guard was uncovered. Added it.
+- `host.kind === 'machine'` was the equivalent mutant — verified across all 50 crackable
+  networks that NO host is a non-machine with a dns-role name, so the role check already is the
+  machine test. Pruned rather than carried as a permanent survivor.
+
+Re-run: **`generateDnsZone.ts` 100% (0 survived)**, and `dig.ts`'s three logic survivors dead.
+The remaining `dig.ts` survivors are the IPV4 arg-detector's `^`/`$` anchors (a heuristic
+classifier, not a strict validator — malformed multi-octet inputs are not real play) and the
+`manual`/`description`/`examples` flavor strings (the count grew only because the manual was
+UPDATED to document the transfer form it had shipped). Every line of transfer logic is covered.
+
+**Live browser close-out (v0.208.0 confirmed on the boot banner).** The whole beat, run against
+`vercel dev` + supabase:
+
+- **Payout — byte-exact.** Cracked GRAD-STUDENT-WIFI, connected, and `dig @10.165.42.116 axfr`
+  (the deep name server `ns-116`) returned all eight records in the zone's own order: four
+  `192.168.112.x` home-LAN hosts (including the `router01` duplicate name at `.1` and `.18`),
+  then the four `10.x` deep hosts — `ns-116`, `edge-rtr-204`, and crucially `portal-244`
+  (`10.80.250.244`) and `workstation-46` (`10.4.82.46`) on segments never reached. `;; XFR size:
+  8 records`, `;; Query time: 2 msec` (the seeded value the golden vector pins), `;; SERVER:
+  10.165.42.116#53`. Identical to the unit test's whole-file vector.
+- **Refusal.** On OSCORP-GUEST, `dig @192.168.118.224 axfr` (the closed Layer-1 `bind-224`) →
+  `; Transfer failed.`, `SERVER 192.168.118.224#53`, exit non-zero.
+- **No DNS service.** `dig @192.168.118.148 axfr` (a fileserver MACHINE) →
+  `dig: 192.168.118.148: no DNS service on target`.
+- **Resolution untouched.** `dig bind-224` → `bind-224.oscorp-guest.lan. … A 192.168.118.224`
+  via the gateway resolver at `#53`.
+
+**FINDING (bounded, pre-existing slice-2, logged to the backlog): a Layer-1 dns box does not
+advertise `53/domain` in `nmap`.** `bind-224` scans as generic `[2121/ftp]`; only DEEP dns boxes
+are role-correct (`ns-116` and `ns-196` both scan `53/domain`). Home-LAN NPCs draw generic ports
+that ignore their role (mailserver→http, fileserver→ftp), so decision 7's "nmap finds the name
+server" holds for deep boxes but not Layer-1 ones. Impact on X1 is low: BOTH open-transfer name
+servers are deep and correctly discoverable, and `dig` is role-based (the transfer works whether
+or not `53` shows). The only affected boxes are the two CLOSED Layer-1 dns boxes — unfindable as
+DNS, but they refuse anyway. Not a slice-3 regression; the door's discoverable payout is intact.
+
+**Slice 3 is DONE and ready for its PR.** Gates: typecheck, lint, 1907 tests across
+`commands/` + `generation/`, the scoped mutation battery, and the live close-out — all green.
