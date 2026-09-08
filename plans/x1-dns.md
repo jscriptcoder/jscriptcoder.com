@@ -5,8 +5,8 @@
 `dig @<server> axfr` transfers a zone client-side, its scoped mutation battery is green, and the
 live close-out confirmed a byte-exact payout on the deep `ns-116` plus the locked-box refusal —
 surfacing one bounded finding (Layer-1 dns boxes don't advertise `53`, logged to the backlog).
-Slice 4 is grilled but unplanned. This is the first door of **Phase 2 — discovery**, and the first
-whose world legacy could not hand over.
+Slice 4 is now PLANNED (ACs to confirm before code). This is the first door of **Phase 2 —
+discovery**, and the first whose world legacy could not hand over.
 **Epic**: [`legacy-parity-epic.md`](legacy-parity-epic.md) → "X1 — resolved scope & decisions
 (grill-me, 2026-09-04)", fourteen locked decisions.
 
@@ -21,8 +21,9 @@ whose world legacy could not hand over.
    (`generateDnsZoneContent`, `generateDnsNamedConf`) ports for the FILE format. Legacy's
    `resolveDomain`/`dnsRecords` do **not** port — they are mission scaffolding for a mechanic v2
    does not have.
-3. **The next action is to plan slice 4** (the transfer's `named.log` trace — the door's only
-   `api/` work). Slice 3 has SHIPPED (#489): its
+3. **The next action is to confirm slice 4's ACs, then cut `feat/x1-the-transfer-leaves-a-trace`**
+   (the transfer's `named.log` trace — the door's only `api/` work; its full plan is under "Slice 4"
+   below). Slice 3 has SHIPPED (#489): its
    whole record — the read-path decision, ten ACs, RED-GREEN increments, the scoped mutation gate,
    and the live close-out with the Layer-1-`53` finding — is under "Slice 3" below. Slice 2 has
    SHIPPED (#488, v0.207.0): its whole gate — typecheck,
@@ -72,7 +73,7 @@ them.
 | 1 | a name resolves | `nslookup web-04` answers, and `ssh root@web-04` lands | ✅ **SHIPPED** v0.206.0 (#487) |
 | 2 | a box answers as a name server | `nmap` finds `53 open`; rooting it and `cat`-ing the zone shows the deep layers | ✅ **SHIPPED** v0.207.0 (#488) |
 | 3 | the zone transfers | `dig @<server> axfr` hands over the whole address plan | ✅ **SHIPPED** v0.208.0 (#489) |
-| 4 | the transfer leaves a trace | `named.log` names whoever transferred it | — |
+| 4 | the transfer leaves a trace | `named.log` names whoever transferred it | 📋 **PLANNED** — ACs to confirm |
 
 Plan each slice when its predecessor lands. **Slices 1 and 2 are independent** — the resolver needs
 no DNS box, the DNS box needs no resolver — so if slice 2 turns out to be the more interesting
@@ -962,5 +963,161 @@ servers are deep and correctly discoverable, and `dig` is role-based (the transf
 or not `53` shows). The only affected boxes are the two CLOSED Layer-1 dns boxes — unfindable as
 DNS, but they refuse anyway. Not a slice-3 regression; the door's discoverable payout is intact.
 
-**Slice 3 is DONE and ready for its PR.** Gates: typecheck, lint, 1907 tests across
+**Slice 3 SHIPPED (v0.208.0, #489).** Gates: typecheck, lint, 1907 tests across
 `commands/` + `generation/`, the scoped mutation battery, and the live close-out — all green.
+
+---
+
+## Slice 4: the transfer leaves a trace
+
+**Value**: Slice 3 handed over a network's whole address plan and left no mark — the recon was
+free and silent. Slice 4 closes that asymmetry the way the game already closes it for scans and
+logins: the DNS box remembers. A `dig @<server> axfr` — whether the box hands the zone over or
+refuses — appends one line to that box's `/var/log/named.log` naming the source and the time; an
+ordinary `dig <name>` lookup leaves nothing, exactly as BIND's defaults do (querylog off, AXFR
+logged). A player who later roots the box reads the log and learns who has been mapping the
+network — the fifth of the shipped cross-player traces (scan → `kern.log`, login/su → `auth.log`;
+transfer → `named.log`), and the one that turns X1's silent payout into an attacker/defender event.
+Today it names the transferring player against their own later root; once same-wifi occupancy ships
+(cross-player Story 7) two occupants transferring one NPC name server accrete into one readable log.
+
+**Path**: `dig @<server> axfr` prints its result client-side (slice 3, byte-for-byte unchanged) →
+after printing, on a real transfer OR a real refusal, `dig` fires a **signed, fire-and-forget**
+action to `api/patches.ts` carrying only `(essid, serverIp)` (mirroring how `nmapScanDeep` is
+dispatched through `patchApi.ts` and exposed on `env`) → the server verifies the pubkey, RECOMPUTES
+the verdict itself (`nameServerStandsAt` / `allowsZoneTransfer` are pure over ESSID+IP and run
+server-side), derives the source IP from the caller's verified pubkey (`resolveCrossPlayerSourceIp`,
+the one derivation every trace shares), resolves the box's machine record from `(essid, serverIp)`
+the way the deep-scan trace resolves a deep target, and calls `appendMachineLog` to append one
+`named.log` line (under the caller's key — see the writer-key decision) → later, `ssh root@<server>`
++ `cat /var/log/named.log` reads the accreted lines through the tier-2 read path. No name server at the
+target, a dark/bricked box, an ordinary lookup, or an offline terminal → nothing is written and
+nothing is fired.
+
+**Class**: behavior change — a new server-written trace and the door's one new signed `api/` action.
+`dig`'s transfer output is unchanged; the notify is additive, best-effort, and invisible to the
+player who ran it.
+
+**Delivery**: independent PR against trunk, cut from an up-to-date `main` as
+`feat/x1-the-transfer-leaves-a-trace`. Depends on slice 3 (the transfer that triggers it). The LAST
+slice of X1 and the ONLY `api/` work in the door.
+
+**Required implementation skills**: `tdd`, `testing`, `mutation-testing` at the PR-readiness gate.
+`refactoring` only if the client notify wants a small seam out of `transferZone`; the server side is
+one new action reusing the shipped trace primitive, not a restructure.
+
+**Reduction program**: `N/A` — no mechanism retired.
+
+**Wire-check**: **REQUIRED — the door's only one.** An `api/` change is unproven until the scripts
+run live (conventions §wire-check). A new `scripts/testNamedXfrTrace.ts` mirrors `testDeepScanTrace.ts`
+/ `testSameLanScanTrace.ts` (no session — seed occupancy directly): bring the stack up against
+`vercel dev` + supabase, run a transfer against a known-open deep name server, read the box's
+`named.log` back and assert the line landed with the server-derived source IP and the AXFR wording;
+assert a refusal against a closed box logs its own line; assert an ordinary lookup and a no-DNS target
+write nothing; assert one writer's repeated transfers accrete into a single row.
+
+### The decisions this plan makes (grill decision 10 left the mechanism to planning)
+
+- **The server recomputes the verdict; it never trusts the client's claim.** The notify carries only
+  `(essid, serverIp)` and the signature. Whether a name server stands there, whether it allows
+  transfer, and therefore which line to write (`AXFR started/ended` vs the denied form) or whether to
+  write nothing are all decided server-side from generation — the same purity slice 3 read from, so
+  the log and a rooted `cat` of the zone can never disagree. This is the "wire is the threat surface"
+  invariant: a client cannot forge a transfer it was refused, or a source it is not.
+- **The source IP is the one every trace already shares** — `resolveCrossPlayerSourceIp` (verified
+  pubkey → home public IP), server-derived, client `source_ip` ignored. For a same-LAN name server
+  this names the player's network rather than their in-subnet address; that is the deliberate,
+  consistent game-model of attacker identity the shipped scan/auth traces use, not a realism gap to
+  special-case. When the pivot vantage ships, the same derivation names the hop with no rework.
+- **The dns base FS seeds an empty `/var/log/named.log`.** Every box that accrues a defender log
+  seeds it empty from boot so `cat` works before the first event and the append targets a real file
+  (`workstationFs`/`routerFs`/`remoteHostFs` do this for `auth.log`/`kern.log`/`access.log`). Slice 4
+  adds the empty `named.log` wherever `remoteHostFs` places `named.conf` and the zone — on every
+  dns-role box, Layer-1 (which only ever logs refusals) and deep alike.
+- **Writer key — the one choice worth the owner's explicit nod.** `appendMachineLog` keys the row to
+  `(machine_id, path, writer_key)`, and on READ the journal folds last-write-wins PER PATH. The
+  shipped own-LAN NPC scan trace writes under the CALLER's key (`nmapScan.ts`): a single player's own
+  repeated transfers accrete correctly into one row, but two players COLLIDE (their rows share the
+  path and the later hides the earlier) — a pre-existing NPC shared-box defect. True cross-player
+  accretion needs a STABLE per-box key (as `resolvePublicScan` derives `apGatewayLogWriterKey` for the
+  shared AP gateway). **Recommendation: slice 4 writes under the caller's key** — the minimal,
+  consistent choice. A player's own transfers accrete, which is the single-player value the door ships
+  today; cross-player accretion rides with same-wifi occupancy (Story 7), exactly where the Value
+  paragraph already places it. A new stable per-box DNS key now would be machinery for a payoff no
+  shipped feature can yet observe.
+
+### Acceptance criteria — to confirm with the owner before any code
+
+1. A successful `dig @S axfr` against an open name server appends exactly ONE line to that box's
+   `/var/log/named.log` naming the server-derived source IP, the zone, and the time, in BIND's AXFR
+   wording; the transfer output the player sees is byte-identical to slice 3.
+2. A refused `dig @S axfr` against a closed box (`allow-transfer { none; }`) ALSO appends one line —
+   the denied attempt, distinctly worded — naming the same source.
+3. An ordinary `dig <name>` lookup appends NOTHING (querylog off — decision 10), and neither does a
+   `dig @X axfr` where no name server stands at `X`, a dark/bricked box, or an offline terminal.
+4. After rooting the box, `cat /var/log/named.log` shows the accreted lines; a reader with no session
+   (tier-3) cannot read `named.log` at all.
+5. A single player's repeated transfers of one box accrete into ONE `named.log` row under their key
+   (read-modify-write), so `cat` shows every transfer they ran, oldest-first. Cross-player accretion
+   (two players into one file) is DEFERRED with the writer-key decision above — it shares the
+   pre-existing NPC shared-box collision and lands with same-wifi occupancy (Story 7); the wire-check
+   asserts the single-writer accretion, not the two-player merge.
+6. The source IP is server-derived from the caller's verified pubkey; a client-supplied source is
+   ignored. A client cannot cause a "transfer succeeded" line for a box that refused it — the server
+   recomputes the verdict.
+7. Logging is best-effort: a failed trace read/write never changes the transfer the player already
+   saw and never fabricates a line (a failed read bails without writing).
+8. An unedited box's log verdict matches what `dig` printed and what a rooted `cat` of the box's
+   `named.conf` says — one authority, consistent with slice 3.
+
+### RED-GREEN increments (planned, subject to the confirmed ACs)
+
+1. **The formatter.** `core/logging/namedLog.ts` — `formatNamedXfrLine` for the started/ended AXFR
+   form and the denied form, plus `NAMED_LOG_PATH` (`/var/log/named.log`), `NAMED_LOG_OWNER`,
+   `NAMED_LOG_PERMISSIONS` (world-read / root-write). Model it on `vsftpdLog.ts`, not
+   `kernLog`/`authLog`: `named` writes its OWN daemon file, so `formatSyslogLine` does not apply —
+   reuse only `MONTHS` / `derivePid` from `syslog.ts`. RED on the exact line text (pure function).
+2. **The server handler.** `core/patches/recordZoneTransfer.ts` (mirroring `nmapScan.ts` /
+   `recordFtpTransfer.ts`): verify the signed envelope (`z.literal('recordZoneTransfer')`,
+   `.refine(!('player_key' in p))`), guard with `nameServerStandsAt(essid, serverIp)`, recompute the
+   verdict with `allowsZoneTransfer`, resolve the box record from the IP —
+   `generateHomeLan(essid).hosts.find(ip === serverIp)` → `resolveLanHostIdentity` for a home-LAN box,
+   the deep resolver (`deepHostsFor` + `resolveDeepScanHosts`) for a deep one — derive the source IP
+   via `resolveCrossPlayerSourceIp`, and `appendMachineLog` the formatted line. RED on: open box → one
+   AXFR line; closed box → the denied line; non-server / dark box → no write.
+3. **The signed action + seam.** New `api/patches.ts` branch beside `nmapScanDeep` (wiring
+   `readMachineLog` + `upsertPatch`), a `recordZoneTransfer` client dispatch in `patchApi.ts`
+   (mirroring `recordDeepScan`), and a new `env.scan.recordZoneTransfer` seam threaded through
+   `types.ts` → `env.ts` → `state.ts`. Proven live by the wire-check, not a unit test of the endpoint.
+4. **The client notify.** `dig`'s `transferZone` fires `env.scan.recordZoneTransfer` after printing,
+   on a real transfer AND a real refusal only. RED (callback-through-public-API): the seam is called
+   with `(essid, serverIp)` on success and on refusal, and NOT called on `dig <name>`, on a no-DNS
+   target, or offline; `dig`'s printed output and exit code are unchanged either way.
+5. **Best-effort** (AC-7): a rejected notify promise leaves the transfer output and exit code intact.
+6. **The base-FS seed** (AC-4 read side): an empty `/var/log/named.log` exists on a dns-role box's FS
+   so `cat` works before any transfer; assert through the generated tree.
+7. **Point the log-sweep at the real file.** `serviceCatalog.ts` and `daemon.ts`'s `sweepLog` defer
+   `named.log` to a placeholder with a "slice 4 writes it" comment; repoint them at `NAMED_LOG_PATH`
+   so a root log-clear targets the file that now exists.
+8. Refactor pass if the notify wants a seam; otherwise `N/A`.
+
+Then the **wire-check** — `npx dotenv -e .env.development.local -- npx tsx
+scripts/testNamedXfrTrace.ts` against local supabase + `vercel dev` (:3100) — and the PR-readiness
+mutation gate over `namedLog.ts`, `recordZoneTransfer`, and `dig`'s notify branch, scoped as slices
+1-3 were (a throwaway vitest config narrowing `include` to the covering tests, carrying `setupFiles`
+/ `__APP_VERSION__` / `solid({ hot: false })`).
+
+### Still deferred after slice 4 — the zone that answers back (poisoning + self-restrict)
+
+Slice 4 is a WRITE (append a log). The follow-on is a READ: making an EDITED `named.conf`/zone change
+what a TRANSFER returns — cross-player and for the editor — which needs the signed journal-READ
+endpoint (`resolveInnerGateway`'s shape: resolve the target IP to its `machine_id`, replay the
+journal, let the replayed files win over generation). Slice 4 builds the `(essid, serverIp) → machine
+record` resolution that follow-on reuses, but does not itself reflect edits. It remains a named next
+step, to ride with or just after this slice, and closes decisions 9 (poisoning) and 6 (owner
+self-restrict). Recorded so it is not lost, and NOT this slice's scope.
+
+### Pre-PR gate
+
+_Filled at close-out: RED-GREEN as run, the scoped mutation battery, the live wire-check result, and
+the browser close-out._
