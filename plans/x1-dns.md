@@ -5,7 +5,8 @@
 `dig @<server> axfr` transfers a zone client-side, its scoped mutation battery is green, and the
 live close-out confirmed a byte-exact payout on the deep `ns-116` plus the locked-box refusal —
 surfacing one bounded finding (Layer-1 dns boxes don't advertise `53`, logged to the backlog).
-Slice 4 is now PLANNED (ACs to confirm before code). This is the first door of **Phase 2 —
+Slice 4's gate is green at v0.209.0 (RED-GREEN as run, 83/85 scoped mutation with the two survivors
+proven equivalent, and a 5/5 live wire-check) — PR pending. This is the first door of **Phase 2 —
 discovery**, and the first whose world legacy could not hand over.
 **Epic**: [`legacy-parity-epic.md`](legacy-parity-epic.md) → "X1 — resolved scope & decisions
 (grill-me, 2026-09-04)", fourteen locked decisions.
@@ -73,7 +74,7 @@ them.
 | 1 | a name resolves | `nslookup web-04` answers, and `ssh root@web-04` lands | ✅ **SHIPPED** v0.206.0 (#487) |
 | 2 | a box answers as a name server | `nmap` finds `53 open`; rooting it and `cat`-ing the zone shows the deep layers | ✅ **SHIPPED** v0.207.0 (#488) |
 | 3 | the zone transfers | `dig @<server> axfr` hands over the whole address plan | ✅ **SHIPPED** v0.208.0 (#489) |
-| 4 | the transfer leaves a trace | `named.log` names whoever transferred it | 📋 **PLANNED** — ACs to confirm |
+| 4 | the transfer leaves a trace | `named.log` names whoever transferred it | 🔧 **gate green** (v0.209.0) — PR pending |
 
 Plan each slice when its predecessor lands. **Slices 1 and 2 are independent** — the resolver needs
 no DNS box, the DNS box needs no resolver — so if slice 2 turns out to be the more interesting
@@ -991,8 +992,10 @@ the one derivation every trace shares), resolves the box's machine record from `
 the way the deep-scan trace resolves a deep target, and calls `appendMachineLog` to append one
 `named.log` line (under the caller's key — see the writer-key decision) → later, `ssh root@<server>`
 + `cat /var/log/named.log` reads the accreted lines through the tier-2 read path. No name server at the
-target, a dark/bricked box, an ordinary lookup, or an offline terminal → nothing is written and
-nothing is fired.
+target, an ordinary lookup, or an offline terminal → nothing is written and nothing is fired. (A dark
+or bricked box is NOT special-cased: slice 4 reads generation, which has no brick state, so a transfer
+still logs from generation's verdict; reflecting an edited or bricked box in the log rides the
+deferred journal-read follow-on — see the reconciliation in the close-out record.)
 
 **Class**: behavior change — a new server-written trace and the door's one new signed `api/` action.
 `dig`'s transfer output is unchanged; the notify is additive, best-effort, and invisible to the
@@ -1054,7 +1057,10 @@ write nothing; assert one writer's repeated transfers accrete into a single row.
 2. A refused `dig @S axfr` against a closed box (`allow-transfer { none; }`) ALSO appends one line —
    the denied attempt, distinctly worded — naming the same source.
 3. An ordinary `dig <name>` lookup appends NOTHING (querylog off — decision 10), and neither does a
-   `dig @X axfr` where no name server stands at `X`, a dark/bricked box, or an offline terminal.
+   `dig @X axfr` where no name server stands at `X`, or an offline terminal. (RECONCILED at close-out:
+   the "dark/bricked box" case is dropped — slice 4 reads generation, which has no brick state, so a
+   transfer against a taken-down box still logs from generation's verdict. Reflecting an edited or
+   bricked box in the verdict/log rides the deferred journal-read follow-on, not this slice.)
 4. After rooting the box, `cat /var/log/named.log` shows the accreted lines; a reader with no session
    (tier-3) cannot read `named.log` at all.
 5. A single player's repeated transfers of one box accrete into ONE `named.log` row under their key
@@ -1096,10 +1102,22 @@ write nothing; assert one writer's repeated transfers accrete into a single row.
 5. **Best-effort** (AC-7): a rejected notify promise leaves the transfer output and exit code intact.
 6. **The base-FS seed** (AC-4 read side): an empty `/var/log/named.log` exists on a dns-role box's FS
    so `cat` works before any transfer; assert through the generated tree.
-7. **Point the log-sweep at the real file.** `serviceCatalog.ts` and `daemon.ts`'s `sweepLog` defer
-   `named.log` to a placeholder with a "slice 4 writes it" comment; repoint them at `NAMED_LOG_PATH`
-   so a root log-clear targets the file that now exists.
-8. Refactor pass if the notify wants a seam; otherwise `N/A`.
+7. ~~Point the log-sweep at the real file.~~ **FOUND UNNECESSARY at close-out — comment fix only.**
+   The plan expected a `sweepLog` placeholder in `serviceCatalog.ts` + `daemon.ts` to repoint at
+   `NAMED_LOG_PATH`. The code refutes both premises: `daemon.ts` has no `sweepLog` at all, and NO
+   consumer reads `sweepLog` to CLEAR a log — all twelve are WRITERS of credential-sweep lines. The
+   `dns` row's `sweepLog` is a deliberately inert placeholder (`accountsOn: () => []`, no secret ⇒ no
+   sweep ever writes it), and named.log's author is the trace (`recordZoneTransfer → appendMachineLog`),
+   never the catalog — the shipped slice-3 comment already refused to point it at named.log to avoid a
+   "second author," and that reasoning holds after slice 4. So the sweepLog is left inert; only its
+   now-landed "slice 4 writes it" comment (a forward slice-ref the no-slice-tags rule forbids) was
+   rewritten to name the real author.
+8. Refactor pass — `N/A`. The notify is one fire-and-forget line in the house pattern
+   (`void env.scan.recordZoneTransfer(...).catch(...)`, as `nmap`'s `recordDeep`); extracting it would
+   be testability-only, which the refactoring skill forbids. The new modules already mirror their
+   shipped siblings. (One out-of-scope observation: the `recordZoneTransfer` endpoint branch inlines
+   the same supabase lookups as the `recordFtpTransfer` branch — the deliberate endpoint-file pattern,
+   deduping it is its own follow-up, not this slice's.)
 
 Then the **wire-check** — `npx dotenv -e .env.development.local -- npx tsx
 scripts/testNamedXfrTrace.ts` against local supabase + `vercel dev` (:3100) — and the PR-readiness
@@ -1117,7 +1135,71 @@ record` resolution that follow-on reuses, but does not itself reflect edits. It 
 step, to ride with or just after this slice, and closes decisions 9 (poisoning) and 6 (owner
 self-restrict). Recorded so it is not lost, and NOT this slice's scope.
 
-### Pre-PR gate
+### Pre-PR gate — mutation + live wire-check (v0.209.0)
 
-_Filled at close-out: RED-GREEN as run, the scoped mutation battery, the live wire-check result, and
-the browser close-out._
+**RED-GREEN increments as run.** Inc 1 (formatter) and inc 2 (server handler) went RED-first on the
+exact line text and on the written row's machine-id / writer / path / owner / source. Inc 3 (the
+client→endpoint wiring: `types.ts` → `env.ts` → `state.ts` → `patchApi.ts` → `api/patches.ts`) is a
+seam proven LIVE by the wire-check, not a unit RED. Inc 4 fired the notify from `dig`'s
+`transferZone` on a real transfer AND a real refusal (RED: the seam is called with `(essid, serverIp)`
+on both, and NOT on `dig <name>`, a no-DNS target, or offline; the printed payout and exit code
+unchanged), and inc 5 (best-effort) folded into that fire. Inc 6 seeded an empty `/var/log/named.log`
+on every dns-role box (RED: a running ns box, a stopped-daemon ns box, and a deep ns box each carry
+it empty; a non-dns box does not). **Deviations, recorded honestly:** inc 7 collapsed to a comment
+fix (the log-sweep repoint was found unnecessary — see increment 7), and inc 8 was `N/A` (no refactor
+added value).
+
+**Scoped mutation battery.** A throwaway vitest config narrowed `include` to the five covering test
+files (`namedLog`, `recordZoneTransfer`, `dig`, `generateDnsZone`, `remoteHostFs`), carrying
+`setupFiles` / `__APP_VERSION__` / `solid({ hot: false })`; `--mutate` = whole `namedLog.ts` +
+`recordZoneTransfer.ts` plus the changed spans of `dig.ts` (the notify), `generateDnsZone.ts`
+(`nameServerMachineIdAt`), and `remoteHostFs.ts` (the seed). First run: 85 mutants, 77 killed / 8
+survived (90.59%) — every survivor in the handler's signed envelope. Triage:
+
+- **Killed (tests added).** No test forged an identity or a malformed envelope, so the schema/refine
+  guard survived. Added: a payload carrying a `player_key` is refused with no write; one carrying a
+  `writer_key` likewise; one naming no server is refused; and the unsigned refusal now asserts the
+  body names why. Six mutants dead — the AC-6 "the wire cannot say who it is" guard is now pinned.
+- **Equivalent (pruned).** The two `{ verdict: 'denied' }` mutants (`→ ""`, `→ {}`): `formatNamedXfrLine`
+  branches only on `verdict === 'transferred'` and never reads the denied value, so both yield the
+  identical line. Killing them would need redundant machinery; pruned as slice 3 pruned its
+  `host.kind === 'machine'` equivalent.
+
+Re-run: **83/85 killed (97.65%)** — `namedLog.ts`, `dig.ts`, `generateDnsZone.ts`, `remoteHostFs.ts`
+all 100%; `recordZoneTransfer.ts` 94.59% with only the two proven equivalents remaining.
+
+**Live wire-check (`scripts/testNamedXfrTrace.ts` — 5/5 against `vercel dev` + supabase).** The door's
+only `api/` slice, so this is REQUIRED. Fixtures are derived from generation (a re-roll cannot leave
+the check asserting a stale address) and resolved to the exact addresses slice 3 confirmed:
+
+- **Open deep `ns-116`** (`10.165.42.116`) → `… client 203.0.113.181 (grad-student-wifi.lan): transfer
+  of 'grad-student-wifi.lan/IN': AXFR ended: 8 records` — source is the actor's seeded HOME public IP.
+- **Forged source ignored** — a client `source_ip: 10.6.6.6` in the payload never reaches the line.
+- **Accretion** — a repeated transfer lands a second AXFR line in the one `(machine_id, path, key)` row.
+- **Refusal** — closed Layer-1 `bind-224` (`192.168.118.224`) → `… zone transfer 'oscorp-guest.lan/IN'
+  denied`; the verdict is recomputed server-side, so no forged success.
+- **No name server** → nothing written (the gateway `.1`, 200 ok, zero rows).
+
+**Gates:** typecheck (`tsc -b`), lint (`eslint .`), the full unit suite (4460+ green with the added
+handler tests), the scoped mutation battery, and the live wire-check — all green. Version bumped to
+**0.209.0** (both `package.json` + `package-lock.json`).
+
+**Reconciliations (recorded above):** the AC-3 / Path "dark/bricked box" case dropped (slice 4 reads
+generation, which has no brick state; brick/edit reflection rides the deferred journal-read
+follow-on); increment 7's log-sweep repoint found unnecessary and collapsed to a comment fix.
+
+**Live browser close-out (v0.209.0 on the boot banner — the whole beat run in the real UI).** Cracked
+GRAD-STUDENT-WIFI (`aircrack-ng` → `football99`), connected (`192.168.112.190`), and
+`dig @10.165.42.116 axfr` returned the byte-exact 8-record payout — identical to the golden vector and
+the wire-check — firing the real notify; a second transfer accreted a second line. Then the deep pivot
+to the trace's box: the sole inner gateway `router01` (`192.168.112.18`) exposes forward `2222` to the
+first deep layer's NPC (`.103` fronts nothing), `hydra -p 2222` cracked its `guest` (password `guest`),
+and `ssh -p 2222 guest@192.168.112.18` landed on `ns-116` itself. There `cat /var/log/named.log`
+rendered BOTH accreted lines through the tier-2 read path:
+
+    08-Sep-2026 11:17:13.240 client 203.71.168.235 (grad-student-wifi.lan): transfer of 'grad-student-wifi.lan/IN': AXFR ended: 8 records
+    08-Sep-2026 11:18:27.528 client 203.71.168.235 (grad-student-wifi.lan): transfer of 'grad-student-wifi.lan/IN': AXFR ended: 8 records
+
+The source `203.71.168.235` is the attacker's OWN home public IP, server-derived from their verified
+key — a rooting defender reads who mapped their network, oldest-first. The whole attacker/defender loop
+— transfer → server-written trace → deep pivot → rooted read — runs end to end in the shipped UI.
