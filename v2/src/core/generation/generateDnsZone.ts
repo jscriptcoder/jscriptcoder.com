@@ -238,16 +238,16 @@ export const allowsZoneTransfer = (essid: string, ip: Ipv4): boolean =>
  * Whether a name server stands at `ip` on `essid`'s network — the box a transfer is
  * aimed at, whether it sits on the home LAN or a layer behind it.
  *
- * A dns-role MACHINE, and only that: a router sharing the address serves the LAN, not
- * names, and a zone belongs to the box that answers for it. Reuses the same home-LAN
- * scan and deep walk the zone itself is built from, so the servers a transfer answers
- * for and the network the zone describes cannot drift apart. It is what keeps
- * `dig @<anything> axfr` from handing back the current network's zone for an address no
- * name server holds.
+ * A dns-role host, which is only ever a machine: routers and switches draw names from
+ * their own pool and claim no role at all, so the role IS the machine test — a router
+ * sharing the address serves the LAN, not names. Reuses the same home-LAN scan and deep
+ * walk the zone itself is built from, so the servers a transfer answers for and the
+ * network the zone describes cannot drift apart. It is what keeps `dig @<anything> axfr`
+ * from handing back the current network's zone for an address no name server holds.
  */
 export const nameServerStandsAt = (essid: string, ip: Ipv4): boolean => {
   const isNameServerAt = (host: LanHost): boolean =>
-    host.kind === 'machine' && host.ip === ip && roleOfHostname(host.hostname) === 'dns';
+    host.ip === ip && roleOfHostname(host.hostname) === 'dns';
   return (
     generateHomeLan(essid).hosts.some(isNameServerAt) || deepHostsFor(essid).some(isNameServerAt)
   );

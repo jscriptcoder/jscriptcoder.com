@@ -202,15 +202,21 @@ export const dig: Command = {
   // /usr/bin, on the player's box or on any box they have rooted.
   availability: { kind: 'any-machine' },
   manual: {
-    synopsis: 'dig <name>',
+    synopsis: 'dig <name> | dig @<server> axfr',
     description:
-      "Ask the network's gateway for the record behind a name, and print it the way a name server hands it over — name, TTL, class, type and address — with the resolver that answered and how long it took. Answers for the network you are connected to only. An unknown name reports NXDOMAIN.",
+      "Ask the network's gateway for the record behind a name, and print it the way a name server hands it over — name, TTL, class, type and address — with the resolver that answered and how long it took. Given @<server> and axfr, transfer that name server's whole zone instead: every host it is authoritative for, on this network's own segments and the layers behind them — unless the server refuses. Answers for the network you are connected to only. An unknown name reports NXDOMAIN.",
     arguments: [
-      { name: 'name', description: 'The host name to look up, e.g. web-04', required: true },
+      { name: 'name', description: 'The host name to look up, e.g. web-04' },
+      {
+        name: '@<server>',
+        description: 'The name server to transfer a zone from, e.g. @192.168.4.12',
+      },
+      { name: 'axfr', description: 'Request a zone transfer from @<server>' },
     ],
     examples: [
       { command: 'dig web-04', description: 'Look up a host you saw in a scan' },
       { command: 'dig web-04.acme-corp.lan', description: 'The same lookup, fully qualified' },
+      { command: 'dig @192.168.4.12 axfr', description: "Transfer a name server's whole zone" },
     ],
   },
   execute,

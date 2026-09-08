@@ -210,9 +210,10 @@ const GRAD_ESSID = 'GRAD-STUDENT-WIFI';
 const GRAD_SLUG = 'grad-student-wifi';
 /** ns-116 — a deep name server on GRAD-STUDENT-WIFI, transfer OPEN. */
 const GRAD_NS_IP = '10.165.42.116';
-/** router01, the LAN gateway on GRAD-STUDENT-WIFI — a real host, but not a name
- *  server, so a transfer aimed at it has no zone to hand over. */
-const GRAD_NON_NS_IP = '192.168.112.1';
+/** warehouse-241, a database server on GRAD-STUDENT-WIFI — a real MACHINE, but not a
+ *  name server, so a transfer aimed at it has no zone to hand over. Sharper than a
+ *  gateway: it proves the target must answer for names, not merely exist as a host. */
+const GRAD_NON_NS_IP = '192.168.112.241';
 
 /** bind-224 — a Layer-1 name server on OSCORP-GUEST whose `allow-transfer` is closed. */
 const OSCORP_ESSID = 'OSCORP-GUEST';
@@ -295,6 +296,34 @@ describe('dig — zone transfer', () => {
 
     expect(reversed).toEqual(canonical);
     expect(shouted).toEqual(canonical);
+  });
+
+  it('takes the server as a bare address, without the @ prefix', async () => {
+    // `@server` is the convention, but a bare address names the same box. The strip and
+    // the match have to agree, or `dig 10.165.42.116 axfr` targets a different IP than
+    // `dig @10.165.42.116 axfr` and the two forms quietly disagree.
+    const prefixed = await transfer(GRAD_ESSID, `@${GRAD_NS_IP}`, 'axfr');
+    const bare = await transfer(GRAD_ESSID, GRAD_NS_IP, 'axfr');
+
+    expect(bare).toEqual(prefixed);
+  });
+
+  it('refuses a transfer while offline, like every other network command', async () => {
+    const conn = onlineConnectivity(GRAD_ESSID);
+    const env = mockCommandEnv({
+      identity: mockIdentity({ publicKeyHex: asPlayerKeyHex(PUBKEY) }),
+      network: mockNetworkView({
+        isOnline: () => false,
+        interfaces: () => [...conn.interfaces.values()],
+      }),
+    });
+
+    const { lines, exitCode } = await drain(
+      await dig.execute(env, [`@${GRAD_NS_IP}`, 'axfr'], new Map()),
+    );
+
+    expect(lines).toEqual(['dig: network is unreachable — connect to a network first']);
+    expect(exitCode).toBe(1);
   });
 
   it('reports the same transfer every run, for every occupant of the network', async () => {
