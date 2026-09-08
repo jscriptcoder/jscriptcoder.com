@@ -36,6 +36,7 @@ import type {
   PublicSweepResult,
   PublicScanResolution,
   DeepScanRecordParams,
+  ZoneTransferRecordParams,
   RemoteAuthParams,
   RemoteAuthResult,
   MysqlConnectParams,
@@ -111,6 +112,7 @@ import {
   recordFtpTransfer,
   recordLanFetch,
   recordScan,
+  recordZoneTransfer,
   type FtpTransferRecord,
   type PatchClientDeps,
 } from '../adapters/patchApi';
@@ -871,6 +873,11 @@ const endScpSession = (sessionId: string): void => {
  *  and a no-op until `startGame` wires the patch client; the scan stands regardless. */
 const recordDeepScanFn = (params: DeepScanRecordParams): Promise<void> =>
   patchClientDeps === undefined ? Promise.resolve() : recordDeepScan(patchClientDeps, params);
+
+/** Record a zone transfer server-side (backs `env.scan.recordZoneTransfer`). Best-effort
+ *  and a no-op until `startGame` wires the patch client; the transfer stands regardless. */
+const recordZoneTransferFn = (params: ZoneTransferRecordParams): Promise<void> =>
+  patchClientDeps === undefined ? Promise.resolve() : recordZoneTransfer(patchClientDeps, params);
 
 /** Resolve an `nmap <public IP>` cross-player (backs `env.scan.resolvePublic`).
  *  Host-down until `startGame` wires the network client — degrade rather than crash. */
@@ -1684,6 +1691,7 @@ const executeLine = async (line: string): Promise<void> => {
     onHydraCrackInnerGateway: hydraCrackInnerGateway,
     onScanRecord: recordScanFn,
     onScanRecordDeep: recordDeepScanFn,
+    onScanRecordZoneTransfer: recordZoneTransferFn,
     onScanResolvePublic: resolvePublicFn,
     onScanResolveInnerGateway: resolveInnerGatewayFn,
     onScanResolveOccupants: resolveOccupantsFn,
