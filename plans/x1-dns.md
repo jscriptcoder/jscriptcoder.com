@@ -1,7 +1,7 @@
 # Plan: X1 — DNS, `nslookup` and `dig`
 
 **Status**: Active — **slices 1 and 2 have SHIPPED** (slice 1: v0.206.0, #487; slice 2: v0.207.0,
-#488) and **slice 3 is DONE and ready for its PR** on `feat/x1-the-zone-transfers` (v0.208.0):
+#488) and **slice 3 has SHIPPED** (v0.208.0, #489):
 `dig @<server> axfr` transfers a zone client-side, its scoped mutation battery is green, and the
 live close-out confirmed a byte-exact payout on the deep `ns-116` plus the locked-box refusal —
 surfacing one bounded finding (Layer-1 dns boxes don't advertise `53`, logged to the backlog).
@@ -21,8 +21,8 @@ whose world legacy could not hand over.
    (`generateDnsZoneContent`, `generateDnsNamedConf`) ports for the FILE format. Legacy's
    `resolveDomain`/`dnsRecords` do **not** port — they are mission scaffolding for a mechanic v2
    does not have.
-3. **The next action is to open slice 3's PR** (`feat/x1-the-zone-transfers` → trunk), then plan
-   slice 4 (the transfer's `named.log` trace — the door's only `api/` work). Slice 3 is DONE: its
+3. **The next action is to plan slice 4** (the transfer's `named.log` trace — the door's only
+   `api/` work). Slice 3 has SHIPPED (#489): its
    whole record — the read-path decision, ten ACs, RED-GREEN increments, the scoped mutation gate,
    and the live close-out with the Layer-1-`53` finding — is under "Slice 3" below. Slice 2 has
    SHIPPED (#488, v0.207.0): its whole gate — typecheck,
@@ -71,7 +71,7 @@ them.
 |---|-------|-----------|--------|
 | 1 | a name resolves | `nslookup web-04` answers, and `ssh root@web-04` lands | ✅ **SHIPPED** v0.206.0 (#487) |
 | 2 | a box answers as a name server | `nmap` finds `53 open`; rooting it and `cat`-ing the zone shows the deep layers | ✅ **SHIPPED** v0.207.0 (#488) |
-| 3 | the zone transfers | `dig @<server> axfr` hands over the whole address plan | ✅ **DONE** — gate + live close-out complete, ready for PR |
+| 3 | the zone transfers | `dig @<server> axfr` hands over the whole address plan | ✅ **SHIPPED** v0.208.0 (#489) |
 | 4 | the transfer leaves a trace | `named.log` names whoever transferred it | — |
 
 Plan each slice when its predecessor lands. **Slices 1 and 2 are independent** — the resolver needs
