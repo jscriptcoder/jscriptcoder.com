@@ -362,8 +362,10 @@ export const SERVICE_CATALOG = {
     altPorts: [],
     altPortChance: 0,
     // Nowhere, in practice: this door has neither accounts nor a secret, so no attempt
-    // is ever formatted to be written. The column has no optional form, and inventing a
-    // named.log destination here would put a second author on the file slice 4 writes.
+    // is ever formatted to be written. The column has no optional form, so this parks at
+    // the auth placeholder rather than at named.log: that file's author is the zone-
+    // transfer trace (recordZoneTransfer → appendMachineLog), and routing a credential
+    // sweep here too would put a second, wrong author on it.
     sweepLog: SYSLOG_AUTH_SWEEP,
     // Nothing — BIND authenticates nobody. A zone is handed to whoever asks or to no
     // one, which is the transfer's own gate rather than a credential, so a sweep of
