@@ -31,6 +31,7 @@ import { lanZoneName } from '../network/resolveName';
 import { createPrng } from './prng';
 import { generateDeepLayer, hostsOnLayer } from './generateDeepLayer';
 import { generateHomeLan, type LanHost } from './generateHomeLan';
+import { hostMachineId } from './remoteHostId';
 import { chainLinks } from './lanTopology';
 import type { DrawnRole } from './machineRole';
 import { roleOfHostname } from './pools/hostnames';
@@ -245,13 +246,27 @@ export const allowsZoneTransfer = (essid: string, ip: Ipv4): boolean =>
  * network the zone describes cannot drift apart. It is what keeps `dig @<anything> axfr`
  * from handing back the current network's zone for an address no name server holds.
  */
-export const nameServerStandsAt = (essid: string, ip: Ipv4): boolean => {
+/**
+ * The machine_id of the name server at `ip` on `essid` — on the home LAN or a layer
+ * behind it — or null when no dns-role box stands there.
+ *
+ * A dns box is only ever a `machine` (routers and switches claim no role), and a
+ * machine's storage id is the coordinate-derived `hostMachineId` at EVERY depth — the
+ * home LAN's machines and the deep layers' NPCs share that one formula — so a name
+ * server needs no home-vs-deep branch to identify. Walks the same home-LAN scan and
+ * deep chain the zone itself is built from, so the box a transfer's log lands on and
+ * the box a transfer answers for cannot drift.
+ */
+export const nameServerMachineIdAt = (essid: string, ip: Ipv4): string | null => {
   const isNameServerAt = (host: LanHost): boolean =>
     host.ip === ip && roleOfHostname(host.hostname) === 'dns';
-  return (
-    generateHomeLan(essid).hosts.some(isNameServerAt) || deepHostsFor(essid).some(isNameServerAt)
-  );
+  const host =
+    generateHomeLan(essid).hosts.find(isNameServerAt) ?? deepHostsFor(essid).find(isNameServerAt);
+  return host === undefined ? null : hostMachineId(host, essid);
 };
+
+export const nameServerStandsAt = (essid: string, ip: Ipv4): boolean =>
+  nameServerMachineIdAt(essid, ip) !== null;
 
 /**
  * The `named.conf` a name server publishes about itself.

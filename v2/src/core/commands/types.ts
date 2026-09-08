@@ -1018,6 +1018,15 @@ export type DeepScanRecordParams = {
   readonly vantageMachineId: string;
 };
 
+/** What `dig @<server> axfr` hands the transfer-trace action so the server can record
+ *  it on the name server. The client names only the network and the server IP — the
+ *  server recomputes the verdict from generation and derives the source IP from the
+ *  verified key, so it never claims who it is, when, or whether the box agreed. */
+export type ZoneTransferRecordParams = {
+  readonly essid: string;
+  readonly serverIp: string;
+};
+
 /** The server-resolved result of scanning a public IP (Story 1). `found` is host
  *  up/down; `ports` are the resolved machine's REAL open ports, read server-side
  *  from the owner's `/var/run/*.pid` record (empty when the host is down or runs
@@ -1041,6 +1050,11 @@ export type ScanApi = {
    *  readable once the player breaks into it. Best-effort like `record`: a logging
    *  failure never surfaces to the scan. */
   readonly recordDeep: (params: DeepScanRecordParams) => Promise<void>;
+  /** Fire-and-forget logger for a zone transfer (signed `recordZoneTransfer` endpoint):
+   *  the transfer resolves CLIENT-side, and this records it — or its refusal — as a
+   *  `/var/log/named.log` line on the name server, readable once the player roots it.
+   *  Best-effort like `record`: a logging failure never surfaces to the transfer. */
+  readonly recordZoneTransfer: (params: ZoneTransferRecordParams) => Promise<void>;
   readonly resolvePublic: (target: string) => Promise<PublicScanResolution>;
   /** Resolve the player's OWN-LAN `nmap` of an inner gateway server-side (signed
    *  `resolveInnerGatewayScan` endpoint): its own sshd PLUS any LIVE NAT forward to

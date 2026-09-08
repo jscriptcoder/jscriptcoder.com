@@ -31,6 +31,7 @@ import type {
   PatchApi,
   PatchResult,
   ScanRecordParams,
+  ZoneTransferRecordParams,
 } from '../core/commands/types';
 import type { AbsPath, MachineId, UserType } from '../core/types';
 
@@ -289,6 +290,25 @@ export const recordDeepScan = async (
     });
   } catch {
     // best-effort: a logging failure must not surface to the scan.
+  }
+};
+
+/** Fire the server-internal zone-transfer log: the transfer resolves client-side, but
+ *  the server recomputes the verdict from the (verified pubkey, essid, server_ip) and
+ *  writes the name server's `/var/log/named.log` line itself — the client names only
+ *  the network and the server it aimed at. Best-effort + fire-and-forget, like
+ *  `recordScan`. */
+export const recordZoneTransfer = async (
+  deps: PatchClientDeps,
+  params: ZoneTransferRecordParams,
+): Promise<void> => {
+  try {
+    await post(deps, 'recordZoneTransfer', {
+      essid: params.essid,
+      server_ip: params.serverIp,
+    });
+  } catch {
+    // best-effort: a logging failure must not surface to the transfer.
   }
 };
 

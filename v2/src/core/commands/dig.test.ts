@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { dig } from './dig';
 import { nslookup } from './nslookup';
 import type { CommandResult } from './types';
@@ -340,5 +340,93 @@ describe('dig — zone transfer', () => {
 
     expect(lines).toEqual(['dig: usage: dig @<server> axfr']);
     expect(exitCode).toBe(1);
+  });
+});
+
+/**
+ * The trace the transfer leaves. `dig` reads generation and answers instantly, so the
+ * name server would learn nothing on its own — after it prints, `dig` fires a
+ * fire-and-forget notify so the server can leave a `/var/log/named.log` line. The
+ * notify carries only the network and the server; the server decides everything else.
+ * A lookup, a target that is not a name server, and an offline terminal fire nothing —
+ * only a real transfer or a real refusal is loud.
+ */
+describe('dig — the transfer leaves a trace', () => {
+  const traceEnv = (essid: string, recordZoneTransfer = vi.fn(async () => undefined)) => ({
+    recordZoneTransfer,
+    env: mockCommandEnv({
+      identity: mockIdentity({ publicKeyHex: asPlayerKeyHex(PUBKEY) }),
+      network: mockNetworkViewFromConnectivity(onlineConnectivity(essid)),
+      scan: mockScanApi({ resolveOccupants: async () => [], recordZoneTransfer }),
+      now: () => asEpochMs(NOW),
+    }),
+  });
+
+  it('tells the name server after handing its zone over, without changing the payout', async () => {
+    const { env, recordZoneTransfer } = traceEnv(GRAD_ESSID);
+
+    const traced = await drain(await dig.execute(env, [`@${GRAD_NS_IP}`, 'axfr'], new Map()));
+
+    // Byte-for-byte the untraced transfer — the notify is invisible to the player.
+    expect(traced).toEqual(await transfer(GRAD_ESSID, `@${GRAD_NS_IP}`, 'axfr'));
+    expect(recordZoneTransfer).toHaveBeenCalledTimes(1);
+    expect(recordZoneTransfer).toHaveBeenCalledWith({ essid: GRAD_ESSID, serverIp: GRAD_NS_IP });
+  });
+
+  it('tells the name server about a refusal too — a denied attempt is still attributable', async () => {
+    const { env, recordZoneTransfer } = traceEnv(OSCORP_ESSID);
+
+    await drain(await dig.execute(env, [`@${OSCORP_NS_IP}`, 'axfr'], new Map()));
+
+    expect(recordZoneTransfer).toHaveBeenCalledTimes(1);
+    expect(recordZoneTransfer).toHaveBeenCalledWith({
+      essid: OSCORP_ESSID,
+      serverIp: OSCORP_NS_IP,
+    });
+  });
+
+  it('says nothing for an ordinary lookup — querylog is off, only transfers are loud', async () => {
+    const { env, recordZoneTransfer } = traceEnv(GRAD_ESSID);
+
+    await drain(await dig.execute(env, ['ns-116'], new Map()));
+
+    expect(recordZoneTransfer).not.toHaveBeenCalled();
+  });
+
+  it('says nothing when no name server stands at the target — there is no daemon to log it', async () => {
+    const { env, recordZoneTransfer } = traceEnv(GRAD_ESSID);
+
+    await drain(await dig.execute(env, [`@${GRAD_NON_NS_IP}`, 'axfr'], new Map()));
+
+    expect(recordZoneTransfer).not.toHaveBeenCalled();
+  });
+
+  it('says nothing while offline — there was no transfer to record', async () => {
+    const conn = onlineConnectivity(GRAD_ESSID);
+    const recordZoneTransfer = vi.fn(async () => undefined);
+    const env = mockCommandEnv({
+      identity: mockIdentity({ publicKeyHex: asPlayerKeyHex(PUBKEY) }),
+      network: mockNetworkView({
+        isOnline: () => false,
+        interfaces: () => [...conn.interfaces.values()],
+      }),
+      scan: mockScanApi({ resolveOccupants: async () => [], recordZoneTransfer }),
+    });
+
+    await drain(await dig.execute(env, [`@${GRAD_NS_IP}`, 'axfr'], new Map()));
+
+    expect(recordZoneTransfer).not.toHaveBeenCalled();
+  });
+
+  it('hands over the zone even if the trace fails — logging is best-effort', async () => {
+    const failing = vi.fn(async () => {
+      throw new Error('trace endpoint down');
+    });
+    const { env } = traceEnv(GRAD_ESSID, failing);
+
+    const traced = await drain(await dig.execute(env, [`@${GRAD_NS_IP}`, 'axfr'], new Map()));
+
+    // A rejected notify never reaches the player: the payout and exit are unchanged.
+    expect(traced).toEqual(await transfer(GRAD_ESSID, `@${GRAD_NS_IP}`, 'axfr'));
   });
 });

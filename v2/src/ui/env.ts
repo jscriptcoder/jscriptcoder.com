@@ -220,6 +220,10 @@ export type BuildCommandEnvArgs = {
    *  to the `recordDeepScan` adapter (signed `nmapScanDeep` round-trip). Optional here
    *  for terse test setups; the UI always passes the real one. */
   readonly onScanRecordDeep?: ScanApi['recordDeep'];
+  /** The zone-transfer trace seam — backs `env.scan.recordZoneTransfer`. The UI wires it
+   *  to the `recordZoneTransfer` adapter (signed `recordZoneTransfer` round-trip). Optional
+   *  here for terse test setups; the UI always passes the real one. */
+  readonly onScanRecordZoneTransfer?: ScanApi['recordZoneTransfer'];
   /** The cross-player public-IP resolution seam — backs `env.scan.resolvePublic`.
    *  The UI wires it to the `resolvePublicScan` adapter (signed round-trip).
    *  Optional here for terse test setups; the UI always passes the real one. */
@@ -457,6 +461,7 @@ export const buildCommandEnv = (args: BuildCommandEnvArgs): CommandEnv => ({
   scan: {
     record: args.onScanRecord ?? notWired('scan.record'),
     recordDeep: args.onScanRecordDeep ?? notWired('scan.recordDeep'),
+    recordZoneTransfer: args.onScanRecordZoneTransfer ?? notWired('scan.recordZoneTransfer'),
     resolvePublic: args.onScanResolvePublic ?? notWired('scan.resolvePublic'),
     resolveInnerGateway: args.onScanResolveInnerGateway ?? notWired('scan.resolveInnerGateway'),
     // Additive read: absent the seam, the scan still runs with no fellow occupants.

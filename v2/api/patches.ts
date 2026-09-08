@@ -10,6 +10,7 @@ import { handleListPatches, type ListPatchesQuery } from '../src/core/patches/li
 import { handleRemovePatch, type PatchTreeQuery } from '../src/core/patches/removePatch';
 import { handleAppendAuthLog, type AuthLogContentQuery } from '../src/core/patches/appendAuthLog';
 import { handleRecordFtpTransfer } from '../src/core/patches/recordFtpTransfer';
+import { handleRecordZoneTransfer } from '../src/core/patches/recordZoneTransfer';
 import { handleNmapScan, type ScanOccupant } from '../src/core/scan/nmapScan';
 import {
   handleRecordLanFetch,
@@ -474,6 +475,48 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       readLog,
       upsertPatch,
       findPatches,
+    });
+    res.status(status).json(body);
+    return;
+  }
+
+  if (actionOf(req.body) === 'recordZoneTransfer') {
+    // A zone transfer runs client-side, so the name server is told about it here: the
+    // server recomputes the verdict from generation and writes the box's named.log
+    // itself, under the caller's key, via the same machine-log read-modify-write. The
+    // source IP is the actor's HOME public IP, resolved from their verified key —
+    // never a client claim.
+    const findPublicIpByEssid = async (essid: string) => {
+      const { data, error } = await supabase
+        .from('network_public_ips')
+        .select('public_ip')
+        .eq('essid', essid)
+        .maybeSingle();
+      if (error) console.error('[patches] axfr source-ip lookup error:', error);
+      return { data: data as { public_ip: string } | null, error };
+    };
+    const findHomeNetworkByOwnerKey = async (ownerKey: string) => {
+      const occupancy = await supabase
+        .from('home_network_occupants')
+        .select('essid')
+        .eq('owner_key', ownerKey)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (occupancy.error) {
+        console.error('[patches] axfr source-ip occupancy error:', occupancy.error);
+        return { data: null, error: occupancy.error };
+      }
+      const essid = (occupancy.data as { essid: string } | null)?.essid ?? null;
+      if (essid === null) return { data: null, error: null };
+      return findPublicIpByEssid(essid);
+    };
+    const { status, body } = await handleRecordZoneTransfer(req.body, {
+      nonceStore: noopNonceStore,
+      now: () => Date.now(),
+      readLog: readMachineLog,
+      upsertPatch,
+      findHomeNetworkByOwnerKey,
     });
     res.status(status).json(body);
     return;
