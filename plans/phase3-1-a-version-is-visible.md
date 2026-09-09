@@ -1,7 +1,7 @@
 # Plan: Phase 3 slice 1 — a version is visible
 
 **Branch**: `feat/phase3-a-version-is-visible` (1a), then `feat/phase3-nmap-sv` (1b)
-**Status**: Active
+**Status**: Active — slice 1a landed (PR #491); slice 1b in progress.
 **Parent**: [`legacy-parity-epic.md`](./legacy-parity-epic.md) → "Phase 3 — resolved scope &
 decisions (grill-me, 2026-09-09)", slice 1 of 9.
 
@@ -118,15 +118,15 @@ apt-managed by the player. That is decision 10's wording, not a new exception.
 
 ## Acceptance criteria
 
-- [ ] Every generated box — the player's workstation, an NPC LAN host, a deep host, and all five
+- [x] Every generated box — the player's workstation, an NPC LAN host, a deep host, and all five
       router-class boxes — carries `/var/lib/dpkg/status` in real dpkg RFC-822 format: blank-line
       separated blocks of `Package:` / `Status: install ok installed` / `Version:`.
-- [ ] The manifest lists a service package iff the GENERATED box carries that service's daemon
+- [x] The manifest lists a service package iff the GENERATED box carries that service's daemon
       binary, all eight libraries on every box, and `firmware` on router-class boxes only.
-- [ ] Package names are apt package names (`openssh-server`, `bind9`, `libpcre`); `Version` holds
+- [x] Package names are apt package names (`openssh-server`, `bind9`, `libpcre`); `Version` holds
       the bare tuple (`9.7.0`), never a vendor prefix.
-- [ ] `cat /var/lib/dpkg/status` works on your own box, and on a box you hold a session on.
-- [ ] A box you have NO session on does not leak more than the manifest: the tier-3 allowlist is
+- [x] `cat /var/lib/dpkg/status` works on your own box, and on a box you hold a session on.
+- [x] A box you have NO session on does not leak more than the manifest: the tier-3 allowlist is
       unchanged, and `/etc/passwd` stays unreadable.
 - [ ] `nmap -sV <target>` prints a VERSION column carrying `<prefix> <version>` for every open
       port whose package is in the target's manifest, and an empty cell for one that is not (a
@@ -181,7 +181,7 @@ comments need rewriting to say what is now true: the directory is always there, 
 "iff the box carries the daemon" test are both boundary-shaped and worth mutating.
 **PR-ready when**: All criteria above that do not mention `nmap` are met, and the human approves
 the commit.
-**Slice complete when**: Its PR lands.
+**Slice complete when**: Its PR lands. — **DONE**, PR #491 merged 2026-09-09 at v0.210.0.
 
 ### Slice 1b: `nmap -sV` prints the version, from every vantage
 
@@ -204,10 +204,23 @@ gate.
   meaning, identical on every path — the alternative (shipping package + tuple and joining
   client-side) puts the render prefix on the wire twice and gives two places to get the join
   wrong.
-- Populate it at each read site: `readOpenPorts`, `scanResult` (both vantages, forwards included
-  via `resolveTargetPorts`), `resolvePublicScan`, `resolveOccupantScan`,
-  `resolveInnerGatewayScan`, `nmapScanDeep`.
-- Widen the zod schemas on the `api/` endpoints that carry `PublicScanResolution`.
+- Populate it in the only two places an `OpenPort` is CONSTRUCTED: `readOpenPorts`
+  (`pidfile.ts`), which reads the target's own manifest off the same tree it already reads
+  `/var/run` from; and the forward synthesis in `scanResult`, which takes its version from the
+  TARGET's port — so scanning an access point's public IP shows the occupant's real version
+  through the NAT forward. `portsOpenToNetwork` only filters, and `resolvePublicScan`,
+  `resolveOccupantScan`, `resolveInnerGatewayScan` and `nmapScanDeep` pass ports straight
+  through, so all five inherit the field untouched. An `nc` listener projects as
+  `UNKNOWN_SERVICE`, which no catalog row names, so its empty VERSION cell is true by
+  construction rather than by a special case.
+- No zod schema changes. The three client paths cast (`body as Partial<PublicScanResolution>`)
+  rather than parse, so the field rides the wire for free — which is precisely why the
+  wire-check below is load-bearing rather than ceremonial: nothing at the type or schema level
+  can catch a server path that fails to send it.
+- The version is always RESOLVED; `-sV` decides only whether the column is PRINTED. The
+  manifest is already tier-3 externally observable, so the flag gates no disclosure a second
+  scan would not hand over anyway, and gating it server-side would mean widening three request
+  schemas and keeping two scan modes in step for nothing.
 
 **RED**: `nmap -sV` on a generated host prints `22/tcp open ssh OpenSSH 9.7.0`; the same scan
 without `-sV` prints three columns; a port with no package in the manifest prints an empty VERSION
