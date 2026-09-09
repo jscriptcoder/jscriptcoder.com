@@ -614,6 +614,7 @@ describe('buildRouterBaseFsFromIdentity', () => {
       hasSsh: boolean;
       hasSnmp: boolean;
       snmpCommunityHash: string;
+      firmwareSeed: string;
     }> = {},
   ): Directory =>
     buildRouterBaseFsFromIdentity({
@@ -621,6 +622,7 @@ describe('buildRouterBaseFsFromIdentity', () => {
       snmpCommunityHash: COMMUNITY_HASH,
       hasSsh: true,
       hasSnmp: false,
+      firmwareSeed: 'router-under-test',
       ...overrides,
     });
 
@@ -788,7 +790,9 @@ describe('buildRouterBaseFsFromIdentity', () => {
     expect(dirAt(fs, 'var', 'log').entries.has('snmpd.log')).toBe(false);
     expect(dirAt(fs, 'usr', 'sbin').entries.has('snmpd')).toBe(false);
     expect(readSnmpdConf(fs)).toBe('');
-    expect(dirAt(fs, 'var').entries.has('lib')).toBe(false);
+    // Not the absence of `/var/lib` — every box has one for its package manifest — but
+    // the absence of the agent's own state directory inside it.
+    expect(dirAt(fs, 'var', 'lib').entries.has('snmp')).toBe(false);
   });
 
   it('has NO open ports when hasSsh is false (the seam toggles the pidfile off)', () => {

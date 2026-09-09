@@ -125,7 +125,10 @@ describe('buildWorkstationBaseFs', () => {
     expect(dirAt(fs, 'home', 'alice').entries.size).toBe(0);
     expect(dirAt(fs, 'root').entries.size).toBe(0);
     expect(dirAt(fs, 'tmp').entries.size).toBe(0);
-    expect([...dirAt(fs, 'var').entries.keys()].sort()).toEqual(['log', 'run', 'www']);
+    expect([...dirAt(fs, 'var').entries.keys()].sort()).toEqual(['lib', 'log', 'run', 'www']);
+    // `/var/lib` holds the package manifest and nothing else on a fresh box: the
+    // datadirs that share the directory arrive only when a player buys one.
+    expect([...dirAt(fs, 'var', 'lib').entries.keys()]).toEqual(['dpkg']);
     expect([...dirAt(fs, 'var', 'www').entries.keys()]).toEqual(['html']);
     expect([...dirAt(fs, 'var', 'log').entries.keys()].sort()).toEqual([
       'access.log',

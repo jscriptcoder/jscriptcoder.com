@@ -78,6 +78,11 @@ export type SweepLog = {
 export type ServiceSpec = {
   /** The label `nmap` prints in the SERVICE column (e.g. `ssh`). */
   readonly service: string;
+  /** The APT package this service's daemon comes from — the name `apt` answers to
+   *  and the name `/var/lib/dpkg/status` records, which are deliberately the same
+   *  one. It is NOT `service`: that label is what a scan prints, and letting apt take
+   *  two names for one thing is the drift a single package namespace exists to stop. */
+  readonly package: string;
   /** The `/var/run/<pidfile>` name; its basename is the daemon written into the
    *  pidfile line (`sshd.pid` → `sshd:port=22`). */
   readonly pidfile: string;
@@ -153,6 +158,7 @@ const SYSLOG_AUTH_SWEEP: SweepLog = {
 export const SERVICE_CATALOG = {
   ssh: {
     service: 'ssh',
+    package: 'openssh-server',
     pidfile: 'sshd.pid',
     defaultPort: 22,
     runUser: 'root',
@@ -169,6 +175,7 @@ export const SERVICE_CATALOG = {
   // something is a lead worth following.
   http: {
     service: 'http',
+    package: 'nginx',
     pidfile: 'nginx.pid',
     defaultPort: 80,
     runUser: 'root',
@@ -193,6 +200,7 @@ export const SERVICE_CATALOG = {
   // same one.
   ftp: {
     service: 'ftp',
+    package: 'vsftpd',
     pidfile: 'vsftpd.pid',
     defaultPort: 21,
     runUser: 'root',
@@ -216,6 +224,7 @@ export const SERVICE_CATALOG = {
   // finding is the role override rather than this rate.
   mysql: {
     service: 'mysql',
+    package: 'mysql',
     pidfile: 'mysqld.pid',
     defaultPort: 3306,
     // Not root, unlike every row above: the /etc/mysql.cnf a database box has carried
@@ -251,6 +260,7 @@ export const SERVICE_CATALOG = {
   // only a lock that is either there or is not — and four stores in ten have none.
   redis: {
     service: 'redis',
+    package: 'redis',
     // The pidfile's basename IS the daemon name (`daemonName`), so it is what `ps`
     // prints, what the pidfile line says, and what binary a generated box plants —
     // all of which must be the command a player can actually type.
@@ -299,6 +309,7 @@ export const SERVICE_CATALOG = {
   // the correction the database row was already given once.
   snmp: {
     service: 'snmp',
+    package: 'snmp',
     pidfile: 'snmpd.pid',
     defaultPort: 161,
     // The one row that is not TCP. Real SNMP is a datagram protocol, and a scan that
@@ -343,6 +354,7 @@ export const SERVICE_CATALOG = {
   // row where the two differ.
   dns: {
     service: 'domain',
+    package: 'bind9',
     pidfile: 'named.pid',
     defaultPort: 53,
     // TCP, not UDP, though real lookups are datagrams. In this game the port serves

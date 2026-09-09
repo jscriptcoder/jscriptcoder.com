@@ -1027,15 +1027,15 @@ describe('the database a player buys', () => {
   });
 
   it('creates the /var/lib/mysql a workstation does not have, before writing into it', async () => {
-    // A fresh box has /var/log, /var/run and /var/www under /var and nothing else, so
-    // the datadir's parents have to arrive first — a write into a directory that does
-    // not exist is refused outright.
+    // The datadir's own directory has to arrive before the write — a write into a
+    // directory that does not exist is refused outright. Its PARENT no longer does:
+    // every box ships a `/var/lib` for its package manifest, so the install creates
+    // only the level the database actually adds.
     const { operations } = await buyMysql();
 
     expect(operations).toEqual([
       { kind: 'write', path: '/usr/bin/mysql' },
       { kind: 'write', path: '/usr/sbin/mysqld' },
-      { kind: 'mkdir', path: '/var/lib' },
       { kind: 'mkdir', path: '/var/lib/mysql' },
       { kind: 'write', path: DATADIR_PATH },
     ]);
@@ -1313,7 +1313,6 @@ describe('the store a player buys', () => {
     expect(operations).toEqual([
       { kind: 'write', path: '/usr/bin/redis-cli' },
       { kind: 'write', path: '/usr/sbin/redis-server' },
-      { kind: 'mkdir', path: '/var/lib' },
       { kind: 'mkdir', path: STORE_DIR },
       { kind: 'write', path: STORE_PATH },
       { kind: 'mkdir', path: '/etc/redis' },

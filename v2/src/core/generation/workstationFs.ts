@@ -29,6 +29,7 @@ import {
   SYSTEM_UTILITY_NAMES,
 } from './binaries';
 import { createLibraryEntries, SYSTEM_LIBRARIES } from './libraries';
+import { withPackageManifest } from '../packages/packageManifest';
 import {
   bootDir,
   dir,
@@ -128,7 +129,7 @@ export const buildWorkstationBaseFsFromIdentity = (identity: {
     },
   ]);
 
-  return dir(
+  const tree = dir(
     {
       bin: dir(createBinaryEntries(SYSTEM_UTILITY_NAMES), TRAVERSABLE_DIR),
       boot: bootDir(),
@@ -174,6 +175,7 @@ export const buildWorkstationBaseFsFromIdentity = (identity: {
     },
     TRAVERSABLE_DIR,
   );
+  return withPackageManifest(tree);
 };
 
 /**

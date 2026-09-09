@@ -22,6 +22,8 @@ import {
   SYSTEM_UTILITY_NAMES,
 } from './binaries';
 import { createLibraryEntries, SYSTEM_LIBRARIES } from './libraries';
+import { withPackageManifest } from '../packages/packageManifest';
+import { FIRMWARE_VENDORS, type FirmwareVendor } from '../packages/packageVersions';
 import {
   bootDir,
   dir,
@@ -168,6 +170,13 @@ const ACL_CONF_SEED = [
   'deny 8080',
 ].join('\n');
 
+/** The firmware a router-class box ships. Every device kind draws from the same
+ *  six vendors on its own seeded stream — a router, a switch and the shared access
+ *  point are all boxes somebody bought with software on them, and one pool is what
+ *  keeps that true as device kinds are added. */
+const pickFirmwareVendor = (seed: string): FirmwareVendor =>
+  createPrng(`firmware-${seed}`).pick(FIRMWARE_VENDORS);
+
 /**
  * Build a gateway device's base filesystem from the IDENTITY the server can
  * RECONSTRUCT cross-player: the root password ALREADY HASHED and whether it runs
@@ -183,6 +192,10 @@ const buildGatewayBaseFs = (
     readonly hasSsh: boolean;
     readonly hasSnmp: boolean;
     readonly snmpCommunityHash: string;
+    /** Seeds the box's firmware vendor, on its OWN stream rather than borrowed
+     *  from a credential: the vendor is what the box IS, and deriving it from a
+     *  password would move it whenever that password moved. */
+    readonly firmwareSeed: string;
   },
   configEntries: Record<string, FileNode>,
 ): Directory => {
@@ -245,7 +258,7 @@ const buildGatewayBaseFs = (
     ? [...SYSTEM_DAEMON_NAMES, daemonName(SERVICE_CATALOG.snmp)]
     : [...SYSTEM_DAEMON_NAMES];
 
-  return dir(
+  const tree = dir(
     {
       bin: dir(createBinaryEntries(SYSTEM_UTILITY_NAMES), TRAVERSABLE_DIR),
       boot: bootDir(),
@@ -288,6 +301,7 @@ const buildGatewayBaseFs = (
     },
     TRAVERSABLE_DIR,
   );
+  return withPackageManifest(tree, { firmwareVendor: pickFirmwareVendor(identity.firmwareSeed) });
 };
 
 /**
@@ -301,6 +315,10 @@ export const buildRouterBaseFsFromIdentity = (identity: {
   readonly hasSsh: boolean;
   readonly hasSnmp: boolean;
   readonly snmpCommunityHash: string;
+  /** Seeds the box's firmware vendor, on its OWN stream rather than borrowed
+   *  from a credential: the vendor is what the box IS, and deriving it from a
+   *  password would move it whenever that password moved. */
+  readonly firmwareSeed: string;
 }): Directory =>
   buildGatewayBaseFs(identity, {
     iptables: dir(
@@ -322,6 +340,7 @@ export const buildApGatewayBaseFs = (essid: string): Directory =>
   buildRouterBaseFsFromIdentity({
     adminPwHash: md5(seedApGatewayAdminPw(essid)),
     snmpCommunityHash: md5(seedApGatewayCommunity(essid)),
+    firmwareSeed: `ap-gw-${essid}`,
     hasSsh: seedApGatewayHasSsh(essid),
     // PINNED, and deliberately not read from the placement table. `ssh` can be pinned
     // there because `router: { ssh: 1 }` makes every gateway's roll succeed; the agent
@@ -350,6 +369,7 @@ export const buildInnerGatewayBaseFs = (essid: string, octet: number): Directory
   buildRouterBaseFsFromIdentity({
     adminPwHash: md5(seedInnerGatewayAdminPw(essid, octet)),
     snmpCommunityHash: md5(seedSnmpCommunity(`inner-gw-community-${essid}:${octet}`)),
+    firmwareSeed: `inner-gw-${essid}:${octet}`,
     hasSsh: true,
     hasSnmp: seedHasSnmp(`inner-gw-snmp-${essid}:${octet}`, 'router'),
   });
@@ -373,6 +393,7 @@ export const buildDeepGatewayBaseFs = (parentMachineId: string, octet: number): 
   buildRouterBaseFsFromIdentity({
     adminPwHash: md5(seedDeepGatewayAdminPw(parentMachineId, octet)),
     snmpCommunityHash: md5(seedSnmpCommunity(`deep-gw-community-${parentMachineId}:${octet}`)),
+    firmwareSeed: `deep-gw-${parentMachineId}:${octet}`,
     hasSsh: true,
     hasSnmp: seedHasSnmp(`deep-gw-snmp-${parentMachineId}:${octet}`, 'router'),
   });
@@ -388,6 +409,7 @@ export const buildDeepSwitchBaseFs = (parentMachineId: string, octet: number): D
     {
       adminPwHash: md5(seedDeepGatewayAdminPw(parentMachineId, octet)),
       snmpCommunityHash: md5(seedSnmpCommunity(`deep-sw-community-${parentMachineId}:${octet}`)),
+      firmwareSeed: `deep-sw-${parentMachineId}:${octet}`,
       hasSsh: true,
       hasSnmp: seedHasSnmp(`deep-sw-snmp-${parentMachineId}:${octet}`, 'switch'),
     },
@@ -404,6 +426,7 @@ export const buildSwitchBaseFs = (essid: string, octet: number): Directory =>
     {
       adminPwHash: md5(seedInnerGatewayAdminPw(essid, octet)),
       snmpCommunityHash: md5(seedSnmpCommunity(`inner-sw-community-${essid}:${octet}`)),
+      firmwareSeed: `inner-sw-${essid}:${octet}`,
       hasSsh: true,
       hasSnmp: seedHasSnmp(`inner-sw-snmp-${essid}:${octet}`, 'switch'),
     },

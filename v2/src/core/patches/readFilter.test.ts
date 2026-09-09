@@ -250,7 +250,9 @@ describe('filterTreeToAllowlist', () => {
     const filtered = filterTreeToAllowlist(gateway);
 
     expect(get(filtered, 'etc', 'snmp', 'snmpd.conf')?.kind).toBe('file');
-    expect(get(filtered, 'var', 'lib')).toBeUndefined();
+    // `/var/lib` survives, carrying the allowlisted package manifest. The agent's
+    // state directory beside it must not — that is where the community lives.
+    expect(get(filtered, 'var', 'lib', 'snmp')).toBeUndefined();
     expect(communityHash).toBeDefined();
     expect(JSON.stringify(serializeTree(filtered))).not.toContain(communityHash);
   });
