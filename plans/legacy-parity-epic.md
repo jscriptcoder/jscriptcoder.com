@@ -391,11 +391,16 @@ PHASE 2 — DISCOVERY
       X1 slice 3 the zone transfers                   ✅ SHIPPED v0.208.0 (#489)
       X1 slice 4 the transfer leaves a trace          ✅ SHIPPED v0.209.0 (#490)
   X2  findit.io + common website-bearing networks     ⏸ DEFERRED — Phase 3 prioritized
-PHASE 3 — VULNERABILITIES
-  V1  service versions (dpkg + nmap -sV)
-  V2  msfconsole + the vulnerability model
-  V3  apt upgrade + the patch-delay timeline
-  V4  libraries + ldd + msfconsole --local
+PHASE 3 — VULNERABILITIES                             GRILLED 2026-09-09 (23 decisions)
+      V slice 1 a version is visible          dpkg/status + nmap -sV VERSION column
+      V slice 2 a CVE is visible              WORLD_EPOCH + walker + severity
+      V slice 3 a door opens                  msfconsole shells + the trace
+      V slice 4 the defender patches          apt upgrade + list -u  <- LOOP CLOSES
+      V slice 5 six more effects              read/list/write/reset/backdoor/script
+      V slice 6 the exploit crosses networks  public IP, forwards, deep chain
+      V slice 7 reboot evicts                 server-side session end
+      V slice 8 libraries fall                ldd + msfconsole --local
+      V slice 9 firmware falls                the third axis
 ────────────────────────── SHIP ──────────────────────────
 POST-SHIP — MISSIONS
 ```
@@ -431,16 +436,20 @@ POST-SHIP — MISSIONS
 
 | # | Slice | Includes | Acceptance |
 |---|---|---|---|
-| **V1** | **A scanner reads what version a service runs** | `/var/lib/dpkg/status` parse/write; `serviceVersion` on the catalog + generation; version overlay; `nmap -sV` | `nmap -sV <host>` → real versions; tier-3 readable (already allowlisted) |
-| **V2** | **A player breaks in with no credentials** | `Vulnerability` model + `publishedAt`/`patchDelay` timeline; `msfconsole <host> <port> [arg]`; the 8 effect kinds; `exploit`/`effect_one_shot` session kinds; **server-side effect authorization** | B finds a vulnerable version → `msfconsole` → `shell_full` with no password; a patched version refuses |
-| **V3** | **A defender patches and the exploit goes inert** | `apt upgrade [svc]`; `apt install pkg=<version>`; patch-delay window (`no fix yet — ETA ~N days`); `apt list -u` | A upgrades → B's working exploit now fails; inside the delay window A is told no fix exists |
-| **V4** | **A player escalates locally through a vulnerable library** | Library **versions** on the existing dep model; `ldd`; `msfconsole --local`; library + meta-package upgrade/pin/remove | B (guest) `msfconsole --local su` → root without the root password; `ldd /bin/su` shows the vulnerable lib; A upgrades to close it |
+| **V1** ✔ | **A scanner reads what version a service runs** — **GRILLED**, now slices 1-2 | `/var/lib/dpkg/status` generated on every box (services + the 8 libraries + firmware on routers); `nmap -sV` VERSION column; `WORLD_EPOCH` + the timeline walker + the severity roll; a CVE id and severity on a live one | `nmap -sV <host>` → real versions; the world is clean for ~3 days, then CVEs start landing; tier-3 readable (already allowlisted) |
+| **V2** ✔ | **A player breaks in with no credentials** — **GRILLED**, now slices 3, 5, 6 | `msfconsole <host> <port> [arg]`; all 8 effect kinds; the exploit session row; the `formatExploit` catalog column tracing BOTH outcomes; **server-side CVE recomputation** through the one shared module the client renders from | B finds a vulnerable version → `msfconsole` → `shell_full` with no password; a patched version refuses and the target logs the bounce |
+| **V3** ✔ | **A defender patches and the exploit goes inert** — **GRILLED**, now slices 4 and 7 | `apt upgrade [pkg]`; `apt list -u` with the ETA status; `apt install pkg=<version>` downgrade-only; install sharing the upgrade resolver; `reboot` ending every session on the machine | A upgrades → B's working exploit now fails; inside the delay window A is told no fix exists; A reboots and B's shell drops |
+| **V4** ✔ | **A player escalates locally through a vulnerable library** — **GRILLED**, now slices 8 and 9 | Library timelines; `ldd`; `msfconsole --local`; the syslog trace; the extended dependency map + its effect pools; `metadata.libraryLinks` deleted; firmware as the third axis | B (guest) `msfconsole --local su` → root without the root password; `ldd /bin/su` shows the vulnerable lib; A upgrades to close it |
 
-**V2 needs its own `grill-me` and sub-split before planning** — it is the largest item in the
-epic by a wide margin and the only one that materially changes the security posture. **It also
-inherits D2.6b's postponed job**: a `password_reset`-shaped effect is now the route by which a
-player obtains a plaintext they did not already hold, so V2's split must produce one or the
-wordlist progression stays inert. See "Next action" for why `/etc/passwd` does not count.
+**Phase 3 is GRILLED — twenty-three locked decisions and a nine-slice spine** in
+["Phase 3 — resolved scope & decisions"](#phase-3--resolved-scope--decisions-grill-me-2026-09-09).
+The V1-V4 rows above are kept as the acceptance statement; the **spine is the nine slices**, which
+cut across them (V2's effect set alone spans three). Ordered **loop-first** so the attack → patch →
+inert cycle is provable at slice 4 rather than slice 6.
+
+**D2.6b's postponed job is discharged by decision 21**: `password_reset` overwrites any account
+including a player's chosen root, so it is the route by which a player obtains a plaintext they did
+not already hold. See "Next action" for why `/etc/passwd` does not count.
 
 **D5b landed before D6** ✔ (v0.157.0), as this ordering required (placement was recommended, not
 locked): role-weighted placement is what makes "find a database box" mean something, rather than a
@@ -2950,6 +2959,415 @@ logging (decision 10); MX, CNAME and TXT records (decision 14); `dig -x` reverse
   dns-role box's `/etc` role config file (D5b slice 3) should say now that the box has a real
   service behind it.
 
+## Phase 3 — resolved scope & decisions (grill-me, 2026-09-09)
+
+Twenty-three locked decisions spanning V1–V4, the last item in the epic before the ship gate.
+Unlike X1, legacy CAN hand this one over: `src/generation/timeline/`,
+`pools/{serviceTemplates,systemLibraryTemplates,vulnerabilities,routerFirmware}.ts`,
+`commands/{msfconsole,apt,ldd,libraryDeps}.ts` and `network/{dpkgStatus,applyVersionOverlay}.ts`
+are a complete, working implementation of the feature. What the grill changed is **which half of
+it is worth taking**, and the answer turned on discovering that the half legacy is famous for
+never actually ran.
+
+The purpose is the owner's: every service and library accumulates vulnerabilities as time passes,
+on one clock shared by everyone, and the only cure is upgrading. A window exists between a CVE
+publishing and its fix shipping, so nobody is ever completely immune. Services are the way IN to a
+machine; libraries are the way UP once you are on one.
+
+### Grounding that reshaped the scope before any decision
+
+- **Legacy's service treadmill was inert.** `machineConfig.ts:536` seeds every machine's
+  `/var/lib/dpkg/status` with all 8 libraries at their `startTuple`, so the LIBRARY treadmill
+  genuinely ran from day 3. Services are seeded from `port.serviceVersion`, which on every
+  ordinary generated box is `defaultServiceVersion()` → the literal string `'latest'`, chosen so
+  *"findVulnForService(anyService, 'latest') always returns undefined"*, and `applyVersionOverlay`
+  skips that sentinel explicitly. A service CVE could only ever land on a box that mission
+  enrichment had FORCED onto a hand-authored version. Legacy shipped the walker, the timelines and
+  all eight effects, and **no ordinary NPC was ever exploitable through a service.** Filling that
+  hole is the first thing Phase 3 does.
+- **Legacy's clock is per-browser.** `session/gameTime.ts` anchors on
+  `localStorage['jshack.gameStartedAt']`, set on that browser's first launch. Two players who
+  started a week apart sit on different days of the same timeline, and clearing storage resets the
+  world. Nothing about it survives.
+- **Legacy's effect tier was envelope-trusted**, and said so in its own comment: *"tier comes from
+  the effect (envelope-trusted today; forge-bypass closure deferred)"*.
+- **v2 has already shipped the library PRESENCE layer.** `core/commands/libraryDeps.ts` is ported
+  verbatim and wired into `registry.ts` inside the binary check; `core/generation/libraries.ts`
+  stamps eight `/lib/<lib>.so` stubs. `rm /lib/libpcre.so` already breaks `ls`, `grep`, `cat`, `rm`
+  and `chmod` with the real dynamic-linker error and exit 127 — today, with no `apt remove` needed.
+- **v2's service catalog was written for this epic.** On `banner`: *"DELIBERATELY VERSION-FREE… a
+  build (`OpenSSH_8.9p1`) is not [fine]. Versions are the package manifest's to tell —
+  `/var/lib/dpkg/status` is where a version scan reads them — and a version baked in here would be
+  a second, contradicting source of truth for the fact vulnerabilities are keyed on."* Every row
+  also already carries `sweepLog: { path, owner, permissions, formatAttempt }`.
+- **Two binaries are stamped with no command behind them** — `ldd` in `SYSTEM_UTILITY_NAMES`
+  (`binaries.ts:75`) and `msfconsole` via `apt install metasploit` (`aptPackages.ts:143`). The
+  `dig` situation X1 called out, standing open for two more slices.
+- **`metadata.libraryLinks` is declared, round-tripped by the codec, and never populated or read** —
+  and its only example value (`/lib/libc.so.6`) contradicts the deliberate libc exclusion.
+- **Rooting a shared AP is already reachable.** Its admin password is ESSID-seeded and `hydra`
+  sweeps the gateway behind any public IP (D2.4). Firmware adds a second route to a beat that
+  already exists, not a new class of risk.
+- **PvP cannot currently reach root at all.** A player's chosen root password *"never cracks"*, and
+  D2.6b is postponed — so `msfconsole` is the FIRST real route to rooting another player. This
+  phase, not any earlier door, is what sets the game's PvP stakes.
+- **v2 sessions never expire** (`ended_at IS NULL` is active indefinitely) and `reboot` pops only
+  the REBOOTER's own hop chain (`reboot.ts:64`), client-side. Nothing in the game today removes
+  another player's session row from a machine.
+
+### Locked decisions
+
+#### 1. World time is a hardcoded epoch constant — not a row, not a round trip
+
+`WORLD_EPOCH` lives in `core/` beside the timing config, and `gameDay = floor((now − EPOCH) /
+86400000)` off UTC. Identical for every player by construction, with no table to seed, no fetch to
+cache and no offline story to write.
+
+The client computes it to RENDER (`nmap -sV`, `apt list -u`); the server recomputes it from its own
+clock to AUTHORIZE. That is the same client-renders / server-enforces split `deepScanHosts`,
+`sweepWord` and `contentHash` already use, and it means a forged client clock changes what a player
+SEES and never what they GET.
+
+#### 2. The epoch starts at zero, and the hand-authored CVE table is dropped
+
+`WORLD_EPOCH` is the launch date. The world is genuinely clean for the first ~3 days, then CVEs
+begin landing one at a time while the earliest players watch — the treadmill introduces itself
+rather than arriving pre-loaded.
+
+This is what lets legacy's `pools/vulnerabilities.ts` (410 lines of hand-authored day-0 CVEs) AND
+the two-layer lookup inside `findVulnForService` both go. One procedural source of truth for every
+CVE in the game, on every axis.
+
+#### 3. Legacy's timing config ports verbatim
+
+Safe window 3–14 game days between CVEs for a package, patch delay 1–2 days, bump weights 80% patch
+/ 15% minor / 5% major, and **1 game day = 1 real day**. On a box running two or three services plus
+the eight libraries that is a new CVE roughly every 0.8 days, so a player is almost always exposed
+on something and daily attention is the price of safety.
+
+`assertCveTimingInvariants` ports with it: `maxPatchDelayDays` must stay strictly below
+`minSafeWindowDays` or a fix could arrive after the next version's own CVE, leaving no safe window
+at all. All four values are constants in one file — retuning after playtest is a one-line change.
+
+#### 4. NPC boxes freeze at `startTuple` and never patch
+
+Every generated machine's services sit on their template's starting tuple forever. Its CVE
+publishes on day 3–14 and stays live permanently, because the box never moves off that version.
+
+This is **a deliberate placeholder for NPC maintainer actors**, not a claim that unattended boxes
+never patch: simulated owners who run their own upgrades are planned, and they are what will close
+the decay. Recording the reason matters, because the alternative considered — a seeded per-box
+patch LAG making the version a pure function of game time — is a different and incompatible model,
+and it should not be reintroduced as a "fix" for a consequence that is already understood.
+
+#### 5. NPC libraries freeze too
+
+One rule for every package on every generated box. The consequence is named plainly in the
+accepted-costs section below: from ~day 14, any shell on any NPC escalates to root through
+`msfconsole --local`, permanently. Accepted; the same maintainer actors close it.
+
+The rejected alternative was Debian's `unattended-upgrades` asymmetry — libraries auto-patching
+while services stay frozen, so local privesc becomes a rotating 1–2 day window keyed to whichever
+library is currently unfixed. It is more realistic and better balanced, and it was declined in
+favour of one rule with one later fix.
+
+#### 6. The player's own libraries freeze too — patch or die
+
+The player's box is generated like any other, so their `/lib` starts at `startTuple` as well.
+`apt upgrade` is the entire defence, and neglect is genuinely fatal. This is the strongest form of
+the engagement loop the feature exists to create, and it needs no asymmetry to explain.
+
+The kill chain this creates against an inattentive player is spelled out in the accepted-costs
+section. It is closed completely by upgrading.
+
+#### 7. `apt install` gives the current latest-safe version, through the upgrade resolver
+
+Install and upgrade resolve their target version through ONE function — an install is an upgrade
+from nothing. A fresh install is therefore born clean rather than born six months stale, and inside
+a patch-delay gap it falls back to the newest published version, so installing into a window leaves
+you exposed exactly as everyone else already is.
+
+The generated baseline stays `startTuple` (decision 4). Two boxes running "nginx" can sit on very
+different versions depending on how each got it, and that is correct: the world was built once,
+what you install today comes from the repo as it is today.
+
+#### 8. All eight effect kinds
+
+`shell_full`, `shell_limited`, `file_read`, `dir_list`, `file_write`, `password_reset`,
+`backdoor_port_open`, `script_exec`.
+
+The weak effects are load-bearing, not padding: they are what stops a frozen NPC from being
+uniformly generous. Trimmed to only the access-granting four, more than half of every exploitable
+box would hand over a real door and `hydra` would lose its job.
+
+Four map onto machinery v2 already has — `shell_full` and `shell_limited` mint sessions (the
+restricted NC shell exists), `backdoor_port_open` writes an `nc` pidfile patch with D5's chain
+forwarding, `password_reset` writes an `/etc/passwd` patch. `file_read` and `dir_list` need only a
+server-computed response payload. `file_write` and `script_exec` need a CVE-authorized write and
+exec path. `script_exec` is pre-committed: D9 deferred it here by name and kept `nc -l`
+script-runnable specifically to serve it.
+
+#### 9. Severity decides the tier
+
+`critical` → root, `high` → user, `medium`/`low` → guest. **Libraries floor at user**: `critical`
+and `high` → root, `medium` and `low` → user, because the library route IS the privesc route and a
+critical-only root rate would make the trip not worth taking.
+
+Legacy's `severity` was decorative and admitted it — *"all four produce the same mechanical
+outcome"*. Coupling it to tier gives the field a job, collapses two independently-rolled facts into
+one, and makes `nmap -sV` genuinely predictive: read the severity, know what the door is worth
+before spending a move on it. The draw is still random, because severity itself is rolled
+(`pickGeneratedSeverity`: 10 / 50 / 30 / 10), which lands services at root 10% / user 50% /
+guest 40%.
+
+This also fixes the delta between legacy and the design: legacy's `SYSTEM_COMMAND_EFFECT_POOLS`
+hardcodes `tier: 'root'` on every entry, so `--local` always jumped straight to root. Under the
+floor it is a real guest → user → root ladder.
+
+#### 10. Three CVE axes — services, libraries, and router firmware
+
+Firmware ports as legacy has it: per-vendor timelines, a `firmwareVendor` on router-role machines,
+a synthetic `firmware` package in dpkg, and `findExploitableCve` falling back to it when a port has
+no service CVE. Routers, switches AND the shared AP gateway are all in.
+
+A fully patched gateway can therefore still fall, which makes network infrastructure a target class
+in its own right. It does not introduce the network-brick beat — rooting a shared AP is already
+reachable through `hydra` against its ESSID-seeded admin password.
+
+#### 11. `libraryDeps` is the single authority for what a command links; `metadata.libraryLinks` is deleted
+
+`ldd` and `msfconsole --local` read the same map, so they cannot drift — `ldd` can never point at a
+library the exploit will not use. Deleting the FS field removes speculation rather than behaviour:
+nothing populates it, nothing reads it, and its only example value contradicts the libc exclusion
+it was meant to serve. One codec test updates.
+
+#### 12. The dependency map extends to the game's own tools, keeping eight libraries
+
+`libraryDeps` covers 17 of 67 commands today. Plausible links get added for the uncovered
+toolchain — `nmap`, `node`, `hydra`, `gpg`, `lynx` and their kin — while shell builtins and UI
+commands (`cd`, `echo`, `pwd`, `whoami`, `clear`, `theme`) stay deliberately library-free. The
+map only ever GROWS, so the ported mapping's "must not be invented or simplified" rule holds.
+
+The thematic grouping stays and is load-bearing, not sloppiness: eight commands share `libpcre`,
+but each rolls its OWN effect from its own pool, so one library CVE lets the player **pick their
+payload by picking the command** — `ls` for `dir_list`, `grep` for `file_read`, `rm` for
+`file_write`. A realistic re-derivation against real Debian link sets would scatter that, grow the
+library set well past eight and re-roll `/lib` on every box; it was declined for exactly that.
+
+Every command added to the map needs its own `SYSTEM_COMMAND_EFFECT_POOLS` entry, or it is mapped
+but not exploitable.
+
+#### 13. `nmap -sV` reports the version, the CVE id and its severity — never the effect
+
+A VERSION column always; a CVE line carrying its id and severity when one is live. **Severity
+forecasts the privilege, the exploit reveals the capability.** The player learns a known bug exists
+and how high they would land, and still has to fire to find out what they get.
+
+Legacy printed the description and an effect hint too (`formatEffectHint`), which made `msfconsole`
+a confirmation rather than an act. That is trimmed.
+
+#### 14. The version scan reads `/var/lib/dpkg/status` server-side; the banner stays version-free
+
+Resolve the target, read its filesystem, report — exactly how `resolvePublicScan` already reads a
+target's `rules.v4` and `readOpenPorts` reads its pidfiles. The file is world-readable in Debian
+and already tier-3 allowlisted.
+
+The rejected alternative was making `banner` a FUNCTION of the dpkg version, which would keep one
+source of truth while letting the daemon announce its own build (and hand `nc` a fingerprinting
+job for free). It is the better fiction and it was declined as a change to a shipped catalog field
+and every banner test, for a difference invisible in play.
+
+#### 15. A successful exploit writes through a `formatExploit` column on the catalog row
+
+The destination reuses that row's existing `sweepLog` path, owner and permissions; the row gains
+one sibling formatter saying what an EXPLOIT looks like on that daemon, because `formatAttempt`
+formats a credential attempt and writing "Failed password" for an exploit would be a lie. An http
+CVE leaves a traversal in `access.log`, a mysql one a suspicious query in `mysql.log`.
+
+**The line must name the CVE.** That is not decoration — under decision 21 it is the defender's
+only route back to their own root password.
+
+This is legacy's per-service truthfulness without legacy's `AttackPattern` model (a six-variant
+union on every CVE plus a 389-line formatter dispatch). v2's rows already know where each service
+logs; a second authority over that fact is exactly the drift D8 refused.
+
+#### 16. A failed exploit writes to the same log as a successful one
+
+A refused-attempt line from the same `formatExploit` family, in the service's own log. One
+destination per service for both outcomes, so a defender greps one file and sees the whole story —
+and patching finally pays a visible dividend: *someone came for you and bounced*.
+
+Legacy split these, sending failures to `/var/log/syslog` while successes went to the service log,
+scattering one attacker's activity across two files.
+
+#### 17. `msfconsole --local` writes a syslog line naming command, library and tier
+
+`/var/log/syslog`, because a library has no daemon and `auth.log` would dress a memory-corruption
+exploit as an authentication event. It closes the incentive legacy left open: with `su` logging
+`Successful su for root by guest` and `--local` logging nothing, the exploit was a strictly better
+AND quieter route to the same place.
+
+It is also the defender's one clue that says *patch your libraries, not your services*.
+
+#### 18. Root is root — an exploit session is an ordinary session row, brick included
+
+The exploit mints a `sessions` row at the granted tier, kind `exploit`, and every existing gate
+treats it exactly like an ssh login. No special cases anywhere, including the `/boot` path: a
+CVE-granted root shell can `rm /boot/vmlinuz` and permanently brick the target.
+
+The odds keep it dramatic rather than routine — root needs a `critical` roll (10%) and a
+shell-class effect (roughly 2 in 10 of a service pool), so about **2% of a player's vulnerable
+services hand a stranger a root shell with no credential at all** — and only inside a window the
+player can close by upgrading or by stopping the service.
+
+#### 19. Sessions persist through a patch
+
+Patching stops NEW exploits; it does not terminate a live shell, which is what happens in
+reality. `apt upgrade` is not an eviction tool.
+
+The rejected alternative — patching a package evicts sessions opened through it, recorded via one
+nullable column on the session row — would have made V3's title literally true at the cost of a
+mechanic that does not exist outside the game.
+
+#### 20. `reboot` ends every session on the machine, server-side
+
+The defender's answer to *"I think I am compromised"* is the real-world one. `reboot` today pops
+only the rebooter's own hop chain client-side, so decision 19 without this would leave an exploit
+session permanently in place with no tool in the game able to remove it.
+
+The interaction is deliberate and worth knowing: if the intruder already deleted `/boot/vmlinuz`,
+the defender's reboot-to-evict is what bricks them.
+
+#### 21. `password_reset` has full power, is deterministic, and offers no recovery hint
+
+The effect overwrites any account's hash including a player's chosen root, with
+`md5("pwned-<last4-of-cve>-<tier>")`, and tells only the attacker the plaintext. This is the job
+the epic assigned this phase — the route by which a player obtains a plaintext they did not already
+hold, without which D2.6b's wordlist progression stays inert.
+
+Recovery exists and is earned, not given: the trace names the CVE (decision 15), and any player who
+has ever run `password_reset` themselves has seen the `pwned-XXXX-<tier>` shape. A defender who
+reads their own logs and understands the mechanic gets their root back. One who does not has
+permanently lost root on their own machine.
+
+The rejected alternatives were naming the new credential in the trace line (recovery for free, and
+the attacker's window becomes "until they read their logs"), and extending v2's existing "a
+player's chosen root password never cracks" rule from being REACHED to being OVERWRITTEN — which
+would leave the effect able to reset only `guest` on a player's box, the account the attacker
+already came in through, and leave the epic's job unmet.
+
+#### 22. The apt surface is upgrade, list -u, and downgrade-only pinning
+
+`apt upgrade [package]`, `apt list -u` carrying the `[vulnerable, no fix yet — ETA ~N days]`
+status, and `apt install pkg=<version>` restricted to **already-published** versions. Legacy's
+730-day forward walk is dropped as time travel.
+
+Pinning earns its place as an attacker tool, not a defender one: root someone's box and pin their
+`sshd` back to a version with a live CVE, and you have planted a backdoor that looks like
+nothing — no pidfile, no forward rule, no new account, just a version number in a file nobody
+reads. A subtler persistence mechanic than D5's `nc` breadcrumb.
+
+Legacy's four library meta-packages (`auth-libs`, `crypto-libs`, `system-libs`, `data-libs`) and
+`apt remove <library>` are deferred: bare `apt upgrade` already covers the bundle case, and
+`rm /lib/<lib>.so` as root already breaks the linked commands, so both are convenience over
+capability the player already has.
+
+#### 23. `msfconsole` runs from a script; shell effects report instead of entering
+
+From a `node` script the exploit runs and state still changes — a backdoor is planted, a password
+reset, a file written, a script injected — but a shell effect REPORTS (`root shell available on
+<host>`) rather than pushing a session, and the player enters from the prompt.
+
+This mirrors the grammar the game already has (`hydra` finds a credential, `ssh` uses it), keeps
+D9's per-line-snapshot rule intact, and makes mass exploitation scriptable, which is what D9's own
+`sweep.js` example was reaching toward. A `withoutScript` function of the arguments could not have
+decided this: two of the eight effects push a session and which one fires is unknowable until the
+exploit runs.
+
+### Forced rather than chosen (planning should not re-litigate)
+
+- **`/var/lib/dpkg/status` is THE version source.** Settled by the catalog's own shipped comment,
+  not by this grill. Every consumer — `nmap -sV`, `msfconsole`, `apt`, the server's authorization —
+  reads that file, base FS plus journal replay like everything else.
+- **`msfconsole` resolves targets through `resolvePublicTarget` / `resolveInnerGatewayTarget`** —
+  the same modules `ssh` and `hydra` authenticate through. D2.4 made "hydra must never disagree with
+  ssh" structural; a third tool resolving its own targets would undo that.
+- **The server recomputes the CVE independently through one shared `core/` module.** Nothing the
+  client sends about version, CVE, severity, effect or tier is trusted. The client calls the same
+  pure function to render.
+- **`ldd` and `msfconsole` attach to binaries v2 already stamps.** No packaging work: the binaries
+  exist, the gate is filesystem-driven, and the commands are what is missing.
+- **A stopped service is not exploitable.** No pidfile means no open port means no target, through
+  the reachability chain every other door already shares.
+
+### Folded in as routine (recorded so they are not re-decided)
+
+- `nmap -sV` on your own box or `localhost` reports your own CVEs — a second defender view beside
+  `apt list -u`, at no extra cost.
+- Deep-chain hosts and inner gateways are exploitable through the resolvers slice 6 wires, not
+  through a parallel path.
+- Legacy's `msfconsole` phase output (`[*] Targeting …`, `[*] Vulnerability: …`, `[*] Sending
+  exploit payload…`, `[+] Exploit successful!`) ports as-is, jitter and Ctrl-C included.
+- A `--local` exploit may run on your own box; skipping `su` on a machine you already own costs
+  nobody anything.
+- `apt list -u` covers services, libraries and firmware alike — one manifest, one status view.
+
+### Slice spine (each vertical + observable)
+
+Ordered **loop-first**: the attack → patch → inert cycle is provable at slice 4, so the treadmill
+can be played and retuned before the effect set widens. Capability-first ordering (the whole
+attacking surface, then a defence) was rejected — it ships the world lopsided and leaves the
+central mechanic unplayable until slice 6.
+
+| # | Slice | Observable |
+|---|---|---|
+| **1** | **A version is visible** | `/var/lib/dpkg/status` generated on every box from its running services + eight libraries (+ firmware on routers); `nmap -sV` gains a VERSION column; the file reads on your own box and on one you hold. No CVEs yet |
+| **2** | **A CVE is visible** | `WORLD_EPOCH` + the timeline walker + the severity roll; `nmap -sV` prints a CVE id and severity for a live one. The world is clean for three days and then starts moving. Nothing is exploitable yet — the player can only watch it happen |
+| **3** | **A door opens** | `msfconsole <host> <port>` on your own LAN; `shell_full` and `shell_limited`; the exploit session row; the `formatExploit` catalog column with BOTH outcomes traced. A stale NPC service hands over a shell with no credential, and the box records it |
+| **4** | **The defender patches** | `apt upgrade [package]`, `apt list -u` with the ETA status, install sharing the upgrade resolver. **The loop closes**: A upgrades, B's working exploit now fails, and inside the delay window A is told no fix exists |
+| **5** | **Six more effects** | `file_read`, `dir_list`, `file_write`, `password_reset`, `backdoor_port_open`, `script_exec` — the third-argument grammar, the CVE-authorized write and exec paths, and D5's backdoor chain forwarding reused whole |
+| **6** | **The exploit crosses networks** | Public IPs, NAT forwards, inner gateways and the deep chain, through the resolvers `ssh` and `hydra` already share. The first real route to rooting another player |
+| **7** | **Reboot evicts** | `reboot` ends every session row on that machine server-side, not just the rebooter's stack. The defender gets an answer; the intruder who deleted `/boot/vmlinuz` gets the last laugh |
+| **8** | **Libraries fall** | Library timelines; `ldd`; `msfconsole --local <command>`; the syslog trace; the extended dependency map with its new effect pools; `metadata.libraryLinks` deleted. Guest becomes root without the root password |
+| **9** | **Firmware falls** | The third axis on routers, switches and the shared AP gateway — a fully patched gateway can still be taken |
+
+Slices 1 and 2 could merge; they are split because a VERSION column is independently useful and
+independently wrong-able. 3 needs 2. 4 needs 3 and is the first slice worth playtesting. 5, 6 and 7
+each need 3. 8 needs 2 (the walker) and 3 (the effect dispatch), not 5. 9 needs 8's second-axis
+shape.
+
+### Deliberately NOT built (recorded so nobody re-opens them)
+
+Legacy's hand-authored day-0 CVE pool and the two-layer lookup (decision 2); a seeded per-box patch
+LAG making NPC versions a function of game time (decision 4 — a different model, not a fix);
+`unattended-upgrades` asymmetry between libraries and services (decisions 5 and 6); an effect hint
+or description in `nmap -sV` (decision 13); version-bearing banners and `nc` fingerprinting
+(decision 14); legacy's `AttackPattern` union and its formatter dispatch (decision 15);
+patch-triggered session eviction (decision 19); naming the reset credential in the defender's trace
+(decision 21); library meta-packages, `apt remove <library>` and forward version pinning
+(decision 22); a full re-derivation of the dependency map against real Debian link sets
+(decision 12); `libc` as a modelled library, whose blast radius would collapse play to *am I in a
+libc window?*.
+
+### Open for planning (named, deliberately not decided)
+
+- **The exact `WORLD_EPOCH` date.** It is one constant, but it is the only irreversible number in
+  the phase — every CVE id, publication date and severity in the game derives from it, and moving
+  it later re-rolls the world's whole history.
+- **The effect pools for the newly-mapped commands** (decision 12). `nmap`, `node`, `hydra`, `gpg`
+  and `lynx` each need a `SYSTEM_COMMAND_EFFECT_POOLS` entry, and what a `node` CVE should yield is
+  a content question with real reach — `script_exec` through the script runner is close to circular.
+- **The firmware vendor set and its placement** across routers, switches and AP gateways
+  (decision 10). Legacy's `routerFirmware.ts` is a starting point, not an answer, now that v2 has
+  three device kinds legacy did not.
+- **Where the CVE derivation module lives and what it is called.** It is called by the client to
+  render and by the server to authorize, so it belongs beside the other shared pure resolvers —
+  but whether services, libraries and firmware share one entry point or three is a shape question
+  for slice 2 that decides how slices 8 and 9 attach.
+- **Whether `formatExploit` is a required or optional catalog column.** Every row needs one
+  eventually; whether a row without one is a type error or falls back to a generic syslog line
+  decides how slice 3 lands against seven rows at once.
+
 ## Open branches (named, not yet decided)
 
 1. ~~**`nc -l` semantics (D5)**~~ — **RESOLVED 2026-08-16 at D5's grill.** A session with no
@@ -3567,9 +3985,31 @@ are now resolved. **A door is not proven by its wire-checks alone** — the wire
 green and could not see any of this, because the defects live in the one vantage no endpoint
 answers. One session's browsing produced four findings, three of them invisible to a green suite.
 
-**➡️ NEXT: Phase 3 — vulnerabilities.** X1 closed Phase 2's first door (below). X2 (`findit.io` and
-networks a player was never told about) is **deferred by decision** — Phase 3 is the priority — and
-stays ungrilled; see the X2 rows in the spine and the acceptance table.
+**➡️ NEXT: Phase 3 slice 1 — a version is visible.** Phase 3 was **grilled 2026-09-09**:
+twenty-three locked decisions and a nine-slice, loop-first spine in
+["Phase 3 — resolved scope & decisions"](#phase-3--resolved-scope--decisions-grill-me-2026-09-09).
+It is ready for `planning`; nothing else in the epic blocks it. X2 (`findit.io` and networks a
+player was never told about) stays **deferred by decision** and ungrilled — see the X2 rows in the
+spine and the acceptance table.
+
+**What the Phase 3 grill found before deciding anything**, and the reason the port is a partial
+one: **legacy's service treadmill never actually ran.** `machineConfig.ts:536` seeds every machine's
+`/var/lib/dpkg/status` with all 8 libraries at their `startTuple`, so the LIBRARY treadmill worked
+from day 3 — but services are seeded from `defaultServiceVersion()`, the literal string `'latest'`,
+chosen so *"findVulnForService(anyService, 'latest') always returns undefined"*, and
+`applyVersionOverlay` skips that sentinel explicitly. A service CVE could only ever land on a box
+mission enrichment had FORCED onto a hand-authored version. Legacy shipped the walker, the
+timelines and all eight effects, and **no ordinary NPC was ever exploitable through a service.**
+The other two deltas were known going in: legacy's clock is `localStorage`-anchored per browser,
+and its effect tier was envelope-trusted by its own admission.
+
+**Three consequences are accepted knowingly** and are recorded in the decision section rather than
+left to be rediscovered as bugs. From ~day 14 any shell on any NPC escalates to root through
+`msfconsole --local`, permanently (decision 5 — closed later by the planned NPC maintainer actors).
+`hydra` guest → `--local su` → root → brick is a live kill chain against any player who stops
+upgrading, and `apt upgrade` closes it completely (decision 6). And `password_reset` can
+permanently cost a player root on their own box if they never learn the convention (decision 21),
+which is why decision 15 requires the exploit trace to name the CVE.
 
 **X1 slice 1 SHIPPED at v0.206.0 (PR #487)** — a name resolves. `apt install dnsutils` installs
 `nslookup` and `dig`, and a name is now accepted anywhere an address was, through ONE shared

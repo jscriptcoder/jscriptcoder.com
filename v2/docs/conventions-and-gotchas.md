@@ -169,6 +169,23 @@ itself. **Phase 2 — discovery** opened and closed its first door: X1 (DNS) SHI
 (v0.206.0–v0.209.0, #487–#490). X2 (`findit.io` and networks a player was never told about) is
 **deferred by decision** — Phase 3 (vulnerabilities) is the priority — and stays ungrilled.
 
+**Phase 3 — vulnerabilities is GRILLED (2026-09-09) and ready for `planning`.** Twenty-three locked
+decisions and a nine-slice, loop-first spine live in the epic. Three things a v2 session should know
+before touching it:
+
+- **Legacy's service treadmill never ran.** Its 8 libraries were seeded at `startTuple` so the
+  LIBRARY timeline worked, but services were seeded `'latest'` — a sentinel picked so no CVE could
+  ever match — and `applyVersionOverlay` skips it explicitly. Only mission enrichment ever made a
+  service exploitable. Do not read legacy's timeline code as proven gameplay; it is proven
+  machinery that was never wired to services.
+- **The clock is a hardcoded `WORLD_EPOCH` constant in `core/`**, not a row and not a round trip.
+  Client computes `gameDay` to RENDER, server recomputes from its own UTC clock to AUTHORIZE — the
+  same split `deepScanHosts` and `sweepWord` already use. Legacy's `localStorage` anchor does not
+  survive.
+- **`/var/lib/dpkg/status` is the single source of truth for every version**, settled by the service
+  catalog's own shipped comment on `banner` ("DELIBERATELY VERSION-FREE … versions are the package
+  manifest's to tell"). Nothing else may carry a version.
+
 - **X1 (a name resolves) ✅ SHIPPED COMPLETE — all four slices (v0.206.0–v0.209.0, #487–#490).** The
   fourteen decisions and the as-built per-slice record live in the epic (the per-slice plan file was
   retired at close-out). The durable shape:
