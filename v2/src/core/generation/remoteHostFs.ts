@@ -47,6 +47,7 @@ import {
   SYSTEM_UTILITY_NAMES,
 } from './binaries';
 import { createLibraryEntries, SYSTEM_LIBRARIES } from './libraries';
+import { withPackageManifest } from '../packages/packageManifest';
 import {
   bootDir,
   dir,
@@ -332,7 +333,7 @@ export const buildRemoteHostFs = (essid: string, host: LanHost): Directory => {
       }
     : {};
 
-  return dir(
+  const tree = dir(
     {
       bin: dir(createBinaryEntries(SYSTEM_UTILITY_NAMES), TRAVERSABLE_DIR),
       boot: bootDir(),
@@ -451,4 +452,5 @@ export const buildRemoteHostFs = (essid: string, host: LanHost): Directory => {
     },
     TRAVERSABLE_DIR,
   );
+  return withPackageManifest(tree);
 };

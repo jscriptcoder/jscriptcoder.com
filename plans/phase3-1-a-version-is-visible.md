@@ -121,8 +121,8 @@ apt-managed by the player. That is decision 10's wording, not a new exception.
 - [ ] Every generated box — the player's workstation, an NPC LAN host, a deep host, and all five
       router-class boxes — carries `/var/lib/dpkg/status` in real dpkg RFC-822 format: blank-line
       separated blocks of `Package:` / `Status: install ok installed` / `Version:`.
-- [ ] The manifest lists a service package iff the box carries that service's daemon binary, all
-      eight libraries on every box, and `firmware` on router-class boxes only.
+- [ ] The manifest lists a service package iff the GENERATED box carries that service's daemon
+      binary, all eight libraries on every box, and `firmware` on router-class boxes only.
 - [ ] Package names are apt package names (`openssh-server`, `bind9`, `libpcre`); `Version` holds
       the bare tuple (`9.7.0`), never a vendor prefix.
 - [ ] `cat /var/lib/dpkg/status` works on your own box, and on a box you hold a session on.
@@ -249,6 +249,22 @@ Per PR, from `v2/`:
 - **Version-bearing banners.** Decision 14 rejected them; `ServiceSpec.banner` stays
   version-free and its comment stays true.
 - **`metadata.libraryLinks` deletion.** Decision 11, slice 8.
+
+## Found during 1a, and owed to a later slice
+
+- **`apt install` does not yet update the manifest.** The manifest is generated from the box's
+  base tree, and `apt install nginx` adds `/usr/sbin/nginx` as a journal PATCH over that base — so
+  a player who buys a daemon carries a binary the manifest does not name. It is the same class of
+  staleness the "installed, not running" rule fixed for generated boxes, and it lands where the
+  apt work already is: **slice 4 must write a manifest patch alongside the binary patch**, exactly
+  as `apt install` already writes its data files. It is invisible until then because nothing reads
+  the manifest for a player-installed daemon: slice 1b's VERSION column simply shows no version
+  for a port whose package is unlisted, which is the same cell a planted backdoor gets.
+- **`openssh-server`, `vsftpd` and the eight libraries are not yet rows in `APT_PACKAGES`.**
+  Decision A says the manifest names apt packages, and nothing currently enforces that the two
+  namespaces agree. Adding installable rows now would let a player `apt install openssh-server`
+  for a daemon every box already has, and no test demands them. **Slice 4 owns closing this**, and
+  should add a check that every package name the manifest can emit is one apt knows.
 
 ## Open, and deliberately carried forward
 

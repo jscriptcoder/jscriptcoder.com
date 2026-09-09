@@ -824,7 +824,12 @@ describe('buildRemoteHostFs', () => {
       const varDir = external.entries.get('var');
       const lib = varDir?.kind === 'directory' ? varDir.entries.get('lib') : undefined;
 
-      expect(lib).toBeUndefined();
+      // `/var/lib` itself survives the filter, because the package manifest under it is
+      // allowlisted on purpose — a version scan reads it with no session. What must not
+      // survive is the datadir beside it, so the assertion is on the neighbour rather
+      // than on the parent they share.
+      expect(lib?.kind).toBe('directory');
+      expect(lib?.kind === 'directory' ? [...lib.entries.keys()] : []).toEqual(['dpkg']);
     });
 
     it('plants /var/log/mysql.log empty where the daemon runs, and nowhere else', () => {
