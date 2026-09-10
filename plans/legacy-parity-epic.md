@@ -392,7 +392,9 @@ PHASE 2 — DISCOVERY
       X1 slice 4 the transfer leaves a trace          ✅ SHIPPED v0.209.0 (#490)
   X2  findit.io + common website-bearing networks     ⏸ DEFERRED — Phase 3 prioritized
 PHASE 3 — VULNERABILITIES                             GRILLED 2026-09-09 (23 decisions)
-      V slice 1 a version is visible          dpkg/status + nmap -sV VERSION column
+      V slice 1 a version is visible          ✔ SHIPPED v0.210.0-v0.211.0 (#491, #494)
+        1a every box carries a manifest       ✅ SHIPPED v0.210.0 (#491)
+        1b nmap -sV prints the version        ✅ SHIPPED v0.211.0 (#494)
       V slice 2 a CVE is visible              WORLD_EPOCH + walker + severity
       V slice 3 a door opens                  msfconsole shells + the trace
       V slice 4 the defender patches          apt upgrade + list -u  <- LOOP CLOSES
@@ -436,7 +438,7 @@ POST-SHIP — MISSIONS
 
 | # | Slice | Includes | Acceptance |
 |---|---|---|---|
-| **V1** ✔ | **A scanner reads what version a service runs** — **GRILLED**, now slices 1-2 | `/var/lib/dpkg/status` generated on every box (services + the 8 libraries + firmware on routers); `nmap -sV` VERSION column; `WORLD_EPOCH` + the timeline walker + the severity roll; a CVE id and severity on a live one | `nmap -sV <host>` → real versions; the world is clean for ~3 days, then CVEs start landing; tier-3 readable (already allowlisted) |
+| **V1** ◐ | **A scanner reads what version a service runs** — **GRILLED**, now slices 1-2; **slice 1 SHIPPED v0.210.0-v0.211.0 (#491, #494)** — the version half is done, the CVE half is slice 2 | `/var/lib/dpkg/status` generated on every box (services + the 8 libraries + firmware on routers); `nmap -sV` VERSION column; `WORLD_EPOCH` + the timeline walker + the severity roll; a CVE id and severity on a live one | `nmap -sV <host>` → real versions; the world is clean for ~3 days, then CVEs start landing; tier-3 readable (already allowlisted) |
 | **V2** ✔ | **A player breaks in with no credentials** — **GRILLED**, now slices 3, 5, 6 | `msfconsole <host> <port> [arg]`; all 8 effect kinds; the exploit session row; the `formatExploit` catalog column tracing BOTH outcomes; **server-side CVE recomputation** through the one shared module the client renders from | B finds a vulnerable version → `msfconsole` → `shell_full` with no password; a patched version refuses and the target logs the bounce |
 | **V3** ✔ | **A defender patches and the exploit goes inert** — **GRILLED**, now slices 4 and 7 | `apt upgrade [pkg]`; `apt list -u` with the ETA status; `apt install pkg=<version>` downgrade-only; install sharing the upgrade resolver; `reboot` ending every session on the machine | A upgrades → B's working exploit now fails; inside the delay window A is told no fix exists; A reboots and B's shell drops |
 | **V4** ✔ | **A player escalates locally through a vulnerable library** — **GRILLED**, now slices 8 and 9 | Library timelines; `ldd`; `msfconsole --local`; the syslog trace; the extended dependency map + its effect pools; `metadata.libraryLinks` deleted; firmware as the third axis | B (guest) `msfconsole --local su` → root without the root password; `ldd /bin/su` shows the vulnerable lib; A upgrades to close it |
@@ -3321,7 +3323,7 @@ central mechanic unplayable until slice 6.
 
 | # | Slice | Observable |
 |---|---|---|
-| **1** | **A version is visible** | `/var/lib/dpkg/status` generated on every box from its running services + eight libraries (+ firmware on routers); `nmap -sV` gains a VERSION column; the file reads on your own box and on one you hold. No CVEs yet |
+| **1** ✅ | **A version is visible** — **SHIPPED v0.210.0-v0.211.0 (#491, #494)** | `/var/lib/dpkg/status` generated on every box from the daemon binaries it CARRIES (not what it runs — see the close-out) + eight libraries (+ firmware on routers); `nmap -sV` gains a VERSION column; the file reads on your own box and on one you hold. No CVEs yet |
 | **2** | **A CVE is visible** | `WORLD_EPOCH` + the timeline walker + the severity roll; `nmap -sV` prints a CVE id and severity for a live one. The world is clean for three days and then starts moving. Nothing is exploitable yet — the player can only watch it happen |
 | **3** | **A door opens** | `msfconsole <host> <port>` on your own LAN; `shell_full` and `shell_limited`; the exploit session row; the `formatExploit` catalog column with BOTH outcomes traced. A stale NPC service hands over a shell with no credential, and the box records it |
 | **4** | **The defender patches** | `apt upgrade [package]`, `apt list -u` with the ETA status, install sharing the upgrade resolver. **The loop closes**: A upgrades, B's working exploit now fails, and inside the delay window A is told no fix exists |
@@ -3357,9 +3359,13 @@ libc window?*.
 - **The effect pools for the newly-mapped commands** (decision 12). `nmap`, `node`, `hydra`, `gpg`
   and `lynx` each need a `SYSTEM_COMMAND_EFFECT_POOLS` entry, and what a `node` CVE should yield is
   a content question with real reach — `script_exec` through the script runner is close to circular.
-- **The firmware vendor set and its placement** across routers, switches and AP gateways
-  (decision 10). Legacy's `routerFirmware.ts` is a starting point, not an answer, now that v2 has
-  three device kinds legacy did not.
+- ~~**The firmware vendor set and its placement**~~ — **RESOLVED 2026-09-09 at slice 1a.** The
+  six legacy vendors port as-is (cisco, mikrotik, ddwrt, openwrt, pfsense, ubiquiti), and all
+  three device kinds draw from the one pool on their own seeded stream, with no per-kind
+  carve-out — the manifest is one flat namespace, so a router, a switch and an AP gateway are
+  indistinguishable in it by construction. One package name, `firmware`, per decision 10;
+  revisit `<vendor>-firmware` only if slice 9 finds the vendor unreadable from the manifest
+  alone.
 - **Where the CVE derivation module lives and what it is called.** It is called by the client to
   render and by the server to authorize, so it belongs beside the other shared pure resolvers —
   but whether services, libraries and firmware share one entry point or three is a shape question
@@ -3985,12 +3991,91 @@ are now resolved. **A door is not proven by its wire-checks alone** — the wire
 green and could not see any of this, because the defects live in the one vantage no endpoint
 answers. One session's browsing produced four findings, three of them invisible to a green suite.
 
-**➡️ NEXT: Phase 3 slice 1 — a version is visible.** Phase 3 was **grilled 2026-09-09**:
-twenty-three locked decisions and a nine-slice, loop-first spine in
+### Phase 3 slice 1 — a version is visible ✅ SHIPPED v0.210.0–v0.211.0 (#491, #494)
+
+Retired here from `phase3-1-a-version-is-visible.md`, the way D3–D10 and X1 each were. Two PRs:
+1a put a real `/var/lib/dpkg/status` on every box in the world; 1b made `nmap -sV` read it.
+
+**A manifest lists what is INSTALLED, not what is RUNNING.** The slice was scoped as "generated
+from its running services", which is legacy's basis, and taking that literally would have shipped
+two bugs. `buildDeepHostFs` patches `sshd:22` onto its tree AFTER `buildRemoteHostFs` builds it,
+so every deep host would have advertised an ssh port with no `openssh-server` behind it; and the
+player's own box runs nothing at start, so its manifest would have held libraries only and
+`systemctl start sshd` would have opened a port with no package to upgrade — on the one box the
+whole defence exists for. Deriving the manifest from the daemon binaries a box CARRIES dissolves
+both, and equals the original wording on every NPC.
+
+**`Package` is the apt package name; `Version` is the bare tuple.** `openssh-server` / `9.7.0`,
+never `ssh` / `OpenSSH 9.7.0`. The vendor prefix is presentation, owned by the version template a
+scan renders — the same reason the catalog's `banner` stays version-free. `ServiceSpec` gained a
+`package` column so apt cannot answer to two names for one thing. One version table covers all
+three axes, because the manifest is itself one flat namespace in which a daemon, a shared object
+and a router's firmware are indistinguishable.
+
+**The manifest is the authority, never the version table.** `apt upgrade` will move a box off what
+it shipped with, and a scan answering from the table would keep pointing at a hole the defender had
+already closed. `readOpenPorts` therefore reads the file, not `PACKAGE_TEMPLATES`.
+
+**`-sV` is a display decision, not a resolution one.** The version is always resolved; the flag
+only decides whether the column prints. The manifest is already tier-3 externally observable
+(`readFilter` had allowlisted the path since before it existed, naming `nmap -sV` as its reader),
+so gating resolution would hide nothing a second scan would not hand over, and would cost the
+server a second scan mode. The flag itself is **declared, not parsed** — `FlagSpec`/`bindFlags`
+were already here, and `stacking`'s own doc names `nmap -sV` as the reason stacking defaults off.
+
+**An `OpenPort` is constructed in exactly two places** — `readOpenPorts` and the forward synthesis
+in `scanResult` — which is why the version reaches all five scan vantages without five changes.
+`portsOpenToNetwork` filters; `resolvePublicScan`, `resolveOccupantScan`,
+`resolveInnerGatewayScan` and `deepScanHosts` pass ports straight through. A forward advertises the
+version of the box it LANDS ON, so scanning an access point's public IP names the occupant's
+software — recon crossing a player boundary on purpose, and the price of opening a forward.
+
+**There were no zod schemas to widen, and that is the hazard, not the relief.** All three client
+paths cast (`body as Partial<PublicScanResolution>`) rather than parse, so the field rides the wire
+for free and nothing at the type or schema level could catch a server that stopped sending it. The
+wire-check is the only thing that can: 24/24 across the four scan scripts, with B scanning A's
+public IP and reading `22=OpenSSH 9.7.0 161=net-snmp 5.9.4` off A's own manifest.
+
+**The mutation gate paid for itself twice.** In 1a it found a latent defect inherited from legacy:
+`/^Package:\s*(.+)$/m` — `\s` matches the newline, so a `Package:` line with an empty value
+swallows the line below it, and a block reading `Package:` then `Version: 3.0.0` parsed as a
+package literally named "Version: 3.0.0". **That bug is still in the frozen legacy tree.** In 1b it
+found the mirror image: `/^Version:` needed the same anchor defence, or a crafted `Description:`
+line could preempt the field it describes. Both live on a file a player owns root on can hand-edit,
+which is what makes them reachable rather than theoretical.
+
+**Two debts are owed to slice 4, and are not reachable before it:**
+
+- **`apt install` does not update the manifest.** The manifest is generated from the box's base
+  tree, and `apt install nginx` adds `/usr/sbin/nginx` as a journal PATCH over that base — so a
+  player who buys a daemon carries a binary the manifest does not name. **Slice 4 must write a
+  manifest patch alongside the binary patch**, exactly as `apt install` already writes its data
+  files. It is invisible until then: the VERSION column simply shows no version for a port whose
+  package is unlisted, which is the same cell a planted backdoor gets.
+- **`openssh-server`, `vsftpd` and the eight libraries are not rows in `APT_PACKAGES`.** Nothing
+  currently enforces that the manifest's namespace and apt's agree. Adding installable rows now
+  would let a player `apt install openssh-server` for a daemon every box already has, and no test
+  demands them. **Slice 4 owns closing this**, with a check that every package name the manifest
+  can emit is one apt knows.
+
+Left open in `nmap.ts` and named rather than fixed: nothing pins the host-discovery table
+(IP/HOSTNAME/KIND) or the router `.1` `sameLAN` vantage, so a mutant swapping that vantage to
+`external` — which would leak NAT forwards to anyone inside the LAN — survives. It predates the
+slice.
+
+**➡️ NEXT: Phase 3 slice 2 — a CVE is visible.** `WORLD_EPOCH`, the timeline walker and the
+severity roll; `nmap -sV` gains a CVE id and severity on a live one. The world stays clean for
+three days and then starts moving, and nothing is exploitable yet — the player can only watch it
+happen. It needs the server-owned world epoch that replaces legacy's `localStorage`-anchored
+per-browser clock, which is the larger of the two known deltas the grill went in with. Slice 1's
+carried-forward opens that slice 2 must settle: **the exact `WORLD_EPOCH` date** (one constant, and
+the only irreversible number in the phase) and **where the CVE derivation module lives** — whether
+services, libraries and firmware share one entry point or three, which decides how slices 8 and 9
+attach. Phase 3 was **grilled 2026-09-09**: twenty-three locked decisions and a nine-slice,
+loop-first spine in
 ["Phase 3 — resolved scope & decisions"](#phase-3--resolved-scope--decisions-grill-me-2026-09-09).
-It is ready for `planning`; nothing else in the epic blocks it. X2 (`findit.io` and networks a
-player was never told about) stays **deferred by decision** and ungrilled — see the X2 rows in the
-spine and the acceptance table.
+X2 (`findit.io` and networks a player was never told about) stays **deferred by decision** and
+ungrilled — see the X2 rows in the spine and the acceptance table.
 
 **What the Phase 3 grill found before deciding anything**, and the reason the port is a partial
 one: **legacy's service treadmill never actually ran.** `machineConfig.ts:536` seeds every machine's

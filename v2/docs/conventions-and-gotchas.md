@@ -753,6 +753,17 @@ sat in the changed lines. Run scoped batteries as
 every mutant's file, line, mutator and status. Note it overwrites the previous report in place, so
 copy one you still need first.
 
+**A TIMEOUT counts as KILLED, so a slower run scores HIGHER.** Stryker folds timeouts into the
+kill count, which means a mutant that merely hung under load is indistinguishable in the score from
+one a test actually caught — and the same code scores better the more loaded the run. Measured on
+one file across two slices: `dpkgStatus.ts` read **86.27% with 7 timeouts** beside another file and
+**77.27% with 0** measured alone; a slice later the same file read **94.52% on 5 timeouts**,
+**89.04% on 7**, and **90.41% on 1**. Four numbers, one file, and the highest was the least true —
+the hung mutants were real survivors the whole time. So: read the `# timeout` column beside every
+score, treat `killed` as `killed + timeout` when judging, re-measure a suspicious file ALONE before
+believing a number, and quote the run with the fewest timeouts when reporting one. A batch run is
+for finding survivors quickly; a single-file run is for scoring.
+
 **Run `npm run encode` before `npx stryker run`, or lose ten minutes to a blank error.**
 The `test:mutation` script has a `pretest:mutation` hook that runs it; invoking Stryker directly to
 pass `--mutate` skips the hook, and the run then dies with `Error: Something went wrong in the
