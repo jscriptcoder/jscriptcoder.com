@@ -18,6 +18,8 @@
  * cannot lose data it does not understand.
  */
 
+import type { Directory } from '../filesystem/types';
+
 export const DPKG_STATUS_PATH = '/var/lib/dpkg/status';
 
 export type DpkgEntry = {
@@ -69,3 +71,19 @@ export const buildEntry = (pkg: string, version: string): DpkgEntry => ({
  *  trailing newline, as dpkg writes it. */
 export const formatDpkgStatus = (entries: readonly DpkgEntry[]): string =>
   `${entries.map((entry) => entry.rawBlock).join('\n\n')}\n`;
+
+/** The manifest text off a box's tree, or '' for a box that carries no manifest —
+ *  which parses to no packages, so a missing file is a missing answer rather than a
+ *  crash. Walks the tree the way the port readers do; this layer has no path
+ *  resolver. Shared by every reader so a box cannot report one version to a scan and
+ *  another to `apt`. */
+export const readDpkgStatus = (root: Directory): string => {
+  const varDir = root.entries.get('var');
+  if (varDir?.kind !== 'directory') return '';
+  const lib = varDir.entries.get('lib');
+  if (lib?.kind !== 'directory') return '';
+  const dpkg = lib.entries.get('dpkg');
+  if (dpkg?.kind !== 'directory') return '';
+  const status = dpkg.entries.get('status');
+  return status?.kind === 'file' ? status.content : '';
+};

@@ -17,6 +17,8 @@ import { withSelfHost } from '../network/mergeLanOccupants';
 import { generateHomeLan, type LanHost } from '../generation/generateHomeLan';
 import { buildRemoteHostFs } from '../generation/remoteHostFs';
 import { readOpenPorts } from '../services/pidfile';
+import { buildEntry, formatDpkgStatus } from '../packages/dpkgStatus';
+import { bindFlags } from '../shell/bindFlags';
 import { seedApGatewayHostname } from '../generation/routerFs';
 import { machineIdForLanHost } from '../generation/lanHostIdentity';
 import { generateDeepLayer, seedNetworkDepth } from '../generation/generateDeepLayer';
@@ -75,7 +77,7 @@ describe('nmap at a name instead of an address', () => {
 
     expect(result.exitCode).toBe(1);
     expect(result.lines.map((line) => line.content)).toEqual([
-      'nmap: usage: nmap <target> (e.g. 192.168.1.5 or 192.168.1.1-254)',
+      'nmap: usage: nmap [-sV] <target> (e.g. 192.168.1.5 or 192.168.1.1-254)',
     ]);
   });
 
@@ -1168,6 +1170,35 @@ describe('nmap — same-LAN occupant merge', () => {
     expect(text).toContain('22/tcp');
   });
 
+  it('names the version behind an occupant port when -sV asks', async () => {
+    // A neighbour's box is resolved on THEIR side, so the version arrives with the port
+    // or not at all — this side has no tree of theirs to read one off, which is the
+    // same reason the ports themselves are not derived locally.
+    const resolveOccupant = vi.fn(async () => ({
+      found: true,
+      ports: [{ port: 22, service: 'ssh', version: 'OpenSSH 9.7.0' }],
+    }));
+
+    const { text } = await drain(
+      await nmap.execute(
+        envWithOccupants(
+          async () => [
+            {
+              workstation_machine_id: 'skylab-aaaa',
+              localIp: '192.168.29.42',
+              machineName: 'alice-rig',
+            },
+          ],
+          { resolveOccupant },
+        ),
+        ['192.168.29.42'],
+        new Map<string, string | true>([['-sV', true]]),
+      ),
+    );
+
+    expect(text).toContain('22/tcp   open  ssh      OpenSSH 9.7.0');
+  });
+
   it('asks nothing of the server for a RANGE that covers an occupant', async () => {
     const resolveOccupant = vi.fn(async () => ({ found: true, ports: [] }));
     await drain(
@@ -1476,6 +1507,21 @@ describe('nmap — reachability-pivot from an inner gateway (5b.2)', () => {
     // The deep host is a reachable target by design — sshd:22 is forced on.
     expect(text).toContain('22/tcp   open  ssh');
     expect(text).toContain('Nmap done — 1 host up');
+  });
+
+  it('names the version behind a deep host port when -sV asks', async () => {
+    // The pivot resolves and renders through its OWN call site rather than the home
+    // path's, so the flag has to reach it there. The deep host's version comes off the
+    // same manifest its forced sshd was matched against.
+    const { text } = await drain(
+      await nmap.execute(
+        vantageEnv(idOf(INNER)),
+        [DEEP.host.ip],
+        new Map<string, string | true>([['-sV', true]]),
+      ),
+    );
+
+    expect(text).toContain('22/tcp   open  ssh      OpenSSH 9.7.0');
   });
 
   it('lists the NPC AND the deeper child gateway in a range scan of the inner router’s deep /24', async () => {
@@ -2107,5 +2153,170 @@ describe('nmap — the player is listed at its leased address', () => {
     expect(ipsIn(result.text).filter((ip) => ip === contested)).toHaveLength(1);
     expect(result.text).toContain(OWN_NAME);
     expect(result.text).not.toContain('tablet-30');
+  });
+});
+
+/**
+ * `nmap -sV` — the version scan.
+ *
+ * The version is ALWAYS resolved; the flag decides only whether the column is printed.
+ * The manifest a version comes from is externally readable already, so gating the
+ * resolution would hide nothing a second scan would not hand over — and it would mean
+ * two scan modes for the server to keep in step.
+ *
+ * This is the first flag `nmap` has ever taken, so the shape is being set here: the
+ * flag is positional-agnostic and everything else is still the target.
+ */
+/**
+ * `nmap -sV` — the version scan.
+ *
+ * The version is ALWAYS resolved; the flag decides only whether the column is printed.
+ * The manifest a version comes from is externally readable already, so gating the
+ * resolution would hide nothing a second scan would not hand over — and it would mean
+ * two scan modes for the server to keep in step.
+ *
+ * The flag is DECLARED rather than parsed: the shell binds it before `execute` is
+ * reached, which is what makes typing order the shell's problem and an unrecognised
+ * flag an error nobody here has to write.
+ */
+describe('nmap -sV — the version scan', () => {
+  const SELF_IP = '192.168.29.188';
+  const PUBLIC_IP = '203.0.113.7';
+  const VERSION_SCAN = new Map<string, string | true>([['-sV', true]]);
+
+  /** An online env whose own box runs `pidfiles` and carries `packages` in its
+   *  manifest — a box assembled the way a generated one is. */
+  const ownBox = (
+    pidfiles: Readonly<Record<string, string>>,
+    packages: Readonly<Record<string, string>>,
+  ) => {
+    const tree = buildDirectory({
+      var: buildDirectory({
+        run: buildDirectory(
+          Object.fromEntries(
+            Object.entries(pidfiles).map(([name, content]) => [
+              name,
+              buildFile(content, { owner: 'root' }),
+            ]),
+          ),
+        ),
+        lib: buildDirectory({
+          dpkg: buildDirectory({
+            status: buildFile(
+              formatDpkgStatus(
+                Object.entries(packages).map(([pkg, version]) => buildEntry(pkg, version)),
+              ),
+              { owner: 'root' },
+            ),
+          }),
+        }),
+      }),
+    });
+    return mockCommandEnv({
+      identity: mockIdentity({ publicKeyHex: asPlayerKeyHex(PUBKEY) }),
+      network: mockNetworkViewFromConnectivity(onlineConnectivity('BEAN-THERE-WIFI')),
+      fs: mockFsViewFromTree(tree, { userType: 'user' }),
+    });
+  };
+
+  const sshdBox = () => ownBox({ 'sshd.pid': 'sshd:port=22' }, { 'openssh-server': '9.7.0' });
+
+  it('adds a VERSION column naming the software behind each port', async () => {
+    const { text, exitCode } = await drain(
+      await nmap.execute(sshdBox(), [SELF_IP], VERSION_SCAN),
+    );
+
+    expect(exitCode).toBe(0);
+    expect(text).toContain('PORT     STATE SERVICE  VERSION');
+    expect(text).toContain('22/tcp   open  ssh      OpenSSH 9.7.0');
+  });
+
+  it('prints exactly the three columns it always has when the flag is absent', async () => {
+    // The flag is the whole difference. A scan that started volunteering versions would
+    // hand every player recon they never asked for and make `-sV` mean nothing.
+    const { text } = await drain(await nmap.execute(sshdBox(), [SELF_IP], new Map()));
+
+    expect(text).toContain('PORT     STATE SERVICE');
+    expect(text).not.toContain('VERSION');
+    expect(text).toContain('22/tcp   open  ssh');
+    expect(text).not.toContain('OpenSSH');
+  });
+
+  it('is a flag the shell knows, on either side of the target', async () => {
+    // Declared rather than parsed, which is the difference between the shell binding it
+    // and the shell rejecting it as an unrecognised option. Both orders bind, because
+    // ordering is the binder's job and a player who types the target first is not wrong.
+    for (const typed of [
+      ['-sV', SELF_IP],
+      [SELF_IP, '-sV'],
+    ]) {
+      const bound = bindFlags(typed, nmap.flags ?? {});
+
+      expect(bound).toEqual({
+        ok: true,
+        positional: [SELF_IP],
+        flags: new Map([['-sV', true]]),
+      });
+    }
+  });
+
+  it('leaves the VERSION cell empty for a port nothing can answer for', async () => {
+    // A planted backdoor is not a package. The blank cell is the finding: a port that
+    // is open, reachable, and belongs to no software the box admits to installing.
+    const env = ownBox(
+      {
+        'sshd.pid': 'sshd:port=22',
+        'nc-4444.pid': 'nc:port=4444,user=mallory,userType=root',
+      },
+      { 'openssh-server': '9.7.0' },
+    );
+
+    const { text } = await drain(await nmap.execute(env, [SELF_IP], VERSION_SCAN));
+
+    expect(text).toContain('22/tcp   open  ssh      OpenSSH 9.7.0');
+    // No trailing run of spaces where the version would have gone.
+    expect(text).toContain('\n4444/tcp open  unknown\n');
+  });
+
+  it('reports the version a CROSS-PLAYER scan resolved, not one it derived locally', async () => {
+    // The whole reason the field is on the wire. Another player's box cannot be
+    // regenerated here, so a version this side invented would describe a box that does
+    // not exist — the same rule the ports themselves already follow.
+    const resolvePublic = vi.fn(async () => ({
+      found: true,
+      ports: [{ port: 2222, service: 'ssh', version: 'OpenSSH 8.1.0' }],
+    }));
+    const env = mockCommandEnv({
+      identity: mockIdentity({ publicKeyHex: asPlayerKeyHex(PUBKEY) }),
+      network: mockNetworkViewFromConnectivity(onlineConnectivity('BEAN-THERE-WIFI')),
+      scan: mockScanApi({ resolvePublic }),
+    });
+
+    const { text } = await drain(await nmap.execute(env, [PUBLIC_IP], VERSION_SCAN));
+
+    expect(text).toContain('PORT     STATE SERVICE  VERSION');
+    expect(text).toContain('2222/tcp open  ssh      OpenSSH 8.1.0');
+  });
+
+  it('documents -sV in the manual, so a player can find the scan at all', () => {
+    // Nothing in the three-column output hints that a fourth column exists, so the man
+    // page is the only place the flag is discoverable. A flag nobody can find is a
+    // mechanic nobody has.
+    expect(nmap.manual?.synopsis).toContain('-sV');
+    expect(nmap.manual?.description).toContain('-sV');
+    // Its own ARGUMENTS row and a worked EXAMPLE, not just a mention in the prose: those
+    // are the two places the man page renderer puts a flag where a reader looks for one.
+    expect(nmap.manual?.arguments?.map((entry) => entry.name)).toContain('-sV');
+    expect(nmap.manual?.examples?.map((entry) => entry.command)).toContain(
+      'nmap -sV 192.168.1.5',
+    );
+  });
+
+  it('is not a target: the flag alone leaves nothing to scan', async () => {
+    const result = await nmap.execute(sshdBox(), [], VERSION_SCAN);
+    if (result.kind !== 'sync') throw new Error('expected sync result');
+
+    expect(result.exitCode).toBe(1);
+    expect(result.lines[0]?.content).toContain('usage');
   });
 });

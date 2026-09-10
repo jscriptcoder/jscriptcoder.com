@@ -219,12 +219,12 @@ const envelope = (
   over: Record<string, unknown> = {},
 ) => signRequest(id, 'resolvePublicScan', { target, ...over });
 
-const SSH_22 = { port: 22, service: 'ssh' };
+const SSH_22 = { port: 22, service: 'ssh', version: 'OpenSSH 9.7.0' };
 /** The agent every access-point gateway bears. PINNED rather than rolled, so unlike a
  *  generated router's it is part of every public port table below — and that is the
  *  point worth seeing here: a stranger scanning any player's public IP now finds a
  *  management port alongside the shell, with no credential spent. */
-const SNMP_161 = { port: 161, service: 'snmp' };
+const SNMP_161 = { port: 161, service: 'snmp', version: 'net-snmp 5.9.4' };
 /** What a fresh AP gateway advertises before any forward is added: its own two doors,
  *  in the order `/var/run` holds them. */
 const OWN_DOORS = [SSH_22, SNMP_161];

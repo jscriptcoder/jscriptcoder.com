@@ -12,6 +12,11 @@
 //   - Keystone: a SECOND scanner (C) accretes its own line into the SAME row instead
 //     of collapsing it under the last-write-wins fold — both source IPs coexist.
 //   - found:false (unknown public IP) writes nothing.
+//   - `-sV`: each returned port carries the VERSION of the software behind it, read
+//     from the TARGET's own package manifest server-side. This is the half `tsc`
+//     cannot see — the client casts the response body rather than parsing it, so a
+//     server that stopped sending the field would look identical to one that never
+//     had it, and every unit test would stay green.
 //
 // Usage (with v2 supabase + vercel dev running):
 //   npx dotenv -e .env.development.local -- npx tsx scripts/testCrossPlayerScanTrace.ts
@@ -58,6 +63,11 @@ const post = async (
 };
 
 const foundOf = (body: unknown): boolean => (body as { found?: boolean } | null)?.found === true;
+
+type WirePort = { readonly port: number; readonly service: string; readonly version?: string };
+
+const portsOf = (body: unknown): readonly WirePort[] =>
+  (body as { ports?: readonly WirePort[] } | null)?.ports ?? [];
 
 const KERN_LOG = '/var/log/kern.log';
 
@@ -138,6 +148,25 @@ check(
   'B nmap <A.publicIp> resolves host-up with the router’s :22',
   s1.status === 200 && foundOf(s1.body),
   `status=${s1.status} found=${foundOf(s1.body)}`,
+);
+
+// The VERSION a scan reads. It has to survive the round trip as a real field on the
+// wire: the client casts this body rather than parsing it, so nothing between here and
+// the terminal would notice the server dropping it.
+const routerSsh = portsOf(s1.body).find((openPort) => openPort.port === 22);
+check(
+  'the resolved :22 carries a VERSION read from A’s own manifest',
+  routerSsh?.version === 'OpenSSH 9.7.0',
+  `version=${routerSsh?.version ?? '(absent)'}`,
+);
+check(
+  'every resolved port names its software, or honestly names none',
+  portsOf(s1.body).every(
+    (openPort) => openPort.version === undefined || /^\D.*\d+(\.\d+)*$/.test(openPort.version),
+  ),
+  portsOf(s1.body)
+    .map((openPort) => `${openPort.port}=${openPort.version ?? '-'}`)
+    .join(' '),
 );
 
 const log1 = await readRouterKernLog(A_ROUTER, alice.publicKeyHex);

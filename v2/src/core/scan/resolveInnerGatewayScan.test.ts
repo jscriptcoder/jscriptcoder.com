@@ -172,8 +172,17 @@ const envelope = (target: string, over: Record<string, unknown> = {}) =>
  *  gateway runs by design, and the SNMP agent this one rolled. Both are seeded, so both
  *  are fixed — the RATE that decides the second is measured across a population in
  *  `routerFs.test.ts`, not here. */
-const SSH_22 = { port: 22, service: 'ssh' };
-const SNMP_161 = { port: 161, service: 'snmp' };
+const SSH_22 = { port: 22, service: 'ssh', version: 'OpenSSH 9.7.0' };
+const SNMP_161 = { port: 161, service: 'snmp', version: 'net-snmp 5.9.4' };
+
+/** A forward surfacing an ssh door at `publicPort`. The version is the TARGET box's,
+ *  never this gateway's: a forward publishes the software it lands on, which is exactly
+ *  the recon it costs the owner who opened it. */
+const forwardedSsh = (publicPort: number) => ({
+  port: publicPort,
+  service: 'ssh',
+  version: 'OpenSSH 9.7.0',
+});
 
 describe('handleResolveInnerGatewayScan', () => {
   it("resolves an inner gateway with no forward to its own sshd:22 (deep layer dark)", async () => {
@@ -223,7 +232,7 @@ describe('handleResolveInnerGatewayScan', () => {
         ports: [
           SSH_22,
           SNMP_161,
-          { port: 2222, service: 'ssh' },
+          forwardedSsh(2222),
         ],
       },
     });
@@ -326,7 +335,7 @@ describe('handleResolveInnerGatewayScan', () => {
         ports: [
           SSH_22,
           SNMP_161,
-          { port: 2222, service: 'ssh' },
+          forwardedSsh(2222),
         ],
       },
     });
@@ -347,7 +356,7 @@ describe('handleResolveInnerGatewayScan', () => {
         ports: [
           SSH_22,
           SNMP_161,
-          { port: 2223, service: 'ssh' },
+          forwardedSsh(2223),
         ],
       },
     });
@@ -566,7 +575,7 @@ describe('handleResolveInnerGatewayScan — chained forward down a deeper chain'
         ports: [
           SSH_22,
           SNMP_161,
-          { port: CHAINED_PORT, service: 'ssh' },
+          forwardedSsh(CHAINED_PORT),
         ],
       },
     });
@@ -668,8 +677,8 @@ describe('handleResolveInnerGatewayScan — the seeded depth + forward set bound
         ports: [
           SSH_22,
           SNMP_161,
-          { port: 2222, service: 'ssh' },
-          { port: 2223, service: 'ssh' },
+          forwardedSsh(2222),
+          forwardedSsh(2223),
         ],
       },
     });
@@ -697,7 +706,7 @@ describe('handleResolveInnerGatewayScan — the seeded depth + forward set bound
         ports: [
           SSH_22,
           SNMP_161,
-          { port: 2222, service: 'ssh' },
+          forwardedSsh(2222),
         ],
       },
     });
