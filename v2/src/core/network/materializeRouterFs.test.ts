@@ -55,8 +55,8 @@ describe('materializeApGatewayFs', () => {
     // The agent is PINNED on every access-point gateway, so a fresh one answers on
     // both its shell and its management port with no journal at all.
     expect(readOpenPorts(router)).toEqual([
-      { port: 22, service: 'ssh' },
-      { port: 161, service: 'snmp' },
+      { port: 22, service: 'ssh', version: 'OpenSSH 9.7.0' },
+      { port: 161, service: 'snmp', version: 'net-snmp 5.9.4' },
     ]);
   });
 
@@ -87,8 +87,8 @@ describe('materializeApGatewayFs', () => {
 
   it('treats a null journal as empty (fresh router still answers with sshd:22)', () => {
     expect(readOpenPorts(materializeApGatewayFs(NETWORK, null))).toEqual([
-      { port: 22, service: 'ssh' },
-      { port: 161, service: 'snmp' },
+      { port: 22, service: 'ssh', version: 'OpenSSH 9.7.0' },
+      { port: 161, service: 'snmp', version: 'net-snmp 5.9.4' },
     ]);
   });
 

@@ -2608,7 +2608,7 @@ describe('buildRemoteHostFs', () => {
 
       expect(running?.pidfile?.content).toBe('named:port=53');
       expect(running?.pidfile?.owner).toBe('bind');
-      expect(running?.openPorts).toContainEqual({ port: 53, service: 'domain' });
+      expect(running?.openPorts).toContainEqual({ port: 53, service: 'domain', version: 'BIND 9.18.22' });
     });
 
     it('runs a name server on nearly every box named for one, so the name is worth reading', () => {

@@ -64,7 +64,7 @@ describe('bootableOccupantFs', () => {
 
     // The daemon the owner started is running on the box a forward would reach — the
     // journal row landed on the rebuilt tree, not just the generated baseline.
-    expect(readOpenPorts(treeOf(fs))).toEqual([{ port: 22, service: 'ssh' }]);
+    expect(readOpenPorts(treeOf(fs))).toEqual([{ port: 22, service: 'ssh', version: 'OpenSSH 9.7.0' }]);
   });
 
   it('refuses a bricked box, even though its sshd pidfile lingers', () => {
@@ -81,7 +81,7 @@ describe('natPortResolver', () => {
     const aliceFs = treeOf(bootableOccupantFs(occupant(ALICE, 'neo'), [sshdUp]));
     const resolve = natPortResolver(new Map([[ALICE_LAN_IP, aliceFs]]));
 
-    expect(resolve(ALICE_LAN_IP)).toEqual([{ port: 22, service: 'ssh' }]);
+    expect(resolve(ALICE_LAN_IP)).toEqual([{ port: 22, service: 'ssh', version: 'OpenSSH 9.7.0' }]);
   });
 
   it('answers for EVERY occupant behind the AP, each at its own leased address', () => {
@@ -95,8 +95,8 @@ describe('natPortResolver', () => {
     );
 
     // One shared AP forwards to many boxes; each address answers for its own.
-    expect(resolve(ALICE_LAN_IP)).toEqual([{ port: 22, service: 'ssh' }]);
-    expect(resolve(BOB_LAN_IP)).toEqual([{ port: 22, service: 'ssh' }]);
+    expect(resolve(ALICE_LAN_IP)).toEqual([{ port: 22, service: 'ssh', version: 'OpenSSH 9.7.0' }]);
+    expect(resolve(BOB_LAN_IP)).toEqual([{ port: 22, service: 'ssh', version: 'OpenSSH 9.7.0' }]);
   });
 
   it('answers with nothing at an address no occupant is behind (a dead forward)', () => {

@@ -201,9 +201,7 @@ describe('buildInnerGatewayBaseFs', () => {
   });
 
   it('runs sshd:22 — an inner gateway is a reachable target by design', () => {
-    expect(portsByDesign(buildInnerGatewayBaseFs(ESSID_A, 25))).toEqual([
-      { port: 22, service: 'ssh' },
-    ]);
+    expect(portsByDesign(buildInnerGatewayBaseFs(ESSID_A, 25))).toEqual([{ port: 22, service: 'ssh', version: 'OpenSSH 9.7.0' }]);
   });
 
   it('seeds rules.v4 with no active forward (opt-in default, same as the edge router)', () => {
@@ -232,7 +230,9 @@ describe('buildSwitchBaseFs', () => {
   });
 
   it('runs sshd:22 — a switch is a reachable target by design', () => {
-    expect(portsByDesign(buildSwitchBaseFs(ESSID_A, 80))).toEqual([{ port: 22, service: 'ssh' }]);
+    expect(portsByDesign(buildSwitchBaseFs(ESSID_A, 80))).toEqual([
+      { port: 22, service: 'ssh', version: 'OpenSSH 9.7.0' },
+    ]);
   });
 
   it('seeds /etc/switch/acl.conf with a documented default-allow policy and one active deny', () => {
@@ -539,7 +539,7 @@ describe('buildDeepGatewayBaseFs', () => {
 
   it('runs sshd:22 — a deep gateway is a reachable target by design', () => {
     expect(portsByDesign(buildDeepGatewayBaseFs(PARENT_GW, 50))).toEqual([
-      { port: 22, service: 'ssh' },
+      { port: 22, service: 'ssh', version: 'OpenSSH 9.7.0' },
     ]);
   });
 
@@ -702,7 +702,7 @@ describe('buildRouterBaseFsFromIdentity', () => {
   it('runs sshd:22 when hasSsh — readOpenPorts reports the ssh port', () => {
     const fs = routerFs({ hasSsh: true });
     expect(fileAt(fs, ['var', 'run'], 'sshd.pid')).toBe('sshd:port=22');
-    expect(readOpenPorts(fs)).toEqual([{ port: 22, service: 'ssh' }]);
+    expect(readOpenPorts(fs)).toEqual([{ port: 22, service: 'ssh', version: 'OpenSSH 9.7.0' }]);
     const pidfile = dirAt(fs, 'var', 'run').entries.get('sshd.pid');
     if (pidfile?.kind !== 'file') throw new Error('missing sshd.pid');
     // World-readable so nmap/ps see the port; root writes it (the daemon is root).
@@ -718,8 +718,8 @@ describe('buildRouterBaseFsFromIdentity', () => {
 
     expect(fileAt(fs, ['var', 'run'], 'snmpd.pid')).toBe('snmpd:port=161');
     expect(readOpenPorts(fs)).toEqual([
-      { port: 22, service: 'ssh' },
-      { port: 161, service: 'snmp' },
+      { port: 22, service: 'ssh', version: 'OpenSSH 9.7.0' },
+      { port: 161, service: 'snmp', version: 'net-snmp 5.9.4' },
     ]);
     // A device advertising a port whose program it does not have could not be stopped
     // by the `systemctl` sitting next to it.

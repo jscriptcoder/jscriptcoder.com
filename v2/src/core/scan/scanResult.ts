@@ -70,7 +70,12 @@ export const scanResult = ({
     const live = resolveTargetPorts(forward.internalIp).find(
       (openPort) => openPort.port === forward.internalPort,
     );
-    return live === undefined ? [] : [{ port: forward.publicPort, service: live.service }];
+    // The TARGET's port, re-addressed — everything the box behind the forward says
+    // about itself (its service, and the version a CVE would be keyed on), reached at
+    // the public port instead of its internal one. A forward is a door onto somebody
+    // else's software, so describing it with the router's own facts would name a box
+    // the traffic never arrives at.
+    return live === undefined ? [] : [{ ...live, port: forward.publicPort }];
   });
 
   return dedupeByPort([...own, ...forwarded]);

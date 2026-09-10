@@ -221,3 +221,42 @@ describe('scanResult', () => {
     expect(ext.map((openPort) => openPort.port)).toEqual([22, 2222]);
   });
 });
+
+/**
+ * A forwarded port advertises the version of the box the forward LANDS ON, never the
+ * router's.
+ *
+ * That is the only answer a scanner could act on: the software behind a NAT forward is
+ * the occupant's, and a CVE keyed on the router's own manifest would point at a box the
+ * traffic never reaches. It is also information genuinely crossing a player boundary —
+ * whoever scans the access point learns what the player behind the forward is running,
+ * which is exactly the recon a forward is meant to cost its owner.
+ */
+describe('the version a NAT forward carries', () => {
+  it('reports the TARGET own version at the public port, not the router version', () => {
+    const fs = makeRouterFs('forward 2222 to 10.0.0.5:22');
+    const occupantRunsSsh = (internalIp: string): readonly OpenPort[] =>
+      internalIp === '10.0.0.5' ? [{ port: 22, service: 'ssh', version: 'OpenSSH 9.9.9' }] : [];
+
+    expect(scanResult({ vantage: 'external', routerFs: fs, resolveTargetPorts: occupantRunsSsh }))
+      .toEqual([
+        { port: 22, service: 'ssh' },
+        { port: 2222, service: 'ssh', version: 'OpenSSH 9.9.9' },
+      ]);
+  });
+
+  it('leaves the public port versionless when the box behind it cannot answer for one', () => {
+    // A forward onto a planted listener. The port is open and reachable, and there is
+    // still nothing to name — the router must not fill the gap with its own answer.
+    const fs = makeRouterFs('forward 4444 to 10.0.0.5:4444');
+    const occupantBackdoor = (internalIp: string): readonly OpenPort[] =>
+      internalIp === '10.0.0.5' ? [{ port: 4444, service: 'unknown' }] : [];
+
+    expect(
+      scanResult({ vantage: 'external', routerFs: fs, resolveTargetPorts: occupantBackdoor }),
+    ).toEqual([
+      { port: 22, service: 'ssh' },
+      { port: 4444, service: 'unknown' },
+    ]);
+  });
+});

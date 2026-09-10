@@ -253,6 +253,34 @@ describe('the dpkg status format a player reads with cat', () => {
     expect([...parseDpkgVersions(text)]).toEqual([['libz', '1.3.1']]);
   });
 
+  it('reads the field that OWNS its line, not the first one mentioned anywhere', () => {
+    // The line anchor is doing work a leftmost match would appear to do for free: with a
+    // well-formed block the real field comes first either way, so only a block that
+    // MENTIONS a field before declaring one can tell the two apart. The file is
+    // root-writable and a description is free text, so that block is one a player can
+    // write — and reading it would let a package rename itself by talking about another.
+    // Both fields, because they carry the same anchor and a defence on one of them is
+    // not a defence: whichever is left unanchored is the one a crafted block would use.
+    const namePreempted =
+      'Description: superseded by Package: libpam\nPackage: libz\nVersion: 1.3.1';
+    const versionPreempted =
+      'Package: libz\nDescription: not Version: 9.9.9\nVersion: 1.3.1';
+
+    expect([...parseDpkgVersions(namePreempted)]).toEqual([['libz', '1.3.1']]);
+    expect([...parseDpkgVersions(versionPreempted)]).toEqual([['libz', '1.3.1']]);
+  });
+
+  it('keeps a block together when not one of its lines contains a space', () => {
+    // Blocks are separated by a BLANK line, which means whitespace and nothing else. A
+    // separator that keyed on the line's content instead would cut this block into two
+    // halves — one naming a package with no version, the other a version under no name —
+    // and drop both. `Package:libz` with no space is already a shape the parser accepts,
+    // so this is a file somebody can hand-edit into existence.
+    const text = 'Package:libz\nStatus:ok\nVersion:1.3.1';
+
+    expect([...parseDpkgVersions(text)]).toEqual([['libz', '1.3.1']]);
+  });
+
   it('finds nothing in an empty file', () => {
     expect(parseDpkgVersions('').size).toBe(0);
     expect(parseDpkgVersions('\n  \n').size).toBe(0);

@@ -53,7 +53,11 @@ const text = (content: string): TerminalLine => ({ kind: 'text', content });
  *  no associated wlan0 (no ESSID ⇒ no subnet to derive). */
 const UNREACHABLE = 'nmap: network is unreachable — connect to a network first';
 
-const USAGE = 'nmap: usage: nmap <target> (e.g. 192.168.1.5 or 192.168.1.1-254)';
+/** Version scan. Real nmap spells it exactly this way, and the multi-letter short flag
+ *  is why this command leaves flag STACKING off: `-sV` must never expand to `-s -V`. */
+const VERSION_FLAG = '-sV';
+
+const USAGE = 'nmap: usage: nmap [-sV] <target> (e.g. 192.168.1.5 or 192.168.1.1-254)';
 
 /** A target on a subnet other than the player's own LAN. */
 const outOfRange = (target: string, subnet: string): string =>
@@ -75,7 +79,20 @@ const SCAN_DELAY_MS = 200;
 
 const PORT_COL = 9;
 const STATE_COL = 6;
-const PORT_HEADER = [padRight('PORT', PORT_COL), padRight('STATE', STATE_COL), 'SERVICE'].join('');
+const SERVICE_COL = 9;
+
+/** The scan table's header. SERVICE is the last column until `-sV` asks for a version,
+ *  so it is only padded when something follows it — a header trailing into whitespace
+ *  is a column a player would have to select to discover was empty. */
+const portHeader = (withVersion: boolean): string =>
+  [
+    padRight('PORT', PORT_COL),
+    padRight('STATE', STATE_COL),
+    padRight('SERVICE', SERVICE_COL),
+    withVersion ? 'VERSION' : '',
+  ]
+    .join('')
+    .trimEnd();
 
 /** The transport a scanned port is on, read off the catalog by the SERVICE the port
  *  advertises. Looked up here rather than carried on `OpenPort`, because that type is
@@ -85,22 +102,31 @@ const PORT_HEADER = [padRight('PORT', PORT_COL), padRight('STATE', STATE_COL), '
  *  only thing that reaches here unnamed, and `nc -l` is TCP. */
 const protocolOf = (service: string): string => serviceByName(service)?.protocol ?? 'tcp';
 
-const formatPortLine = (entry: OpenPort): string =>
+/** One scan row. A port whose box cannot answer for a version — a planted listener, or
+ *  a daemon the manifest does not list — ends after its service rather than trailing the
+ *  spaces the empty column would leave. */
+const formatPortLine = (entry: OpenPort, withVersion: boolean): string =>
   [
     padRight(`${entry.port}/${protocolOf(entry.service)}`, PORT_COL),
     padRight('open', STATE_COL),
-    entry.service,
-  ].join('');
+    padRight(entry.service, SERVICE_COL),
+    withVersion ? (entry.version ?? '') : '',
+  ]
+    .join('')
+    .trimEnd();
 
 /** The PORT/STATE/SERVICE table for a host's open ports, preceded by a blank line —
  *  or nothing at all when the host runs no services. Shared by every host report
  *  (the own-LAN single scan and the cross-player public-IP scan) so the two render
  *  identically and can never drift. */
-function* portTableLines(ports: readonly OpenPort[]): Iterable<TerminalLine> {
+function* portTableLines(
+  ports: readonly OpenPort[],
+  withVersion: boolean,
+): Iterable<TerminalLine> {
   if (ports.length === 0) return;
   yield text('');
-  yield text(PORT_HEADER);
-  for (const port of ports) yield text(formatPortLine(port));
+  yield text(portHeader(withVersion));
+  for (const port of ports) yield text(formatPortLine(port, withVersion));
 }
 
 async function* scanRange(
@@ -124,6 +150,7 @@ async function* scanSingle(
   rawTarget: string,
   host: LanHost | undefined,
   resolveHostPorts: (host: LanHost) => readonly OpenPort[],
+  withVersion: boolean,
 ): AsyncIterable<TerminalLine> {
   yield text(`Starting Nmap scan — ${rawTarget}`);
   yield text('');
@@ -136,7 +163,7 @@ async function* scanSingle(
   }
   yield text(`Nmap scan report for ${host.hostname} (${host.ip})`);
   yield text('Host is up.');
-  yield* portTableLines(resolveHostPorts(host));
+  yield* portTableLines(resolveHostPorts(host), withVersion);
   yield text('');
   yield text('Nmap done — 1 host up');
 }
@@ -164,6 +191,7 @@ async function* scanResolvedHost(
   address: string,
   reportName: string,
   resolve: () => Promise<PublicScanResolution | null>,
+  withVersion: boolean,
 ): AsyncIterable<TerminalLine> {
   yield text(`Starting Nmap scan — ${address}`);
   yield text('');
@@ -176,15 +204,19 @@ async function* scanResolvedHost(
   }
   yield text(`Nmap scan report for ${reportName}`);
   yield text('Host is up.');
-  yield* portTableLines(resolution?.ports ?? []);
+  yield* portTableLines(resolution?.ports ?? [], withVersion);
   yield text('');
   yield text('Nmap done — 1 host up');
 }
 
 /** A public IP names an access point rather than a machine, and the caller has no LAN
  *  of their own to look it up on — so the address is all there is to report it by. */
-const scanPublic = (env: CommandEnv, target: string): AsyncIterable<TerminalLine> =>
-  scanResolvedHost(target, target, () => env.scan.resolvePublic(target));
+const scanPublic = (
+  env: CommandEnv,
+  target: string,
+  withVersion: boolean,
+): AsyncIterable<TerminalLine> =>
+  scanResolvedHost(target, target, () => env.scan.resolvePublic(target), withVersion);
 
 /** An inner gateway is scanned from its UPSTREAM side, where a NAT forward into the
  *  deeper layer is visible. Its name is known — it is a host on the caller's own LAN. */
@@ -192,9 +224,13 @@ const scanInnerGateway = (
   env: CommandEnv,
   essid: string,
   host: LanHost,
+  withVersion: boolean,
 ): AsyncIterable<TerminalLine> =>
-  scanResolvedHost(host.ip, `${host.hostname} (${host.ip})`, () =>
-    env.scan.resolveInnerGateway(essid, host.ip),
+  scanResolvedHost(
+    host.ip,
+    `${host.hostname} (${host.ip})`,
+    () => env.scan.resolveInnerGateway(essid, host.ip),
+    withVersion,
   );
 
 /** A fellow occupant's services live on THEIR box. `buildRemoteHostFs` keys on the host
@@ -204,9 +240,13 @@ const scanOccupant = (
   env: CommandEnv,
   essid: string,
   host: LanHost,
+  withVersion: boolean,
 ): AsyncIterable<TerminalLine> =>
-  scanResolvedHost(host.ip, `${host.hostname} (${host.ip})`, () =>
-    env.scan.resolveOccupant(essid, host.ip),
+  scanResolvedHost(
+    host.ip,
+    `${host.hostname} (${host.ip})`,
+    () => env.scan.resolveOccupant(essid, host.ip),
+    withVersion,
   );
 
 /** Scan the deep `/24` BEHIND the gateway the active shell is standing on — the
@@ -222,6 +262,7 @@ const resolveDeepPivotScan = (
   essid: string,
   rawTarget: string,
   vantage: PivotVantage,
+  withVersion: boolean,
 ): CommandResult | null => {
   const resolution = resolveDeepScanHosts(essid, vantage, env.fs.root());
   const parsed = parseScanTarget(rawTarget, resolution.subnet);
@@ -251,11 +292,16 @@ const resolveDeepPivotScan = (
   const lines =
     parsed.target.kind === 'range'
       ? scanRange(env, rawTarget, hosts)
-      : scanSingle(env, rawTarget, hosts[0], resolveHostPorts);
+      : scanSingle(env, rawTarget, hosts[0], resolveHostPorts, withVersion);
   return { kind: 'async', lines, exitCode: async () => 0 };
 };
 
-const execute: Command['execute'] = async (env, args) => {
+const execute: Command['execute'] = async (env, args, flags) => {
+  // Declared in the spec below, so the shell has already bound it and rejected anything
+  // it does not know. The version itself is resolved either way — the manifest it comes
+  // from is readable to anyone who can scan at all, so withholding it here would hide
+  // nothing a second scan would not hand over, and would cost the server a second mode.
+  const withVersion = flags.get(VERSION_FLAG) === true;
   const rawTarget = args[0];
   if (rawTarget === undefined) {
     return error(USAGE);
@@ -272,7 +318,11 @@ const execute: Command['execute'] = async (env, args) => {
   // routes here; a range or a private/own-subnet address falls through to the LAN
   // path below (which scans it or reports it out of range).
   if (isPublicIp(rawTarget)) {
-    return { kind: 'async', lines: scanPublic(env, rawTarget), exitCode: async () => 0 };
+    return {
+      kind: 'async',
+      lines: scanPublic(env, rawTarget, withVersion),
+      exitCode: async () => 0,
+    };
   }
 
   const essid = wlan0.association.essid;
@@ -294,7 +344,7 @@ const execute: Command['execute'] = async (env, args) => {
   // — so the upstream segment stays visible from the gateway too.
   const pivotVantage = pivotVantageForMachineId(essid, env.session.machineId);
   if (pivotVantage !== null) {
-    const pivotScan = resolveDeepPivotScan(env, essid, target, pivotVantage);
+    const pivotScan = resolveDeepPivotScan(env, essid, target, pivotVantage, withVersion);
     if (pivotScan !== null) {
       return pivotScan;
     }
@@ -349,10 +399,18 @@ const execute: Command['execute'] = async (env, args) => {
   // scan builds no port table for any host, so a single scan is the whole of what asks.
   const single = parsed.target.kind === 'single' ? hosts[0] : undefined;
   if (single !== undefined && occupantIps.has(single.ip)) {
-    return { kind: 'async', lines: scanOccupant(env, essid, single), exitCode: async () => 0 };
+    return {
+      kind: 'async',
+      lines: scanOccupant(env, essid, single, withVersion),
+      exitCode: async () => 0,
+    };
   }
   if (single !== undefined && isInnerGateway(single)) {
-    return { kind: 'async', lines: scanInnerGateway(env, essid, single), exitCode: async () => 0 };
+    return {
+      kind: 'async',
+      lines: scanInnerGateway(env, essid, single, withVersion),
+      exitCode: async () => 0,
+    };
   }
 
   // Per-host open ports. The `.1` gateway is the ACCESS POINT's gateway — a distinct
@@ -381,7 +439,7 @@ const execute: Command['execute'] = async (env, args) => {
   const lines =
     parsed.target.kind === 'range'
       ? scanRange(env, target, hosts)
-      : scanSingle(env, target, hosts[0], resolveHostPorts);
+      : scanSingle(env, target, hosts[0], resolveHostPorts, withVersion);
   return { kind: 'async', lines, exitCode: async () => 0 };
 };
 
@@ -391,11 +449,17 @@ export const nmap: Command = {
   category: 'network',
   tier: 'guest',
   availability: { kind: 'installed-package', packageName: 'nmap' },
+  flags: { [VERSION_FLAG]: 'boolean' },
   manual: {
-    synopsis: 'nmap <target>',
+    synopsis: 'nmap [-sV] <target>',
     description:
-      'Network exploration tool. Discovers hosts on your network, listing the ones that are up with their IP, hostname, and kind. Scan a single host (e.g. "192.168.1.5") or a range of hosts (e.g. "192.168.1.1-254"). Only your own network is reachable. Requires a network connection; install with "apt install nmap".',
+      'Network exploration tool. Discovers hosts on your network, listing the ones that are up with their IP, hostname, and kind. Scan a single host (e.g. "192.168.1.5") or a range of hosts (e.g. "192.168.1.1-254"). With -sV, a single-host scan also names the software and version behind each open port, read from the target\u2019s package manifest. Only your own network is reachable. Requires a network connection; install with "apt install nmap".',
     arguments: [
+      {
+        name: '-sV',
+        description:
+          'Version scan: add a VERSION column naming the software behind each open port',
+      },
       {
         name: 'target',
         description: 'An IP address or range to scan, e.g. 192.168.1.5 or 192.168.1.1-254',
@@ -405,6 +469,7 @@ export const nmap: Command = {
     examples: [
       { command: 'nmap 192.168.1.5', description: 'Scan a single host' },
       { command: 'nmap 192.168.1.1-254', description: 'Discover hosts in an IP range' },
+      { command: 'nmap -sV 192.168.1.5', description: 'Scan a host and name its software versions' },
     ],
   },
   execute,

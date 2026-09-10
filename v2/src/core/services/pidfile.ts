@@ -24,6 +24,8 @@ import { createPrng } from '../generation/prng';
 import { asAbsPath, type AbsPath, type MachineId, type UserType } from '../types';
 import type { Directory, FilePermissions } from '../filesystem/types';
 import { SERVICE_CATALOG, type ServiceSpec } from './serviceCatalog';
+import { parseDpkgVersions, readDpkgStatus } from '../packages/dpkgStatus';
+import { displayVersion } from '../packages/packageVersions';
 
 /** The directory holding every running service's pidfile. */
 export const VAR_RUN = '/var/run';
@@ -148,7 +150,17 @@ const parseListenerContent = (content: string): Listener | null => {
   return userType === null ? null : { port: Number(rawPort), user, userType };
 };
 
-export type OpenPort = { readonly port: number; readonly service: string };
+/** One open port as a scanner sees it. `version` is the already-RENDERED display
+ *  string (`OpenSSH 9.7.0`), not a package and a tuple to be joined later: this type is
+ *  the cross-player scan's wire payload, and shipping the two halves would put the
+ *  product name on the wire twice and give two places to get the join wrong. Absent
+ *  when the box cannot answer for the port — a planted listener, or a daemon its own
+ *  manifest does not list. */
+export type OpenPort = {
+  readonly port: number;
+  readonly service: string;
+  readonly version?: string;
+};
 
 /** One thing found running on a machine — everything a reader can learn from
  *  `/var/run`. A union rather than one row with fields that are blank half the
@@ -216,8 +228,22 @@ export const listenerOn = (fs: Directory, port: number | undefined): Listener | 
  *  reader (the `nmap` display + the server scan action) so the ports a scan SHOWS
  *  and the ports it LOGS can never drift. A listener projects as `unknown` — open,
  *  and unaccounted for. */
-export const readOpenPorts = (root: Directory): readonly OpenPort[] =>
-  readRunningProcesses(root).map((running) => ({
-    port: running.port,
-    service: running.kind === 'service' ? running.spec.service : UNKNOWN_SERVICE,
-  }));
+export const readOpenPorts = (root: Directory): readonly OpenPort[] => {
+  const installed = parseDpkgVersions(readDpkgStatus(root));
+  return readRunningProcesses(root).map((running) => {
+    if (running.kind !== 'service') {
+      return { port: running.port, service: UNKNOWN_SERVICE };
+    }
+    // The MANIFEST decides, never the version table: `apt upgrade` moves a box off the
+    // version it shipped with, and a scan answering from the table would keep pointing
+    // at a hole the defender had already closed.
+    const version = installed.get(running.spec.package);
+    return {
+      port: running.port,
+      service: running.spec.service,
+      ...(version === undefined
+        ? {}
+        : { version: displayVersion(running.spec.package, version) }),
+    };
+  });
+};
